@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { PrismaClient } from '@prisma/client'
 import { requireWritesAllowed } from '@/lib/write-freeze'
 
@@ -43,12 +44,34 @@ export const createProtectedPrismaClient = (databaseUrl?: string) => {
     })
 }
 
+export type ProtectedPrismaClient = ReturnType<typeof createProtectedPrismaClient>
+const requestPrismaContext = new AsyncLocalStorage<ProtectedPrismaClient>()
+
+export function withRequestPrismaContext<T>(client: ProtectedPrismaClient, callback: () => T): T {
+    return requestPrismaContext.run(client, callback)
+}
+
 declare const globalThis: {
-    prismaGlobal: ReturnType<typeof createProtectedPrismaClient>;
+    prismaGlobal?: ReturnType<typeof createProtectedPrismaClient>;
 } & typeof global;
 
-const prisma = globalThis.prismaGlobal ?? createProtectedPrismaClient()
+let defaultPrisma: ProtectedPrismaClient | undefined
+function getDefaultPrisma(): ProtectedPrismaClient {
+    if (process.env.PRISMA_REQUEST_SCOPE_REQUIRED === 'true' && !requestPrismaContext.getStore()) {
+        throw new Error('REQUEST_DATABASE_CONTEXT_REQUIRED')
+    }
+    if (defaultPrisma) return defaultPrisma
+    defaultPrisma = globalThis.prismaGlobal ?? createProtectedPrismaClient()
+    if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = defaultPrisma
+    return defaultPrisma
+}
+
+const prisma = new Proxy({} as ProtectedPrismaClient, {
+    get(_target, property) {
+        const client = requestPrismaContext.getStore() ?? getDefaultPrisma()
+        const value = Reflect.get(client, property, client)
+        return typeof value === 'function' ? value.bind(client) : value
+    },
+})
 
 export default prisma
-
-if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = prisma

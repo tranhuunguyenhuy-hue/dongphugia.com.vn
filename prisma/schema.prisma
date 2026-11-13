@@ -1,11 +1,13 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters", "multiSchema"]
 }
 
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+  schemas   = ["dpg_app"]
 }
 
 model banners {
@@ -22,6 +24,8 @@ model banners {
   position    String?     @default("HERO") @db.VarChar(50)
   brands      brands?     @relation(fields: [brand_id], references: [id], onUpdate: NoAction)
   categories  categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction)
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -31,6 +35,8 @@ model colors {
   slug     String     @unique @db.VarChar(50)
   hex_code String?    @db.VarChar(7)
   products products[]
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -39,6 +45,8 @@ model origins {
   name     String     @db.VarChar(100)
   slug     String     @unique @db.VarChar(100)
   products products[]
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -54,6 +62,8 @@ model product_images {
 
   @@index([product_id], map: "idx_product_images_product")
   @@index([image_type], map: "idx_product_images_type")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -181,6 +191,8 @@ model products {
   @@index([subcategory_id, product_type_id, is_active], map: "idx_products_sub_typeid_active")
   @@index([product_sub_type_id, is_active], map: "idx_products_subtypeid_active")
   @@index([variant_group_id], map: "idx_products_variant_group_id")
+
+  @@schema("dpg_app")
 }
 
 model product_relationships {
@@ -204,6 +216,8 @@ model product_relationships {
   @@index([child_sku], map: "idx_prel_child_sku")
   @@index([component_type], map: "idx_prel_component_type")
   @@index([resolution_status], map: "idx_prel_resolution_status")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -214,6 +228,8 @@ model redirects {
   status_code Int?      @default(301)
   is_active   Boolean?  @default(true)
   created_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -242,6 +258,8 @@ model quote_requests {
   @@index([phone], map: "idx_quote_requests_phone")
   @@index([customer_id], map: "idx_quote_requests_customer")
   @@index([assigned_to], map: "idx_quote_requests_assigned")
+
+  @@schema("dpg_app")
 }
 
 model quote_items {
@@ -265,6 +283,8 @@ model quote_items {
 
   @@index([quote_id], map: "idx_quote_items_quote")
   @@index([product_id], map: "idx_quote_items_product")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -282,6 +302,8 @@ model customers {
 
   @@index([phone], map: "idx_customers_phone")
   @@index([last_interacted_at(sort: Desc)], map: "idx_customers_interaction")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -300,6 +322,8 @@ model blog_categories {
   blog_posts      blog_posts[]
 
   @@index([slug], map: "idx_blog_categories_slug")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -312,6 +336,8 @@ model blog_post_tags {
   @@id([post_id, tag_id])
   @@index([post_id], map: "idx_blog_post_tags_post")
   @@index([tag_id], map: "idx_blog_post_tags_tag")
+
+  @@schema("dpg_app")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -363,6 +389,8 @@ model blog_posts {
   @@index([publishing_identity_id, updated_at(sort: Desc), id(sort: Desc)], map: "idx_blog_posts_publishing_list")
   @@index([publishing_identity_id, status, updated_at(sort: Desc), id(sort: Desc)], map: "idx_blog_posts_publishing_status")
   @@index([status, scheduled_for, id], map: "idx_blog_posts_scheduler")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -378,6 +406,8 @@ model blog_tags {
   blog_post_tags blog_post_tags[]
 
   @@index([is_active, name], map: "idx_blog_tags_active_name")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -396,6 +426,8 @@ model partners {
   updated_at     DateTime? @default(now()) @db.Timestamptz(6)
 
   @@index([is_active], map: "idx_partners_active")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -416,6 +448,8 @@ model projects {
 
   @@index([is_active], map: "idx_projects_active")
   @@index([is_featured], map: "idx_projects_featured")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -437,6 +471,8 @@ model brands {
 
   @@index([is_active], map: "idx_brands_active")
   @@index([is_featured], map: "idx_brands_featured")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -460,6 +496,8 @@ model categories {
   subcategories      subcategories[]
 
   @@index([is_active], map: "idx_categories_active")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -486,6 +524,8 @@ model filter_definitions {
   @@index([product_type_id], map: "idx_filter_def_product_type")
   @@index([spec_definition_id], map: "idx_filter_def_spec_definition")
   @@index([subcategory_id, is_active, sort_order], map: "idx_filter_def_sub_active_sort")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -496,6 +536,8 @@ model materials {
   description String?
   sort_order  Int        @default(0)
   products    products[]
+
+  @@schema("dpg_app")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -515,6 +557,8 @@ model order_items {
 
   @@index([order_id], map: "idx_order_items_order")
   @@index([product_id], map: "idx_order_items_product")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -547,6 +591,8 @@ model orders {
   @@index([payment_status], map: "idx_orders_payment")
   @@index([status], map: "idx_orders_status")
   @@index([assigned_to], map: "idx_orders_assigned")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -561,6 +607,8 @@ model product_feature_values {
   @@unique([product_id, feature_id])
   @@index([feature_id], map: "idx_pfv_feature")
   @@index([product_id], map: "idx_pfv_product")
+
+  @@schema("dpg_app")
 }
 
 model catalog_taxons {
@@ -590,6 +638,8 @@ model catalog_taxons {
   @@index([parent_id], map: "idx_catalog_taxons_parent")
   @@index([slug], map: "idx_catalog_taxons_slug")
   @@index([is_active], map: "idx_catalog_taxons_active")
+
+  @@schema("dpg_app")
 }
 
 model product_taxon_assignments {
@@ -611,6 +661,8 @@ model product_taxon_assignments {
   @@index([taxon_id], map: "idx_product_taxon_assignments_taxon")
   @@index([product_id], map: "idx_product_taxon_assignments_product")
   @@index([source], map: "idx_product_taxon_assignments_source")
+
+  @@schema("dpg_app")
 }
 
 model external_taxonomy_mappings {
@@ -639,6 +691,8 @@ model external_taxonomy_mappings {
   @@index([source_category_slug], map: "idx_external_taxonomy_mappings_source_category_slug")
   @@index([taxon_id], map: "idx_external_taxonomy_mappings_taxon")
   @@index([source_key], map: "idx_external_taxonomy_mappings_source_key")
+
+  @@schema("dpg_app")
 }
 
 model product_attribute_values {
@@ -662,6 +716,8 @@ model product_attribute_values {
   @@index([taxon_id], map: "idx_product_attribute_values_taxon")
   @@index([attribute_key, value_slug], map: "idx_product_attribute_values_key_value")
   @@index([source], map: "idx_product_attribute_values_source")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -673,6 +729,8 @@ model product_features {
   description            String?
   sort_order             Int                      @default(0)
   product_feature_values product_feature_values[]
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -700,6 +758,8 @@ model subcategories {
   @@unique([category_id, slug])
   @@index([is_active], map: "idx_subcategories_active")
   @@index([category_id], map: "idx_subcategories_category")
+
+  @@schema("dpg_app")
 }
 
 /// Junction table: allows a product to appear in multiple subcategories.
@@ -717,6 +777,8 @@ model product_secondary_subcategories {
   @@unique([product_id, subcategory_id])
   @@index([product_id], map: "idx_prod_sec_subcat_product")
   @@index([subcategory_id], map: "idx_prod_sec_subcat_subcat")
+
+  @@schema("dpg_app")
 }
 
 /// Admin users with role-based access control.
@@ -743,6 +805,8 @@ model admin_users {
   @@index([email], map: "idx_admin_users_email")
   @@index([role], map: "idx_admin_users_role")
   @@index([is_active], map: "idx_admin_users_active")
+
+  @@schema("dpg_app")
 }
 
 /// Internal non-human identities authorized to use the Publishing API.
@@ -767,6 +831,8 @@ model publishing_machine_identities {
 
   @@index([sponsor_user_id], map: "idx_publishing_identities_sponsor")
   @@index([is_active], map: "idx_publishing_identities_active")
+
+  @@schema("dpg_app")
 }
 
 model publishing_identity_capabilities {
@@ -778,6 +844,8 @@ model publishing_identity_capabilities {
 
   @@id([identity_id, capability])
   @@index([capability, revoked_at], map: "idx_publishing_capabilities_active")
+
+  @@schema("dpg_app")
 }
 
 model publishing_credentials {
@@ -798,6 +866,8 @@ model publishing_credentials {
 
   @@index([identity_id, environment, expires_at], map: "idx_publishing_credentials_identity")
   @@index([expires_at, revoked_at], map: "idx_publishing_credentials_expiry")
+
+  @@schema("dpg_app")
 }
 
 model publishing_identity_ip_allowlist {
@@ -808,6 +878,8 @@ model publishing_identity_ip_allowlist {
   identity    publishing_machine_identities @relation(fields: [identity_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([identity_id, ip_address], map: "uq_publishing_identity_ip")
+
+  @@schema("dpg_app")
 }
 
 /// Minimal immutable media inventory used to prove ownership and readiness.
@@ -831,6 +903,8 @@ model publishing_managed_media {
 
   @@index([identity_id, status], map: "idx_publishing_media_identity_status")
   @@index([created_at], map: "idx_publishing_media_created")
+
+  @@schema("dpg_app")
 }
 
 model publishing_blog_post_media {
@@ -844,6 +918,8 @@ model publishing_blog_post_media {
   @@id([post_id, media_id, usage])
   @@index([media_id], map: "idx_publishing_post_media_asset")
   @@index([post_id, usage], map: "idx_publishing_post_media_usage")
+
+  @@schema("dpg_app")
 }
 
 model publishing_idempotency_records {
@@ -865,6 +941,8 @@ model publishing_idempotency_records {
   @@unique([identity_id, key_hash], map: "uq_publishing_idempotency_identity_key")
   @@index([expires_at], map: "idx_publishing_idempotency_expiry")
   @@index([resource_type, resource_id], map: "idx_publishing_idempotency_resource")
+
+  @@schema("dpg_app")
 }
 
 model publishing_rate_limit_windows {
@@ -877,6 +955,8 @@ model publishing_rate_limit_windows {
 
   @@id([identity_id, bucket, window_start])
   @@index([window_start], map: "idx_publishing_rate_window_cleanup")
+
+  @@schema("dpg_app")
 }
 
 model publishing_global_controls {
@@ -885,6 +965,8 @@ model publishing_global_controls {
   version            Int      @default(1)
   updated_at         DateTime @default(now()) @db.Timestamptz(6)
   updated_by_user_id Int?
+
+  @@schema("dpg_app")
 }
 
 model publishing_scheduler_state {
@@ -898,6 +980,8 @@ model publishing_scheduler_state {
   last_published_count Int       @default(0)
   last_blocked_count   Int       @default(0)
   updated_at           DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@schema("dpg_app")
 }
 
 model publishing_audit_events {
@@ -927,6 +1011,8 @@ model publishing_audit_events {
   @@index([identity_id, created_at(sort: Desc)], map: "idx_publishing_audit_identity")
   @@index([post_id, created_at(sort: Desc)], map: "idx_publishing_audit_post")
   @@index([request_id], map: "idx_publishing_audit_request")
+
+  @@schema("dpg_app")
 }
 
 /// Active sessions for admin users. One user can have multiple sessions (multi-device).
@@ -943,6 +1029,8 @@ model admin_sessions {
   @@index([token_hash], map: "idx_admin_sessions_token")
   @@index([user_id], map: "idx_admin_sessions_user")
   @@index([expires_at], map: "idx_admin_sessions_expires")
+
+  @@schema("dpg_app")
 }
 
 /// Audit trail for all admin actions. Used for traceability and dispute resolution.
@@ -962,6 +1050,8 @@ model audit_logs {
   @@index([entity_type, entity_id], map: "idx_audit_logs_entity")
   @@index([created_at(sort: Desc)], map: "idx_audit_logs_created")
   @@index([action], map: "idx_audit_logs_action")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -986,6 +1076,8 @@ model crawl_import_decisions {
 
   @@index([decision], map: "idx_crawl_import_decisions_decision")
   @@index([target_product_id], map: "idx_crawl_import_decisions_target")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1012,6 +1104,8 @@ model crawl_product_snapshots {
   @@index([sku], map: "idx_crawl_snapshots_sku")
   @@index([source_product_id], map: "idx_crawl_snapshots_source_product")
   @@index([status], map: "idx_crawl_snapshots_status")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1030,6 +1124,8 @@ model crawl_runs {
   @@index([source, brand_slug], map: "idx_crawl_runs_source_brand")
   @@index([started_at], map: "idx_crawl_runs_started")
   @@index([status], map: "idx_crawl_runs_status")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1044,6 +1140,8 @@ model product_descriptions {
   products     products @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([source], map: "idx_product_descriptions_source")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1063,6 +1161,8 @@ model product_documents {
   @@unique([product_id, url], map: "uq_product_documents_product_url")
   @@index([product_id], map: "idx_product_documents_product")
   @@index([document_type], map: "idx_product_documents_type")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1085,6 +1185,8 @@ model product_package_items {
   @@index([child_sku], map: "idx_product_package_items_child_sku")
   @@index([product_id], map: "idx_product_package_items_product")
   @@index([resolution_status], map: "idx_product_package_items_resolution")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1106,6 +1208,8 @@ model product_source_mappings {
   @@index([sku], map: "idx_product_source_mappings_sku")
   @@index([source, source_product_id], map: "idx_product_source_mappings_source_product")
   @@index([status], map: "idx_product_source_mappings_status")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1134,6 +1238,8 @@ model product_spec_values {
   @@index([product_id], map: "idx_product_spec_values_product")
   @@index([source], map: "idx_product_spec_values_source")
   @@index([value_text], map: "idx_product_spec_values_text")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1150,6 +1256,8 @@ model product_sub_types {
   @@unique([product_type_id, slug], map: "uq_product_sub_types_type_slug")
   @@index([is_active], map: "idx_product_sub_types_active")
   @@index([product_type_id], map: "idx_product_sub_types_type")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1172,6 +1280,8 @@ model product_types {
   @@unique([subcategory_id, slug], map: "uq_product_types_sub_slug")
   @@index([is_active], map: "idx_product_types_active")
   @@index([subcategory_id], map: "idx_product_types_subcategory")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1190,6 +1300,8 @@ model product_variant_groups {
 
   @@index([base_sku], map: "idx_product_variant_groups_base_sku")
   @@index([variant_type], map: "idx_product_variant_groups_type")
+
+  @@schema("dpg_app")
 }
 
 /// Canonical Product Family identity. This is separate from the legacy
@@ -1208,6 +1320,8 @@ model product_families {
   catalogue_gaps       product_family_catalogue_gaps[]
 
   @@index([source], map: "idx_product_families_source")
+
+  @@schema("dpg_app")
 }
 
 /// A generic configuration grouping within one Product Family.
@@ -1227,6 +1341,8 @@ model product_family_configuration_groups {
   @@unique([family_id, group_key], map: "uq_product_family_configuration_groups_family_key")
   @@unique([id, family_id], map: "uq_product_family_configuration_groups_id_family")
   @@index([family_id, sort_order], map: "idx_product_family_configuration_groups_order")
+
+  @@schema("dpg_app")
 }
 
 /// Explicit Product-to-Family configuration membership. Product identity and
@@ -1248,6 +1364,8 @@ model product_family_memberships {
   @@unique([family_id, product_id], map: "uq_product_family_memberships_family_product")
   @@index([configuration_group_id, sort_order, product_id], map: "idx_product_family_memberships_group_order")
   @@index([family_id, sort_order, product_id], map: "idx_product_family_memberships_family_order")
+
+  @@schema("dpg_app")
 }
 
 /// An explicit record for an approved Family member whose Product row is not
@@ -1267,6 +1385,8 @@ model product_family_catalogue_gaps {
 
   @@unique([family_id, member_key], map: "uq_product_family_catalogue_gaps_family_member")
   @@index([family_id, status], map: "idx_product_family_catalogue_gaps_status")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1289,6 +1409,8 @@ model spec_definitions {
 
   @@index([is_filterable], map: "idx_spec_definitions_filterable")
   @@index([is_pdp_visible], map: "idx_spec_definitions_pdp_visible")
+
+  @@schema("dpg_app")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -1307,4 +1429,6 @@ model spec_options {
   @@index([is_active], map: "idx_spec_options_active")
   @@index([spec_definition_id], map: "idx_spec_options_definition")
   @@index([spec_definition_id, value], map: "idx_spec_options_definition_value")
+
+  @@schema("dpg_app")
 }

@@ -102,7 +102,10 @@ export async function createBlogPost(data: unknown) {
                     skipDuplicates: true,
                 })
                 await transaction.$executeRawUnsafe(
-                    `UPDATE blog_tags SET post_count = (SELECT COUNT(*) FROM blog_post_tags WHERE tag_id = blog_tags.id) WHERE id = ANY($1::int[])`,
+                    `UPDATE dpg_app.blog_tags AS tags
+                    SET post_count = (
+                        SELECT COUNT(*) FROM dpg_app.blog_post_tags AS links WHERE links.tag_id = tags.id
+                    ) WHERE tags.id = ANY($1::int[])`,
                     d.tag_ids,
                 )
             }
@@ -215,10 +218,10 @@ export async function updateBlogPost(id: number, data: unknown) {
                 })
             }
             await transaction.$executeRaw(
-                Prisma.sql`UPDATE blog_tags
+                Prisma.sql`UPDATE dpg_app.blog_tags AS tags
                     SET post_count = (
-                        SELECT COUNT(*) FROM blog_post_tags
-                        WHERE blog_post_tags.tag_id = blog_tags.id
+                        SELECT COUNT(*) FROM dpg_app.blog_post_tags AS links
+                        WHERE links.tag_id = tags.id
                     )`,
             )
             if (existing.publishing_identity_id) {
@@ -326,8 +329,8 @@ export async function deleteBlogPost(id: number, expectedVersion: number) {
         }
         // Refresh tag counts
         await prisma.$executeRaw(
-            Prisma.sql`UPDATE blog_tags SET post_count = (
-                SELECT COUNT(*) FROM blog_post_tags WHERE tag_id = blog_tags.id
+            Prisma.sql`UPDATE dpg_app.blog_tags AS tags SET post_count = (
+                SELECT COUNT(*) FROM dpg_app.blog_post_tags AS links WHERE links.tag_id = tags.id
             )`,
         )
         revalidatePath('/admin/blog/posts')
@@ -390,7 +393,7 @@ export async function deleteBlogTag(id: number) {
 
 export async function incrementViewCount(postId: number) {
     await prisma.$executeRawUnsafe(
-        `UPDATE blog_posts SET view_count = view_count + 1 WHERE id = $1`,
+        `UPDATE dpg_app.blog_posts SET view_count = view_count + 1 WHERE id = $1`,
         postId
     )
 }

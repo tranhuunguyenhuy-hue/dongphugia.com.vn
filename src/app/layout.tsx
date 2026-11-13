@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/sonner";
-import { GoogleTagManager } from '@next/third-parties/google';
 import { JsonLd } from "@/components/seo/json-ld";
 import { buildOrganizationSchema } from "@/lib/seo/schema";
 import { getSiteRuntimeConfig } from "@/lib/site";
@@ -41,12 +40,15 @@ export function generateMetadata(): Metadata {
 // Without this, DevTools mobile emulation and real phones will show the DESKTOP layout.
 export const viewport: Viewport = publicViewport;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+  const GoogleTagManager = gtmId
+    ? (await import('@next/third-parties/google')).GoogleTagManager
+    : null;
   const siteRuntime = getSiteRuntimeConfig()
   const siteUrl = siteRuntime.siteUrl;
   const cdnHostname = process.env.BUNNY_CDN_HOSTNAME ?? "cdn.dongphugia.com.vn";
@@ -70,7 +72,7 @@ export default function RootLayout({
         {/* Organization / LocalBusiness structured data — site-wide SEO signal */}
         <JsonLd data={buildOrganizationSchema()} />
         <Toaster richColors position="top-right" />
-        {gtmId ? (
+        {gtmId && GoogleTagManager ? (
           <>
             <WebVitalsReporter />
             <GoogleTagManager gtmId={gtmId} />
