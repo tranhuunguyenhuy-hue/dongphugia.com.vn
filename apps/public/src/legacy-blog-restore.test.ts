@@ -10,6 +10,7 @@ import {
   blogCategoriesWithPosts,
   blogPosts,
   blogPostPath,
+  mergePublicBlogData,
   getLegacyBlogCategory,
   getLegacyBlogPost,
   getLegacyBlogPostsForCategory,
@@ -105,13 +106,38 @@ describe('Owner-requested legacy blog restoration', () => {
     const smoke = readFileSync(resolve(root, 'scripts/catalogue-direct/public-production-smoke.mjs'), 'utf8')
     const homepage = readFileSync(resolve(root, 'apps/public/src/runtime/preview-public-home.ts'), 'utf8')
     expect(listing).toContain('blogPosts')
-    expect(category).toContain('getLegacyBlogPostsForCategory')
+    expect(category).toContain('getPublicBlogData')
     expect(detail).toContain('sanitizeRichHtml')
     expect(detail).toContain('application/ld+json')
     expect(smoke).toContain("fail('NEWS_RESTORE')")
-    expect(homepage).toContain('blogPosts.slice(0, 3)')
+    expect(homepage).toContain('publicBlog.posts.slice(0, 3)')
     for (const post of blogPosts) {
       expect(smoke).toContain(blogPostPath(post))
     }
+  })
+
+  it('overlays a shared-DB article by canonical URL and keeps unmatched verified archive posts', () => {
+    const archivePost = blogPosts[0]
+    const category = { ...archivePost.category, id: 900, is_active: true as const }
+    const databasePost = {
+      ...archivePost,
+      id: 9000,
+      category_id: category.id,
+      category,
+      title: 'Updated shared-DB title',
+      content: '<p>Updated shared-DB content.</p>',
+      source: undefined,
+    }
+    const merged = mergePublicBlogData({ categories: [category], posts: [databasePost] })
+    const matching = merged.posts.filter((post) => blogPostPath(post) === blogPostPath(archivePost))
+
+    expect(matching).toHaveLength(1)
+    expect(matching[0]).toMatchObject({
+      id: 9000,
+      title: 'Updated shared-DB title',
+      content: '<p>Updated shared-DB content.</p>',
+      source: 'database',
+    })
+    expect(merged.posts.some((post) => post.id === blogPosts[1].id)).toBe(true)
   })
 })

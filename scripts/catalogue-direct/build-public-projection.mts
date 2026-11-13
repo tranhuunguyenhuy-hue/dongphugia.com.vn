@@ -9,6 +9,7 @@ import type { ProductVisibilityInput } from '../../src/lib/public-product-visibi
 import type { ProductPathInput, ProductTaxonAssignmentRef } from '../../src/lib/taxonomy-paths'
 import { projectProduct, buildProjection, ROOTS } from './public-projection.mjs'
 import {projectPublicContent,publicText,PUBLIC_SPEC_KEYS,PUBLIC_LEGACY_SPEC_PATHS} from './public-product-content.mjs'
+import {buildPublicBlogAsset,projectPublicBlog} from './public-blog-projection.mjs'
 
 // Root .ts modules are CommonJS; this protected .mts runner is ESM. Keep the
 // exact canonical implementations using tsx's registered CommonJS loader.
@@ -64,6 +65,7 @@ async function main() {
   projectionPhase='CONNECT_READ'
   const client=await connect('read')
   await client.query('begin isolation level repeatable read read only')
+  const projectionAsOf=(await client.query('select transaction_timestamp() as "asOf"')).rows[0].asOf as Date
   projectionPhase='TARGET_PRIVACY'
   await assertTargetPrivate(client)
   projectionPhase='PUBLIC_QUERY'
@@ -198,9 +200,21 @@ async function main() {
     }))
   }
   const projected=projectedPairs.map(({product})=>({...product,...publicVariantById.get(product.id)}))
+  projectionPhase='PUBLIC_BLOG_QUERY'
+  const blogCategories=(await client.query(`select id,name,slug,description,thumbnail_url,sort_order,seo_title,seo_description,is_active
+    from dpg_app.blog_categories where is_active order by sort_order,id`)).rows
+  const blogPosts=(await client.query(`select id,title,slug,excerpt,content,category_id,thumbnail_url,cover_image_url,
+      seo_title,seo_description,reading_time,is_featured,is_pinned,status,published_at,created_at,updated_at
+    from dpg_app.blog_posts where status='published' and published_at is not null and published_at<=$1
+    order by is_pinned desc,published_at desc,id desc`,[projectionAsOf])).rows
+  const projectedBlog=projectPublicBlog({categories:blogCategories,posts:blogPosts,asOf:projectionAsOf})
   projectionPhase='PUBLIC_ASSEMBLY'
   const {manifest,assets}=buildProjection(projected,evidence,rootMetadata,{restoreCommerce:true})
   if(!manifest.products||!manifest.listingProducts) throw new Error('PUBLIC_PROJECTION_EMPTY_REVIEW_REQUIRED')
+  const blogAsset=buildPublicBlogAsset(projectedBlog,evidence.checkpoint,manifest.contract)
+  manifest.blogSnapshot={asset:'blog.json',contract:projectedBlog.contract,asOf:projectedBlog.asOf,
+    categories:projectedBlog.categories.length,posts:projectedBlog.posts.length}
+  assets.set('blog.json',blogAsset)
   await client.query('commit')
   projectionPhase='ASSET_WRITE'
   const output=resolve('apps/public/dist/client/__catalogue/v1')
@@ -238,7 +252,7 @@ async function main() {
   if (!existingHeaders.includes('/__catalogue/*')) await writeFile(headersPath, existingHeaders + '\n/__catalogue/*\n  X-Robots-Tag: noindex, nofollow\n  Cache-Control: private, no-store\n')
   // Only public projection DTO assets are emitted. Raw SQL rows stay in memory.
   console.log(JSON.stringify({status:'PASS',stage:'M4_PUBLIC_PROJECTION',...evidence,
-    publicProducts:manifest.products,listingProducts:manifest.listingProducts,excludedInvalidCanonical:rows.length-projected.length,assets:assets.size,bytes,
+    publicProducts:manifest.products,listingProducts:manifest.listingProducts,blogPosts:projectedBlog.posts.length,excludedInvalidCanonical:rows.length-projected.length,assets:assets.size,bytes,
     historicalReferencePrices:manifest.contentStats.referencePrices,verifiedVariantProducts:publicVariantById.size,
     publicPrices:manifest.contentStats.publicPrices,hitaPrices:manifest.contentStats.hitaPrices,
     onlineFinalPrices:manifest.contentStats.onlineFinalPrices,priceExceptions:exceptions.length,

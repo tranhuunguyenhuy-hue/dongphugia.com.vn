@@ -1,9 +1,43 @@
 import archive from './legacy-blog-snapshot.json'
 import verifiedMedia from './legacy-blog-media.json'
+import { getSnapshotBlogData } from './public-snapshot-catalogue'
+import { usesPublicSnapshot } from './public-snapshot-mode'
+import { safeImage } from '../../../../scripts/catalogue-direct/public-image-policy.mjs'
 
-export type LegacyBlogCategory = (typeof archive.categories)[number]
-export type LegacyBlogPost = (typeof archive.posts)[number] & {
+export type LegacyBlogCategory = {
+  id: number
+  name: string
+  slug: string
+  description: string | null
+  thumbnail_url: string | null
+  is_active: boolean
+  sort_order: number
+  seo_title: string | null
+  seo_description: string | null
+}
+export type LegacyBlogPost = {
+  id: number
+  title: string
+  slug: string
+  content_md5?: string
+  excerpt: string | null
+  content: string
+  category_id: number
+  thumbnail_url: string | null
+  cover_image_url: string | null
+  seo_title: string | null
+  seo_description: string | null
+  reading_time: number | null
+  status: string
+  published_at: string
+  author_name: string
+  author_avatar: string | null
+  is_featured: boolean
+  is_pinned: boolean
+  created_at: string | null
+  updated_at: string | null
   category: LegacyBlogCategory
+  source: 'archive' | 'database'
 }
 
 if (archive.contract !== 'dpg:verified-legacy-blog-snapshot:v1') {
@@ -19,7 +53,7 @@ export const blogPosts: readonly LegacyBlogPost[] = archive.posts
   .map((post) => {
     const category = blogCategories.find(({ id }) => id === post.category_id)
     if (!category) throw new Error('LEGACY_BLOG_CATEGORY_MISSING')
-    return { ...post, category }
+    return { ...post, category, source: 'archive' as const }
   })
   .sort((a, b) => b.published_at.localeCompare(a.published_at)
     || Number(b.is_pinned) - Number(a.is_pinned)
@@ -28,6 +62,58 @@ export const blogPosts: readonly LegacyBlogPost[] = archive.posts
 export const blogCategoriesWithPosts = blogCategories.filter((category) =>
   blogPosts.some((post) => post.category_id === category.id),
 )
+
+export function mergePublicBlogData(snapshot: {
+  categories: readonly LegacyBlogCategory[]
+  posts: readonly Omit<LegacyBlogPost, 'source'>[]
+}, legacyCategories: readonly LegacyBlogCategory[] = blogCategories,
+legacyPosts: readonly LegacyBlogPost[] = blogPosts) {
+  const categoriesBySlug = new Map<string, LegacyBlogCategory>(
+    legacyCategories.map((category) => [category.slug, category]),
+  )
+  for (const category of snapshot.categories) {
+    categoriesBySlug.set(category.slug, {
+      ...category,
+      thumbnail_url: category.thumbnail_url,
+      is_active: true,
+    })
+  }
+  const postByCanonicalPath = new Map<string, LegacyBlogPost>()
+  for (const post of legacyPosts) {
+    const category = categoriesBySlug.get(post.category.slug)
+    if (category) postByCanonicalPath.set(blogPostPath({ ...post, category }), { ...post, category })
+  }
+  for (const post of snapshot.posts) {
+    const category = categoriesBySlug.get(post.category.slug)
+    if (!category) throw new Error('PUBLIC_BLOG_CATEGORY_MISSING')
+    const projectedPost: LegacyBlogPost = { ...post, category, source: 'database' }
+    postByCanonicalPath.set(blogPostPath(projectedPost), projectedPost)
+  }
+
+  const categories = [...categoriesBySlug.values()].sort((a, b) => a.sort_order - b.sort_order || a.id - b.id)
+  const posts = [...postByCanonicalPath.values()].sort((a, b) =>
+    b.published_at.localeCompare(a.published_at)
+    || Number(b.is_pinned) - Number(a.is_pinned)
+    || b.id - a.id,
+  )
+  return {
+    categories,
+    posts,
+    categoriesWithPosts: categories.filter((category) =>
+      posts.some((post) => post.category.slug === category.slug),
+    ),
+  }
+}
+
+export async function getPublicBlogData() {
+  if (!usesPublicSnapshot()) {
+    return { categories: blogCategories, posts: blogPosts, categoriesWithPosts: blogCategoriesWithPosts }
+  }
+  const snapshot = await getSnapshotBlogData()
+  return snapshot
+    ? mergePublicBlogData(snapshot)
+    : { categories: blogCategories, posts: blogPosts, categoriesWithPosts: blogCategoriesWithPosts }
+}
 
 export function getLegacyBlogCategory(slug: string) {
   return blogCategories.find((category) => category.slug === slug) ?? null
@@ -93,6 +179,14 @@ export function historicalBlogImage(value: string | null | undefined): string | 
   } catch {
     return null
   }
+}
+
+export function publicBlogImage(value: string | null | undefined, source: LegacyBlogPost['source'] = 'archive'): string | null {
+  if (source === 'archive') return historicalBlogImage(value)
+  const safe = safeImage(value)
+  return safe?.startsWith('https://cdn.dongphugia.com.vn/')
+    ? 'https://dpg-products.b-cdn.net/' + safe.slice('https://cdn.dongphugia.com.vn/'.length)
+    : safe
 }
 
 export function restoreHistoricalBlogArticleLinks(html:string){

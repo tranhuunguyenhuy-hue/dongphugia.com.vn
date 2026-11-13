@@ -6,9 +6,8 @@ import { LegacyBlogCard } from '../../../../src/components/legacy-blog-card'
 import {
   blogPostPath,
   formatLegacyBlogDate,
-  getLegacyBlogPost,
-  getLegacyBlogRelatedPosts,
-  historicalBlogImage,
+  getPublicBlogData,
+  publicBlogImage,
   restoreHistoricalBlogArticleLinks,
 } from '../../../../src/runtime/legacy-blog'
 
@@ -19,10 +18,11 @@ type Props = { params: Promise<{ categorySlug: string; postSlug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug, postSlug } = await params
-  const post = getLegacyBlogPost(categorySlug, postSlug)
+  const { posts } = await getPublicBlogData()
+  const post = posts.find((entry) => entry.category.slug === categorySlug && entry.slug === postSlug)
   if (!post) return { title: 'Bài viết không tồn tại', robots: { index: false, follow: false } }
   const path = blogPostPath(post)
-  const cover = historicalBlogImage(post.cover_image_url ?? post.thumbnail_url)
+  const cover = publicBlogImage(post.cover_image_url ?? post.thumbnail_url, post.source)
   return {
     title: post.seo_title || post.title,
     description: post.seo_description || post.excerpt || post.title,
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: post.title,
       description: post.excerpt || undefined,
       publishedTime: post.published_at,
-      modifiedTime: post.updated_at,
+      ...(post.updated_at ? { modifiedTime: post.updated_at } : {}),
       url: path,
       ...(cover ? { images: [{ url: cover }] } : {}),
     },
@@ -42,13 +42,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PublicBlogPostPage({ params }: Props) {
   const { categorySlug, postSlug } = await params
-  const post = getLegacyBlogPost(categorySlug, postSlug)
+  const { posts } = await getPublicBlogData()
+  const post = posts.find((entry) => entry.category.slug === categorySlug && entry.slug === postSlug)
   if (!post) notFound()
-  const cover = historicalBlogImage(post.cover_image_url ?? post.thumbnail_url)
+  const cover = publicBlogImage(post.cover_image_url ?? post.thumbnail_url, post.source)
   const articleContent = sanitizeRichHtml(
     restoreHistoricalBlogArticleLinks(post.content.replace(/<h1(\s|>)/gi, '<h2$1').replace(/<\/h1>/gi, '</h2>')),
   )
-  const relatedPosts = getLegacyBlogRelatedPosts(post)
+  const relatedPosts = posts.filter((other) =>
+    other.slug !== post.slug && other.category.slug === post.category.slug,
+  ).slice(0, 3)
   const path = blogPostPath(post)
   const articleStructuredData = {
     '@context': 'https://schema.org',
@@ -109,7 +112,7 @@ export default async function PublicBlogPostPage({ params }: Props) {
           <section className="mx-auto mt-14 max-w-[1280px]" aria-labelledby="related-news">
             <h2 id="related-news" className="mb-6 text-2xl font-bold text-[#192125]">Bài viết liên quan</h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {relatedPosts.map((related) => <LegacyBlogCard key={related.id} post={related} />)}
+              {relatedPosts.map((related) => <LegacyBlogCard key={blogPostPath(related)} post={related} />)}
             </div>
           </section>
         ) : null}

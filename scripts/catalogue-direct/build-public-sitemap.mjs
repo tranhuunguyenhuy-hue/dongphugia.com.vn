@@ -33,6 +33,37 @@ for (const post of blog.posts) {
     paths.add(`/blog/${category}/${post.slug}`)
   }
 }
+if (manifest.blogSnapshot !== undefined) {
+  const declaration = manifest.blogSnapshot
+  if (declaration?.asset !== 'blog.json' || declaration.contract !== 'dpg:public-blog-snapshot:v1'
+    || !Number.isSafeInteger(declaration.categories) || declaration.categories < 0
+    || !Number.isSafeInteger(declaration.posts) || declaration.posts < 0
+    || typeof declaration.asOf !== 'string' || Number.isNaN(Date.parse(declaration.asOf))) {
+    throw new Error('PUBLIC_SITEMAP_BLOG_MANIFEST_INVALID')
+  }
+  const projected = JSON.parse(await readFile(join(catalogue, declaration.asset), 'utf8'))
+  if (projected.contract !== manifest.contract || projected.checkpoint !== manifest.checkpoint
+    || projected.blogContract !== declaration.contract || projected.asOf !== declaration.asOf
+    || !Array.isArray(projected.categories) || projected.categories.length !== declaration.categories
+    || !Array.isArray(projected.posts) || projected.posts.length !== declaration.posts) {
+    throw new Error('PUBLIC_SITEMAP_BLOG_ASSET_INVALID')
+  }
+  const projectedCategories = new Map(projected.categories
+    .filter(category => category?.is_active === true && Number.isSafeInteger(category.id)
+      && typeof category.slug === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(category.slug))
+    .map(category => [category.id, category.slug]))
+  for (const post of projected.posts) {
+    const category = projectedCategories.get(post?.category_id)
+    if (!category || post?.status !== 'published' || typeof post.slug !== 'string'
+      || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(post.slug)
+      || typeof post.published_at !== 'string' || Number.isNaN(Date.parse(post.published_at))
+      || Date.parse(post.published_at) > Date.parse(declaration.asOf)) {
+      throw new Error('PUBLIC_SITEMAP_BLOG_POST_INVALID')
+    }
+    paths.add(`/blog/${category}`)
+    paths.add(`/blog/${category}/${post.slug}`)
+  }
+}
 let products = 0
 const seenIds = new Set()
 for (const bucket of manifest.productBuckets) {

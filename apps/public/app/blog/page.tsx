@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { LegacyBlogCard } from '../../src/components/legacy-blog-card'
 import {
-  blogCategoriesWithPosts,
-  blogPosts,
+  blogPostPath,
+  getPublicBlogData,
 } from '../../src/runtime/legacy-blog'
 
 export const runtime = 'edge'
@@ -23,6 +23,7 @@ export default async function PublicNewsPage({ searchParams }: {
   const { page } = await searchParams
   // The original published archive has eight posts: exactly one listing page.
   if (page !== undefined && page !== '1') notFound()
+  const { posts: blogPosts, categoriesWithPosts: blogCategoriesWithPosts } = await getPublicBlogData()
   const [featured, ...remaining] = blogPosts
   return (
     <main className="min-h-screen bg-white">
@@ -48,9 +49,9 @@ export default async function PublicNewsPage({ searchParams }: {
           <section aria-labelledby="all-news">
             <h2 id="all-news" className="mb-6 text-2xl font-bold text-[#192125]">Các bài viết đã xuất bản</h2>
             <div className="grid gap-6 sm:grid-cols-2">
-              {remaining.map((post) => <LegacyBlogCard key={post.id} post={post} />)}
+              {remaining.map((post) => <LegacyBlogCard key={blogPostPath(post)} post={post} />)}
             </div>
-            <p className="mt-8 text-sm text-[#6A8A97]">Đang hiển thị {blogPosts.length} bài viết được khôi phục từ dữ liệu website trước đây.</p>
+            <p className="mt-8 text-sm text-[#6A8A97]">Đang hiển thị {blogPosts.length} bài viết công khai.</p>
           </section>
         </div>
         <aside className="w-full shrink-0 lg:w-[30%]" aria-label="Chuyên mục tin tức">

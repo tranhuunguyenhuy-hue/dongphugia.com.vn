@@ -2,10 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { LegacyBlogCard } from '../../../src/components/legacy-blog-card'
-import {
-  getLegacyBlogCategory,
-  getLegacyBlogPostsForCategory,
-} from '../../../src/runtime/legacy-blog'
+import { getPublicBlogData } from '../../../src/runtime/legacy-blog'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -17,9 +14,10 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug } = await params
-  const category = getLegacyBlogCategory(categorySlug)
+  const data = await getPublicBlogData()
+  const category = data.categories.find((entry) => entry.slug === categorySlug)
   if (!category) return { title: 'Không tìm thấy chuyên mục', robots: { index: false, follow: false } }
-  const count = getLegacyBlogPostsForCategory(categorySlug).length
+  const count = data.posts.filter((post) => post.category.slug === categorySlug).length
   return {
     title: category.seo_title || category.name,
     description: category.seo_description || category.description || `Bài viết chuyên mục ${category.name} tại Đông Phú Gia.`,
@@ -31,9 +29,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PublicBlogCategoryPage({ params, searchParams }: Props) {
   const [{ categorySlug }, { page }] = await Promise.all([params, searchParams])
   if (page !== undefined && page !== '1') notFound()
-  const category = getLegacyBlogCategory(categorySlug)
+  const data = await getPublicBlogData()
+  const category = data.categories.find((entry) => entry.slug === categorySlug)
   if (!category) notFound()
-  const posts = getLegacyBlogPostsForCategory(categorySlug)
+  const posts = data.posts.filter((post) => post.category.slug === categorySlug)
 
   return (
     <main className="min-h-screen bg-white">
@@ -51,7 +50,7 @@ export default async function PublicBlogCategoryPage({ params, searchParams }: P
       <section className="mx-auto max-w-[1280px] px-5 py-12 lg:py-16">
         {posts.length > 0 ? (
           <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => <LegacyBlogCard key={post.id} post={post} />)}
+            {posts.map((post) => <LegacyBlogCard key={post.category.slug + '/' + post.slug} post={post} />)}
           </div>
         ) : (
           <div className="rounded-2xl border border-[#E4EEF2] bg-[#F5F9FB] p-12 text-center text-[#6A8A97]">

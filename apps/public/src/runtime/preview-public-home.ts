@@ -10,7 +10,7 @@ import {
 } from './preview-public-catalogue'
 import { usesPublicSnapshot } from './public-snapshot-mode'
 import { readSnapshotManifest } from './public-snapshot-catalogue'
-import { blogPosts, historicalBlogImage } from './legacy-blog'
+import { getPublicBlogData, publicBlogImage } from './legacy-blog'
 
 export async function getPublicHomeBanners(): Promise<PublicHomePageData['banners']> {
   if (process.env.APP_ENV !== 'production') return []
@@ -51,6 +51,7 @@ export async function getPublicHomeBanners(): Promise<PublicHomePageData['banner
 
 export async function getPublicHomeContent(): Promise<PublicHomeContent> {
   const catalogueManifest = usesPublicSnapshot() ? await readSnapshotManifest() : null
+  const publicBlog = process.env.APP_ENV === 'production' ? await getPublicBlogData() : null
   const categories: readonly PublicHomeCategory[] = await Promise.all((await getPreviewCatalogueCategories()).map(async (category) => {
     const listing = category.listings[0]
     const products = listing
@@ -75,12 +76,12 @@ export async function getPublicHomeContent(): Promise<PublicHomeContent> {
 
   return {
     categories,
-    posts: process.env.APP_ENV === 'production' ? blogPosts.slice(0, 3).map((post) => ({
+    posts: publicBlog ? publicBlog.posts.slice(0, 3).map((post) => ({
           id: post.id,
           title: post.title,
           slug: post.slug,
           excerpt: post.excerpt,
-          thumbnailUrl: historicalBlogImage(post.thumbnail_url),
+          thumbnailUrl: publicBlogImage(post.thumbnail_url, post.source),
           publishedAt: post.published_at,
           category: { name: post.category.name, slug: post.category.slug },
         })) : [],

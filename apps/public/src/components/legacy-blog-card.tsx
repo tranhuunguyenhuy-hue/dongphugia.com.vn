@@ -2,7 +2,7 @@ import Link from 'next/link'
 import {
   blogPostPath,
   formatLegacyBlogDate,
-  historicalBlogImage,
+  publicBlogImage,
   type LegacyBlogPost,
 } from '../runtime/legacy-blog'
 
@@ -10,7 +10,7 @@ export function LegacyBlogCard({ post, featured = false }: {
   post: LegacyBlogPost
   featured?: boolean
 }) {
-  const image = historicalBlogImage(post.thumbnail_url ?? post.cover_image_url)
+  const image = publicBlogImage(post.thumbnail_url ?? post.cover_image_url, post.source)
   const path = blogPostPath(post)
   return (
     <article className={`group overflow-hidden rounded-2xl border border-[#E4EEF2] bg-white shadow-sm ${featured ? 'flex flex-col md:flex-row' : 'flex h-full flex-col'}`}>
