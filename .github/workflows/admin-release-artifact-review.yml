@@ -1,0 +1,58 @@
+name: Review combined Admin artifact
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact main source SHA used by the approved build producer
+        required: true
+        type: string
+      candidate_run_id:
+        description: Successful combined Admin build run ID
+        required: true
+        type: string
+permissions:
+  actions: read
+  contents: read
+jobs:
+  review:
+    if: github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' && github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.13.0
+      - name: Verify exact trusted producer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ && "$SOURCE_SHA" == "$GITHUB_SHA" && "$CANDIDATE_RUN_ID" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN_ID" > "$RUNNER_TEMP/producer.json"
+          jq -e --arg sha "$SOURCE_SHA" '.conclusion == "success" and .head_sha == $sha and .head_branch == "main" and .event == "workflow_dispatch" and .run_attempt == 1 and .path == ".github/workflows/combined-admin-build.yml" and .actor.login == "tranhuunguyenhuy-hue"' "$RUNNER_TEMP/producer.json" > /dev/null
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: combined-admin-${{ inputs.source_sha }}
+          path: ${{ runner.temp }}/combined-admin-candidate
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify candidate data without provider credentials
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+        run: |
+          set -euo pipefail
+          node scripts/app-foundation/review-admin-release.mjs "$RUNNER_TEMP/combined-admin-candidate" "$SOURCE_SHA" | tee "$RUNNER_TEMP/admin-review.json"
+          {
+            echo '### Combined Admin artifact review (no publication)'
+            echo "- Source SHA: $SOURCE_SHA"
+            echo "- Producer run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN_ID"
+            echo "- Artifact SHA-256: $(jq -r .artifactSha256 "$RUNNER_TEMP/admin-review.json")"
+            echo '- Review scope and target bindings, token policy, runtime smoke, rollback and protected approval separately before publication.'
+          } >> "$GITHUB_STEP_SUMMARY"
