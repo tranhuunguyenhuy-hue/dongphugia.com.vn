@@ -268,6 +268,14 @@ export async function runEnvironmentWorkerWranglerDeploy({
       const cleanOutput = stripAnsi(rawOutput).replace(/\r/g, '\n')
       let prompt
       while ((prompt = nextWranglerConfirmation(cleanOutput, cursor))) {
+        // Wrangler redraws the answered question with a checkmark; it is not a
+        // second confirmation. Match only the observed, adjacent redraw.
+        const prefix = cleanOutput.slice(cursor, prompt.index - prompt.prompt.length)
+        if (apiOriginAcknowledged && prompt.prompt === CONFIRMATION_PROMPTS[0]
+          && /^\s*›\s*\(Y\/n\)\s*✔\s*$/.test(prefix)) {
+          cursor = prompt.nextCursor
+          continue
+        }
         const shouldAcknowledge = acknowledgement === API_ORIGIN_ACK
           && !apiOriginAcknowledged
           && !declinedOtherPrompt
