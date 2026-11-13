@@ -26,7 +26,6 @@ import { ProductRelationshipPicker } from './product-relationship-picker'
 import { ProductVariantManager } from '@/components/admin/products/product-variant-manager'
 import { QuickCreateProductModal } from './quick-create-product-modal'
 import { addProductRelationship, removeProductRelationship } from '@/lib/product-actions'
-import { NormalizedPimPanel } from './normalized-pim-panel'
 
 import {
   AlertDialog,
@@ -140,15 +139,6 @@ interface NormalizedProductTypeItem {
     product_sub_types: { id: number; product_type_id: number; name: string }[]
 }
 
-interface SpecDefinitionItem {
-    id: number
-    key: string
-    label: string
-    data_type: string
-    unit: string | null
-    spec_options: { id: number; value: string }[]
-}
-
 interface ProductFormProps {
     pageTitle: string
     pageSubtitle?: string
@@ -164,10 +154,9 @@ interface ProductFormProps {
     productTypes?: ProductTypeItem[]
     catalogTaxons?: CatalogTaxonItem[]
     normalizedProductTypes?: NormalizedProductTypeItem[]
-    specDefinitions?: SpecDefinitionItem[]
 }
 
-export function ProductForm({ pageTitle, pageSubtitle, product, categories, subcategories, brands, origins, colors, materials, filterDefinitions = [], productTypes = [], catalogTaxons = [], normalizedProductTypes = [], specDefinitions = [] }: ProductFormProps) {
+export function ProductForm({ pageTitle, pageSubtitle, product, categories, subcategories, brands, origins, colors, materials, filterDefinitions = [], productTypes = [], catalogTaxons = [], normalizedProductTypes = [] }: ProductFormProps) {
     const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const isEdit = !!product
@@ -1069,12 +1058,6 @@ export function ProductForm({ pageTitle, pageSubtitle, product, categories, subc
 
                             {/* TAB 3: NÂNG CAO & THÔNG SỐ */}
                             <TabsContent value="advance" className="space-y-6 outline-none">
-                                <NormalizedPimPanel
-                                    productId={product?.id}
-                                    definitions={specDefinitions}
-                                    initialValues={product?.product_spec_values || []}
-                                    initialDocuments={product?.product_documents || []}
-                                />
                                 {/* Thông số Native */}
                                 <Card className="shadow-none rounded-xl overflow-hidden p-0 gap-0">
                                     <CardHeader className="bg-stone-100 border-b px-5 !py-3">

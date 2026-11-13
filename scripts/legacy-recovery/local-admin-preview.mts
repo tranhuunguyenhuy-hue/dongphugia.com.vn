@@ -2,6 +2,7 @@ import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { once } from 'node:events'
 import { mkdir, readFile, readdir, realpath, rm } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -26,6 +27,7 @@ const TEST_ADMIN = { email: 'local-preview-admin@dpg.test', username: 'local-pre
 const TEST_MANAGER = { email: 'local-preview-manager@dpg.test', username: 'local-preview-manager', name: 'Local Preview Manager', role: 'sale_manager' }
 const TEST_USERS = [TEST_ADMIN, TEST_MANAGER] as const
 const SAFE_NEXT_ENV_KEYS = ['PATH', 'HOME', 'TMPDIR'] as const
+const encodeServerActionReply = createRequire(import.meta.url)('next/dist/compiled/react-server-dom-webpack/client.node').encodeReply as (value: unknown) => Promise<string>
 const args = process.argv.slice(2)
 const sourceArg = args.find((arg) => arg.startsWith('--source='))
 const sourceDir = sourceArg?.slice('--source='.length)
@@ -443,6 +445,92 @@ async function assertDeferredModulesDenied(page: Page, suffix: string) {
   return { notFound: deniedPaths, home: 'redirected-to-products' }
 }
 
+async function assertDeferredAdminActionsDenied(page: Page, prisma: PrismaClient, productId: number, suffix: string) {
+  const manifest = JSON.parse(await readFile(join(process.cwd(), '.next/server/server-reference-manifest.json'), 'utf8')) as {
+    node: Record<string, { filename: string; exportedName: string }>
+  }
+  const actionSpecs: Array<{ filename: string; name: string; args: (orderNumber: string, phone: string) => unknown[] }> = [
+    { filename: 'lib/order-actions.ts', name: 'getAdminOrders', args: (orderNumber) => [{ search: orderNumber }] },
+    { filename: 'lib/order-actions.ts', name: 'createOrder', args: (orderNumber, phone) => [{
+      customer_name: 'Scope denial order probe', customer_phone: phone,
+      customer_email: `${orderNumber.toLowerCase()}@example.test`,
+      items: [{ product_id: productId, product_name: 'Scope denial sentinel', product_sku: 'SCOPE-DENIAL', quantity: 1, unit_price: 0 }],
+    }] },
+    { filename: 'app/admin/(dashboard)/customers/actions.ts', name: 'saveCustomer', args: (_orderNumber, phone) => [{
+      full_name: 'Scope denial customer probe', phone, source: 'MANUAL',
+    }] },
+    { filename: 'lib/blog-actions.ts', name: 'createBlogTag', args: (orderNumber) => [{
+      name: 'Scope denial tag probe', slug: `scope-denial-${orderNumber.toLowerCase()}`,
+    }] },
+    { filename: 'lib/pim-actions.ts', name: 'getPimPilotParityReport', args: () => [{}] },
+  ]
+  const orderCount = await prisma.orders.count()
+  const customerCount = await prisma.customers.count()
+  if (orderCount !== 0 || customerCount !== 0) fail(`LOCAL_DEFERRED_ACTION_COMMERCE_NOT_EMPTY:${suffix}`)
+  const token = randomBytes(6).toString('hex').toUpperCase()
+  const orderNumber = `L${token}`
+  const privateMarker = `SCOPE_DENIAL_PRIVATE_${token}`
+  const phone = `09${BigInt(`0x${token}`).toString().padStart(10, '0').slice(-10)}`
+  const tagSlug = `scope-denial-${token.toLowerCase()}`
+  const seededOrder = await prisma.orders.create({ data: {
+    order_number: orderNumber,
+    customer_name: privateMarker,
+    customer_phone: phone,
+    customer_email: `${privateMarker.toLowerCase()}@example.test`,
+    note: privateMarker,
+    subtotal: 0,
+    shipping_fee: 0,
+    total: 0,
+  } })
+  const tested: string[] = []
+  try {
+    const postAction = async (filename: string, name: string, args: unknown[]) => {
+      const actionId = Object.entries(manifest.node).find(([, reference]) =>
+        reference.filename === filename && reference.exportedName === name,
+      )?.[0]
+      if (!actionId) fail(`LOCAL_ACTION_REFERENCE_MISSING:${name}`)
+      const body = await encodeServerActionReply(args)
+      return page.evaluate(async ({ id, actionBody }) => {
+        const result = await fetch('/admin/products', {
+          method: 'POST',
+          headers: {
+            'Next-Action': id,
+            Accept: 'text/x-component',
+            'Content-Type': 'text/plain;charset=UTF-8',
+            RSC: '1',
+          },
+          body: actionBody,
+        })
+        return { status: result.status, body: await result.text() }
+      }, { id: actionId, actionBody: body })
+    }
+    const allowedResponse = await postAction('lib/product-actions.ts', 'searchProducts', [`NO_MATCH_${token}`])
+    if (allowedResponse.status !== 200) {
+      fail(`LOCAL_ALLOWED_ACTION_POST_FAILED:${suffix}:${JSON.stringify({ status: allowedResponse.status, body: allowedResponse.body.slice(0, 500) })}`)
+    }
+    tested.push('searchProducts:allowed')
+    for (const spec of actionSpecs) {
+      const response = await postAction(spec.filename, spec.name, spec.args(orderNumber, phone))
+      if (response.status !== 500 || response.body.includes(privateMarker) || response.body.includes(orderNumber)) {
+        fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:${spec.name}:${suffix}:${JSON.stringify({ status: response.status, body: response.body.slice(0, 500) })}`)
+      }
+      tested.push(spec.name)
+    }
+  } finally {
+    await prisma.orders.deleteMany({ where: { customer_phone: phone } })
+    await prisma.customers.deleteMany({ where: { phone } })
+    await prisma.blog_tags.deleteMany({ where: { slug: tagSlug } })
+  }
+  const [remainingOrders, remainingCustomers, remainingTags, seededOrderRemaining] = await Promise.all([
+    prisma.orders.count(), prisma.customers.count(), prisma.blog_tags.count({ where: { slug: tagSlug } }),
+    prisma.orders.count({ where: { id: seededOrder.id } }),
+  ])
+  if (remainingOrders !== 0 || remainingCustomers !== 0 || remainingTags !== 0 || seededOrderRemaining !== 0) {
+    fail(`LOCAL_DEFERRED_ACTION_POST_CHANGED_DATABASE:${suffix}:${JSON.stringify({ remainingOrders, remainingCustomers, remainingTags, seededOrderRemaining })}`)
+  }
+  return { route: '/admin/products', deniedActions: tested, privateOrderRead: 'not-returned', databaseAfter: { orders: 0, customers: 0, probeTags: 0 } }
+}
+
 async function captureNoSession(page: Page, suffix: string, evidenceDir: string) {
   for (const path of ['/admin/products', '/admin/blog/posts']) {
     await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' })
@@ -567,6 +655,7 @@ async function exerciseViewport(
   const noSession = await captureNoSession(page, suffix, evidenceDir)
   await login(page, staff.users[0], suffix, evidenceDir)
   const launchNavigation = await assertLaunchNavigation(page, suffix, evidenceDir)
+  const deferredActionPosts = await assertDeferredAdminActionsDenied(page, prisma, fixtures.product.id, suffix)
   const deferredModules = await assertDeferredModulesDenied(page, suffix)
 
   let fullListingCounts: { unfilteredTotal: number; sourceRows: number; public: number; private: number } | undefined
@@ -697,6 +786,7 @@ async function exerciseViewport(
     productStatusFilters: fullListingCounts,
     blogList: 'read-ok',
     launchNavigation,
+    deferredActionPosts,
     deferredModules,
     managerProductRead: 'allowed',
     managerBlogRead: 'redirected-to-products',

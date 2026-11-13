@@ -1,5 +1,6 @@
 'use server'
 
+import { assertAdminLaunchModuleEnabled } from '@/lib/admin-launch-scope'
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { requirePermission } from '@/lib/auth/get-current-user'
@@ -13,6 +14,7 @@ export async function saveCustomer(data: {
     notes?: string
     source?: string
 }) {
+    assertAdminLaunchModuleEnabled('customers')
     try {
         await requirePermission('customers:write')
 
