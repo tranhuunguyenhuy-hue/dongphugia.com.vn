@@ -69,6 +69,7 @@ describe('deferred quote module launch-scope boundary', () => {
         expect(mocks.customerFind).not.toHaveBeenCalled()
         expect(mocks.customerCreate).not.toHaveBeenCalled()
         expect(mocks.customerUpdate).not.toHaveBeenCalled()
+        expect(mocks.auditCreate).not.toHaveBeenCalled()
         expect(mocks.revalidatePath).not.toHaveBeenCalled()
     })
 })

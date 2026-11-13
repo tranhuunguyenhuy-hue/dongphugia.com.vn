@@ -79,7 +79,7 @@ describe('Users module launch-scope boundary', () => {
         await expect(saveUser(activeAdmin)).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
 
         expect(mocks.getCurrentUser).not.toHaveBeenCalled()
-        expect(mocks.requirePermission).not.toHaveBeenCalled()
+        expect(mocks.findUser).not.toHaveBeenCalled()
         expect(mocks.updateUser).not.toHaveBeenCalled()
         expect(mocks.deleteSessions).not.toHaveBeenCalled()
         expect(mocks.transaction).not.toHaveBeenCalled()

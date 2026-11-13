@@ -70,6 +70,8 @@ describe('admin Server Action authorization', () => {
     })
 
     it('denies the deferred Orders module before authentication or reads', async () => {
+        mocks.requireAuth.mockRejectedValue(new Error('UNAUTHORIZED'))
+
         await expect(getAdminOrders({})).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
 
         expect(mocks.requireAuth).not.toHaveBeenCalled()
@@ -79,7 +81,11 @@ describe('admin Server Action authorization', () => {
 
     it('denies order mutations before permission or assignment checks', async () => {
         mocks.requirePermission.mockResolvedValue({ id: 7, role: 'sale' })
+        mocks.orderFindUnique.mockResolvedValue({ assigned_to: 7 })
+        mocks.orderUpdate.mockResolvedValue({})
+
         await expect(updateOrderStatus(123, 'confirmed')).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
+
         expect(mocks.requirePermission).not.toHaveBeenCalled()
         expect(mocks.orderFindUnique).not.toHaveBeenCalled()
         expect(mocks.orderUpdate).not.toHaveBeenCalled()
