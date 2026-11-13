@@ -10,7 +10,7 @@ import { prepareAdminRelease } from './prepare-admin-release.mjs'
 const sourceSha = 'a'.repeat(40)
 const hyperdriveId = 'b'.repeat(32)
 const hashes = { worker: 'c'.repeat(64), publicServer: 'd'.repeat(64), adminServer: 'e'.repeat(64), assets: 'f'.repeat(64) }
-const valid = () => ({ contract: 'dpg:combined-public-admin-worker:v1', sourceSha, entrypoint: 'combined/worker.mjs', hosts: { public: ['dongphugia.vn', 'www.dongphugia.vn'], adminPath: '/admin' }, schema: 'dpg_app', bindings: { ASSETS: { type: 'assets' }, HYPERDRIVE_ADMIN_NO_CACHE: { type: 'hyperdrive', cache: 'off' } }, vars: { APP_ENV: 'production', APP_ORIGIN: 'https://www.dongphugia.vn', APP_BUILD_TARGET: 'public', RUNTIME_ROLE: 'production', WRITE_FREEZE_MODE: 'false', PRISMA_REQUEST_SCOPE_REQUIRED: 'true' }, hashes: { ...hashes } })
+const valid = () => ({ contract: 'dpg:combined-public-admin-worker:v1', sourceSha, entrypoint: 'combined/worker.mjs', hosts: { admin: '/admin', public: ['dongphugia.vn', 'www.dongphugia.vn'] }, schema: 'dpg_app', bindings: { ASSETS: { type: 'assets' }, HYPERDRIVE_ADMIN_NO_CACHE: { type: 'hyperdrive', cache: 'off' } }, vars: { APP_ENV: 'production', APP_ORIGIN: 'https://www.dongphugia.vn', APP_BUILD_TARGET: 'public', RUNTIME_ROLE: 'production', WRITE_FREEZE_MODE: 'false', PRISMA_REQUEST_SCOPE_REQUIRED: 'true' }, hashes: { ...hashes } })
 
 describe('proposed integrated Admin profile', () => {
   it('accepts the exact bounded declaration', () => expect(validateAdminReleaseProfile(valid(), { sourceSha, hashes })).toBe(true))
@@ -21,7 +21,7 @@ describe('proposed integrated Admin profile', () => {
     ['unknown variable', (m: ReturnType<typeof valid>) => { Object.assign(m.vars, { DATABASE_URL: 'x' }) }],
     ['unscoped request', (m: ReturnType<typeof valid>) => { m.vars.PRISMA_REQUEST_SCOPE_REQUIRED = 'false' }],
     ['wrong schema', (m: ReturnType<typeof valid>) => { m.schema = 'public' }],
-    ['wrong host', (m: ReturnType<typeof valid>) => { m.hosts.adminPath = '/other' }],
+    ['wrong host', (m: ReturnType<typeof valid>) => { m.hosts.admin = '/other' }],
     ['wrong source', (m: ReturnType<typeof valid>) => { m.sourceSha = 'f'.repeat(40) }],
     ['wrong digest', (m: ReturnType<typeof valid>) => { m.hashes.adminServer = 'f'.repeat(64) }],
     ['extra field', (m: ReturnType<typeof valid>) => { Object.assign(m, { extra: true }) }],
@@ -45,8 +45,8 @@ describe('proposed integrated Admin profile', () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'dpg-admin-artifact-'))
     try {
       const combined = path.join(root, 'combined')
-      for (const dir of ['public/server/ssr', 'admin/server/ssr', 'assets/__admin']) await mkdir(path.join(combined, dir), { recursive: true })
-      for (const file of ['worker.mjs', 'public/server/index.mjs', 'admin/server/index.mjs', 'public/server/ssr/chunk.mjs', 'admin/server/ssr/chunk.mjs', 'assets/__admin/app.js']) await writeFile(path.join(combined, file), file)
+      for (const dir of ['public/server/ssr', 'admin/server/ssr', 'assets/admin']) await mkdir(path.join(combined, dir), { recursive: true })
+      for (const file of ['worker.mjs', 'public/server/index.mjs', 'admin/server/index.mjs', 'public/server/ssr/chunk.mjs', 'admin/server/ssr/chunk.mjs', 'assets/admin/app.js']) await writeFile(path.join(combined, file), file)
       const manifest = valid()
       manifest.hashes.worker = createHash('sha256').update('worker.mjs').digest('hex')
       for (const [key, dir] of [['publicServer', 'public/server'], ['adminServer', 'admin/server'], ['assets', 'assets']] as const) manifest.hashes[key] = (await digestEnvironmentWorkerArtifact(path.join(combined, dir))).sha256
@@ -62,7 +62,7 @@ describe('proposed integrated Admin profile', () => {
       await expect(prepareAdminRelease({ ...input, accountId: 'other' })).rejects.toThrow('ADMIN_RELEASE_TRUSTED_IDENTITY_INVALID')
       await expect(prepareAdminRelease({ ...input, artifactSha256: 'a'.repeat(64) })).rejects.toThrow('ADMIN_RELEASE_ARTIFACT_DIGEST_MISMATCH')
       await expect(prepareAdminRelease({ ...input, hyperdrive: { ...hyperdrive, caching: { disabled: false } } })).rejects.toThrow('ADMIN_RELEASE_HYPERDRIVE_TARGET_INVALID')
-      for (const file of ['worker.mjs', 'public/server/ssr/chunk.mjs', 'admin/server/ssr/chunk.mjs', 'assets/__admin/app.js']) {
+      for (const file of ['worker.mjs', 'public/server/ssr/chunk.mjs', 'admin/server/ssr/chunk.mjs', 'assets/admin/app.js']) {
         await writeFile(path.join(combined, file), 'tampered')
         await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha })).rejects.toThrow('ADMIN_RELEASE_PROFILE_INVALID')
         await writeFile(path.join(combined, file), file)
@@ -70,7 +70,7 @@ describe('proposed integrated Admin profile', () => {
       await writeFile(path.join(combined, 'admin/server/wrangler.json'), '{}')
       await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha })).rejects.toThrow('ADMIN_RELEASE_CANDIDATE_CONFIG_FORBIDDEN')
       await rm(path.join(combined, 'admin/server/wrangler.json'))
-      await symlink('app.js', path.join(combined, 'assets/__admin/alias.js'))
+      await symlink('app.js', path.join(combined, 'assets/admin/alias.js'))
       await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha })).rejects.toThrow('ENVIRONMENT_WORKER_ARTIFACT_SYMLINK_FORBIDDEN')
     } finally { await rm(root, { recursive: true, force: true }) }
   })

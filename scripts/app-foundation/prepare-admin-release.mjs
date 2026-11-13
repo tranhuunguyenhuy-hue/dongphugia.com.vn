@@ -14,7 +14,7 @@ export async function prepareAdminRelease({ root, sourceSha, artifactSha256, acc
   verifyAdminHyperdriveMetadata(hyperdrive, expectedHyperdrive)
   return {
     name: 'dongphugia-v1-public-production', compatibility_date: '2026-08-30', compatibility_flags: ['nodejs_compat'],
-    workers_dev: true, preview_urls: false, ...reconstructAdminCapabilities(expectedHyperdrive.id),
+    workers_dev: true, preview_urls: false, no_bundle: true, ...reconstructAdminCapabilities(expectedHyperdrive.id),
   }
 }
 

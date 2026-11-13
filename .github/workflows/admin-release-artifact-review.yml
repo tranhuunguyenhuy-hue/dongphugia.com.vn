@@ -10,14 +10,44 @@ on:
         description: Successful combined Admin build run ID
         required: true
         type: string
+      publish:
+        description: Request protected Production publication after review
+        required: true
+        type: boolean
+        default: false
+      deployment_token_id:
+        description: Nonsecret ID of the reviewed Production deployment token
+        required: true
+        type: string
+      hyperdrive_id:
+        description: Reviewed cache-disabled Hyperdrive ID
+        required: true
+        type: string
+      hyperdrive_host:
+        description: Reviewed database origin hostname
+        required: true
+        type: string
+      hyperdrive_database:
+        description: Reviewed origin database name
+        required: true
+        type: string
+      rollback_version:
+        description: Current 100-percent Production Worker version for rollback
+        required: true
+        type: string
 permissions:
   actions: read
   contents: read
+concurrency:
+  group: dpg-production-publication
+  cancel-in-progress: false
 jobs:
   review:
     if: github.repository == 'tranhuunguyenhuy-hue/dongphugia.com.vn' && github.ref == 'refs/heads/main' && github.run_attempt == 1
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    outputs:
+      artifact_sha256: ${{ steps.digest.outputs.artifact_sha256 }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -43,16 +73,83 @@ jobs:
           run-id: ${{ inputs.candidate_run_id }}
           github-token: ${{ github.token }}
       - name: Verify candidate data without provider credentials
+        id: digest
         env:
           SOURCE_SHA: ${{ inputs.source_sha }}
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          TOKEN_ID: ${{ inputs.deployment_token_id }}
+          HYPERDRIVE_ID: ${{ inputs.hyperdrive_id }}
+          HYPERDRIVE_HOST: ${{ inputs.hyperdrive_host }}
+          HYPERDRIVE_DATABASE: ${{ inputs.hyperdrive_database }}
+          ROLLBACK_VERSION: ${{ inputs.rollback_version }}
         run: |
           set -euo pipefail
+          [[ "$TOKEN_ID" =~ ^[a-f0-9]{32}$ && "$HYPERDRIVE_ID" =~ ^[a-f0-9]{32}$ && "$HYPERDRIVE_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$HYPERDRIVE_DATABASE" =~ ^[a-zA-Z0-9_-]+$ && "$ROLLBACK_VERSION" =~ ^[a-f0-9-]{36}$ ]]
           node scripts/app-foundation/review-admin-release.mjs "$RUNNER_TEMP/combined-admin-candidate" "$SOURCE_SHA" | tee "$RUNNER_TEMP/admin-review.json"
+          echo "artifact_sha256=$(jq -r .artifactSha256 "$RUNNER_TEMP/admin-review.json")" >> "$GITHUB_OUTPUT"
           {
             echo '### Combined Admin artifact review (no publication)'
             echo "- Source SHA: $SOURCE_SHA"
             echo "- Producer run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN_ID"
             echo "- Artifact SHA-256: $(jq -r .artifactSha256 "$RUNNER_TEMP/admin-review.json")"
+            echo "- Reviewed token ID: $TOKEN_ID; Hyperdrive ID: $HYPERDRIVE_ID"
+            echo "- Hyperdrive origin: $HYPERDRIVE_HOST; database: $HYPERDRIVE_DATABASE; role: dpg_admin_runtime_login"
+            echo "- Expected current Production rollback version: $ROLLBACK_VERSION"
             echo '- Review scope and target bindings, token policy, runtime smoke, rollback and protected approval separately before publication.'
           } >> "$GITHUB_STEP_SUMMARY"
+  publish:
+    if: inputs.publish && needs.review.result == 'success'
+    needs: review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment: Production
+    env:
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      ARTIFACT_SHA256: ${{ needs.review.outputs.artifact_sha256 }}
+      ARTIFACT_ROOT: ${{ runner.temp }}/combined-admin-candidate
+      HYPERDRIVE_ID: ${{ inputs.hyperdrive_id }}
+      HYPERDRIVE_HOST: ${{ inputs.hyperdrive_host }}
+      HYPERDRIVE_DATABASE: ${{ inputs.hyperdrive_database }}
+      EXPECTED_TOKEN_ID: ${{ inputs.deployment_token_id }}
+      ROLLBACK_VERSION: ${{ inputs.rollback_version }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.13.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: combined-admin-${{ inputs.source_sha }}
+          path: ${{ env.ARTIFACT_ROOT }}
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+      - name: Install trusted pinned deployment tool without provider credentials
+        run: npm ci --prefix apps/public
+      - name: Recheck main and Production protection before provider credentials
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/app-foundation/check-admin-release-protection.mjs
+      - name: Verify reviewed artifact, token identity and Hyperdrive metadata
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_HYPERDRIVE_READ_TOKEN: ${{ secrets.CLOUDFLARE_HYPERDRIVE_READ_TOKEN }}
+        run: node scripts/app-foundation/configure-admin-release.mjs
+      - name: Capture Production baseline
+        run: node scripts/app-foundation/verify-production-public-baseline.mjs capture "$RUNNER_TEMP/dpg-production-baseline.json"
+      - name: Deploy exact reviewed Production Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: d54f3402b9d112ab64d6135e0e3f1fb1
+          CI: 'true'
+          WRANGLER_SEND_METRICS: 'false'
+        run: node apps/public/node_modules/wrangler/bin/wrangler.js deploy --strict --message "DPG admin source $SOURCE_SHA" --config "$ARTIFACT_ROOT/trusted-wrangler.json"
+      - name: Verify deployed identity and Public/Admin shell responses
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: node scripts/app-foundation/verify-admin-production-deployment.mjs
+      - name: Compare Production baseline
+        if: always()
+        run: node scripts/app-foundation/verify-production-public-baseline.mjs compare "$RUNNER_TEMP/dpg-production-baseline.json"

@@ -9,7 +9,7 @@ const SHA256 = /^[a-f0-9]{64}$/
 const ID = /^[a-f0-9]{32}$/
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
 const keysAre = (value, keys) => isObject(value) && JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...keys].sort())
-const expectedHosts = { public: ['dongphugia.vn', 'www.dongphugia.vn'], adminPath: '/admin' }
+const expectedHosts = { admin: '/admin', public: ['dongphugia.vn', 'www.dongphugia.vn'] }
 const expectedVars = { APP_ENV: 'production', APP_ORIGIN: 'https://www.dongphugia.vn', APP_BUILD_TARGET: 'public', RUNTIME_ROLE: 'production', WRITE_FREEZE_MODE: 'false', PRISMA_REQUEST_SCOPE_REQUIRED: 'true' }
 const expectedBindings = { ASSETS: { type: 'assets' }, HYPERDRIVE_ADMIN_NO_CACHE: { type: 'hyperdrive', cache: 'off' } }
 
@@ -53,7 +53,7 @@ export async function verifyAdminReleaseArtifact(root, manifest, { sourceSha }) 
     const entrypoint = await lstat(path.join(combined, name))
     if (!entrypoint.isFile() || entrypoint.isSymbolicLink()) throw new Error('ADMIN_RELEASE_ENTRYPOINT_INVALID')
   }
-  const adminAssets = await lstat(path.join(combined, 'assets', '__admin'))
+  const adminAssets = await lstat(path.join(combined, 'assets', 'admin'))
   if (!adminAssets.isDirectory() || adminAssets.isSymbolicLink()) throw new Error('ADMIN_RELEASE_ADMIN_ASSETS_INVALID')
   const dirs = ['public/server', 'admin/server', 'assets'].map((name) => path.join(combined, name))
   await Promise.all(dirs.map(inspectTree))
@@ -72,7 +72,7 @@ export function reconstructAdminCapabilities(hyperdriveId) {
 // A caller must supply independently reviewed target metadata, never values
 // chosen by the candidate artifact. This does not query the provider itself.
 export function verifyAdminHyperdriveMetadata(config, expected) {
-  if (!ID.test(expected?.id || '') || !expected?.host || !expected?.database || !expected?.user) throw new Error('ADMIN_RELEASE_EXPECTED_IDENTITY_INVALID')
+  if (!ID.test(expected?.id || '') || !expected?.host || !expected?.database || expected?.user !== 'dpg_admin_runtime_login') throw new Error('ADMIN_RELEASE_EXPECTED_IDENTITY_INVALID')
   if (!isObject(config) || config.id !== expected.id || config.caching?.disabled !== true
     || config.origin?.host !== expected.host || config.origin?.database !== expected.database
     || config.origin?.user !== expected.user || !['postgres', 'postgresql'].includes(config.origin?.scheme)) {

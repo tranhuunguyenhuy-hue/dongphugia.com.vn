@@ -10,6 +10,11 @@ describe('combined Admin artifact review workflow', () => {
     expect(workflow).toContain('.head_sha == $sha')
     expect(workflow).toContain('.conclusion == "success"')
     expect(workflow).toContain('review-admin-release.mjs')
-    expect(workflow).not.toMatch(/secrets\.|CLOUDFLARE_API_TOKEN|DATABASE_URL|wrangler.*deploy/)
+    const review = workflow.split('\n  publish:')[0]
+    const publish = workflow.split('\n  publish:')[1]
+    expect(review).not.toMatch(/secrets\.|CLOUDFLARE_API_TOKEN|DATABASE_URL|wrangler.*deploy/)
+    expect(publish).toContain('environment: Production')
+    expect(publish.indexOf('check-admin-release-protection.mjs')).toBeLessThan(publish.indexOf('secrets.CLOUDFLARE_API_TOKEN'))
+    expect(publish).toContain('needs.review.outputs.artifact_sha256')
   })
 })
