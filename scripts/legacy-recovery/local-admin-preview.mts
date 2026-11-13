@@ -536,7 +536,7 @@ async function main() {
     await prisma.$connect()
     const serverIdentity = await prisma.$queryRaw<Array<{
       server_address: string | null; server_port: number; database_name: string; data_directory: string; version_num: number
-    }>>`SELECT inet_server_addr()::text AS server_address, inet_server_port() AS server_port,
+    }>>`SELECT host(inet_server_addr()) AS server_address, inet_server_port() AS server_port,
       current_database() AS database_name, current_setting('data_directory') AS data_directory,
       current_setting('server_version_num')::integer AS version_num`
     const identity = serverIdentity[0]
