@@ -6,9 +6,9 @@
 
 ## Approved sequence
 
-**M1** DB-backed Production Public + full Products/Blog → **M2** Production-parity `dpg-staging` (snapshot allowed) → **M3** full legacy Admin accepted on Staging with isolated DB → **M4** Admin Production → **M5** holistic audit and future recommendations.
+**M1** DB-backed Production Public + Products/Blog → **M2** one fixed Worker Preview named `staging` inside Production Worker (Public snapshot allowed) → **M3** full legacy Admin, Hyperdrive and real Auth on that Preview with isolated TEST DB → **M4** accepted Admin to Production → **M5** audit.
 
-**Environments:** localhost for developer preview; `dpg-staging` fixed Cloudflare Staging; `dongphugia-v1-public-production` fixed Worker Production for `www.dongphugia.vn`. Remote PR Preview is not required. Worker rollback does not undo SQL/data.
+**Environments:** localhost (development) → **fixed Preview `staging` INSIDE existing `dongphugia-v1-public-production` Worker** (M2/M3) → same Worker's Production deployment (`www.dongphugia.vn`). No new Worker, no automatic per-PR Preview. The old separate `dpg-staging` Worker is no longer used. Preview secrets/Hyperdrive/test database are isolated. Code rollback is not database rollback.
 
 ## Repo pointers
 
@@ -21,4 +21,4 @@
 
 ## Agent execution
 
-Open only the **active milestone** and relevant code/runbook; implement with localhost + focused tests, one integration PR, then actual deployment evidence/Owner acceptance. Do not revive Phase 2, cart/checkout, Cloudflare Preview, multi-agent parallel pipelines or V2 work. No secrets in repository; before Production writes verify backup and rollback. Historic open PRs are not work orders.
+Open only the **active milestone** and required code/runbook; localhost + focused tests + one named Preview for M2/M3 + runtime evidence. Do not revive Phase 2, checkout, per-branch Previews, the old `dpg-staging` Worker, parallel agents or V2. No source-committed secrets; backup and rollback before Production writes.

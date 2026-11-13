@@ -4,7 +4,7 @@
 
 ## What has been deliberately removed from the active tree
 
-Superseded policy/process documents for AWS/Coolify/dedicated EC2 Staging, Cloudflare remote Preview, legacy Phase 2/checkout/marketing work, obsolete zero-touch agent workflows and outdated production promotion manuals. Their content survives in Git history and closed PRs for audit, **not** as active agent instruction.
+Superseded policy/process documents for AWS/Coolify/dedicated EC2 Staging, separate Staging Worker/automatic per-branch Preview proliferation, Phase 2/checkout/marketing work, zero-touch agent workflows and obsolete release manuals. Preserved in Git history, not active policy.
 
 ## What must not be deleted in this reset
 
@@ -13,8 +13,8 @@ Executable SQL/rollback scripts, SHA256 integrity evidence, DB and backup runboo
 ## Important supersession notes
 
 - No `admin.dongphugia.vn` Admin rebuild: recover `src/app/admin` at `/admin`.
-- No mandatory Cloudflare Preview: localhost is development; `dpg-staging` is the fixed acceptance environment.
-- M1 Production database-backed Public is intentionally **before** M2 Staging parity; use existing snapshot rollback and non-destructive database validation.
-- Staging Public may use Production snapshot; Staging Admin **must** use a separate test DB.
+- Only **one fixed Worker Preview named `staging` INSIDE `dongphugia-v1-public-production`** for M2/M3; `dpg-staging` separate Worker is obsolete. Localhost for fast coding; no per-branch Previews.
+- M1 Production database-backed Public remains **before** fixed Preview parity M2, with snapshot rollback and non-destructive data validation.
+- Fixed Preview Public may use snapshot, but **Preview Admin may run all legacy features, Hyperdrive and real Auth** only with dedicated Preview secrets and isolated TEST PostgreSQL/roles.
 - The old Product/Blog-only Admin source is **not full Admin acceptance**.
 - Old task and branch history remains searchable, but all open legacy Issue/PR work orders are to be closed as superseded; agent works **only** M1–M5.

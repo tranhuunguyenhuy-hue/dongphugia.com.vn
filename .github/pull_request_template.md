@@ -9,14 +9,15 @@
 - Source SHA and changed paths:
 - Focused tests + relevant build/typecheck:
 - Functional results on localhost:
-- Staging / Production URL and deployed Worker version **if applicable**:
+- Fixed Preview `staging` URL / exact Preview deployment ID OR Production URL / Worker version, when applicable:
 - Hosted PostgreSQL count / read-path / CRUD evidence **if applicable**:
 - PASS / FAIL / UNKNOWN (each acceptance criterion):
 - Data/auth risk and documented rollback (Worker rollback ≠ SQL rollback):
 
 ## Scope and release
 
-- [ ] Not a resumed Phase 2, Cloudflare Preview, V2 or duplicate Admin implementation
+- [ ] Not a resumed Phase 2, per-branch Preview, separate `dpg-staging` Worker, V2 or competing Admin implementation
+- [ ] Fixed Preview (if used): dedicated Hyperdrive TEST DB, Preview-only secrets, real login/access protection
 - [ ] Verified correct V1 account/target; no credentials or PII committed
 - [ ] No destructive DB operation or unapproved additional costs
 - [ ] Diff reviewed against only the assigned Issue
