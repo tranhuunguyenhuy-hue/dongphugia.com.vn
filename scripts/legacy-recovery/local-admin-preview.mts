@@ -502,7 +502,8 @@ async function exerciseViewport(
       const text = await page.locator('body').innerText()
       const match = text.match(/Hiển thị\s+([\d,.]+)\s*\/\s*([\d,.]+)\s+sản phẩm/)
       if (!match || Number(match[2].replace(/[,.]/g, '')) !== expected) {
-        fail(`LOCAL_FULL_PRODUCT_FILTER_COUNT_FAILED:${suffix}:${status}:${match?.[2] ?? 'missing'}`)
+        await page.screenshot({ path: join(evidenceDir, `admin-products-filter-failure-${status}-${suffix}.png`), fullPage: true }).catch(() => undefined)
+        fail(`LOCAL_FULL_PRODUCT_FILTER_COUNT_FAILED:${suffix}:${status}:${JSON.stringify({ actual: match?.[2] ?? null, excerpt: text.slice(-1200) })}`)
       }
       await page.screenshot({ path: join(evidenceDir, `admin-products-${status}-filter-${suffix}.png`), fullPage: true })
       return Number(match[2].replace(/[,.]/g, ''))
