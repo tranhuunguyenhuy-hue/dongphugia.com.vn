@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { createHash } from 'node:crypto'
 import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -12,7 +11,7 @@ const bundleSha256 = 'c'.repeat(64)
 const assetsSha256 = 'd'.repeat(64)
 const expected = { sourceSha, hyperdriveId, bundleSha256, assetsSha256 }
 const valid = () => ({
-  contract: 'dpg:combined-public-admin-worker:v1', sourceSha, entrypoint: 'worker.mjs',
+  contract: 'dpg:combined-public-admin-worker:v1', sourceSha, entrypoint: 'server/index.mjs',
   routes: { admin: '/admin', public: '/' }, schema: 'dpg_app',
   bundleSha256, assetsSha256,
   bindings: { ASSETS: { type: 'assets' }, HYPERDRIVE_ADMIN_NO_CACHE: { type: 'hyperdrive' } },
@@ -48,20 +47,31 @@ describe('proposed integrated Admin declaration', () => {
   it('recomputes bytes and rejects tampering and symlinks', async () => {
     const root = await mkdtemp(path.join(os.tmpdir(), 'dpg-admin-artifact-'))
     try {
-      await mkdir(path.join(root, 'assets'))
-      await writeFile(path.join(root, 'worker.mjs'), 'worker')
-      await writeFile(path.join(root, 'assets', 'app.js'), 'asset')
+      await mkdir(path.join(root, 'server', 'ssr'), { recursive: true })
+      await mkdir(path.join(root, 'client'))
+      await writeFile(path.join(root, 'server', 'index.mjs'), 'worker')
+      await writeFile(path.join(root, 'client', 'app.js'), 'asset')
       const manifest = valid()
-      manifest.bundleSha256 = createHash('sha256').update('worker').digest('hex')
-      manifest.assetsSha256 = (await digestEnvironmentWorkerArtifact(path.join(root, 'assets'))).sha256
+      await writeFile(path.join(root, 'server', 'ssr', 'chunk.mjs'), 'chunk')
+      manifest.bundleSha256 = (await digestEnvironmentWorkerArtifact(path.join(root, 'server'))).sha256
+      manifest.assetsSha256 = (await digestEnvironmentWorkerArtifact(path.join(root, 'client'))).sha256
       expect(await verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId })).toBe(true)
-      await writeFile(path.join(root, 'worker.mjs'), 'changed')
+      await writeFile(path.join(root, 'untracked.mjs'), 'extra')
+      await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId })).rejects.toThrow('ADMIN_RELEASE_ROOT_CONTENT_INVALID')
+      await rm(path.join(root, 'untracked.mjs'))
+      await writeFile(path.join(root, 'server', 'index.mjs'), 'changed')
       await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId })).rejects.toThrow('ADMIN_RELEASE_PROFILE_INVALID')
-      await writeFile(path.join(root, 'worker.mjs'), 'worker')
-      await writeFile(path.join(root, 'assets', 'app.js'), 'changed')
+      await writeFile(path.join(root, 'server', 'index.mjs'), 'worker')
+      await writeFile(path.join(root, 'server', 'ssr', 'chunk.mjs'), 'changed')
       await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId })).rejects.toThrow('ADMIN_RELEASE_PROFILE_INVALID')
-      await writeFile(path.join(root, 'assets', 'app.js'), 'asset')
-      await symlink('app.js', path.join(root, 'assets', 'alias.js'))
+      await writeFile(path.join(root, 'server', 'ssr', 'chunk.mjs'), 'chunk')
+      await writeFile(path.join(root, 'client', 'app.js'), 'changed')
+      await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId })).rejects.toThrow('ADMIN_RELEASE_PROFILE_INVALID')
+      await writeFile(path.join(root, 'client', 'app.js'), 'asset')
+      await writeFile(path.join(root, 'server', 'wrangler.json'), '{}')
+      await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId })).rejects.toThrow('ADMIN_RELEASE_CANDIDATE_CONFIG_FORBIDDEN')
+      await rm(path.join(root, 'server', 'wrangler.json'))
+      await symlink('app.js', path.join(root, 'client', 'alias.js'))
       await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId })).rejects.toThrow('ENVIRONMENT_WORKER_ARTIFACT_SYMLINK_FORBIDDEN')
     } finally {
       await rm(root, { recursive: true, force: true })

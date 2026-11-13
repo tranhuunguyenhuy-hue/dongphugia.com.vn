@@ -1,6 +1,5 @@
 // Isolated preparation only: this module is not wired into a publisher.
-import { createHash } from 'node:crypto'
-import { lstat, readFile } from 'node:fs/promises'
+import { lstat, readdir } from 'node:fs/promises'
 import path from 'node:path'
 import { digestEnvironmentWorkerArtifact } from './environment-worker-artifact-digest.mjs'
 const SHA = /^[a-f0-9]{40}$/
@@ -15,7 +14,7 @@ export function validateAdminReleaseProfile(manifest, { sourceSha, hyperdriveId,
   if (!keysAre(manifest, ['contract', 'sourceSha', 'entrypoint', 'routes', 'bindings', 'vars', 'schema', 'bundleSha256', 'assetsSha256'])
     || manifest.contract !== 'dpg:combined-public-admin-worker:v1'
     || manifest.sourceSha !== sourceSha
-    || manifest.entrypoint !== 'worker.mjs'
+    || manifest.entrypoint !== 'server/index.mjs'
     || manifest.schema !== 'dpg_app'
     || manifest.bundleSha256 !== bundleSha256 || manifest.assetsSha256 !== assetsSha256
     || JSON.stringify(manifest.routes) !== JSON.stringify({ admin: '/admin', public: '/' })
@@ -32,13 +31,28 @@ export function validateAdminReleaseProfile(manifest, { sourceSha, hyperdriveId,
 }
 
 export async function verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId }) {
-  const workerPath = path.join(root, 'worker.mjs')
+  const rootEntries = await readdir(root, { withFileTypes: true })
+  if (rootEntries.length !== 2 || rootEntries.some((entry) => !['server', 'client'].includes(entry.name) || !entry.isDirectory() || entry.isSymbolicLink())) {
+    throw new Error('ADMIN_RELEASE_ROOT_CONTENT_INVALID')
+  }
+  const workerPath = path.join(root, 'server', 'index.mjs')
   const stat = await lstat(workerPath)
   if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('ADMIN_RELEASE_ENTRYPOINT_INVALID')
-  const assetsStat = await lstat(path.join(root, 'assets'))
-  if (!assetsStat.isDirectory() || assetsStat.isSymbolicLink()) throw new Error('ADMIN_RELEASE_ASSETS_INVALID')
-  const bundleSha256 = createHash('sha256').update(await readFile(workerPath)).digest('hex')
-  const { sha256: assetsSha256 } = await digestEnvironmentWorkerArtifact(path.join(root, 'assets'))
+  for (const directory of ['server', 'client']) {
+    const directoryStat = await lstat(path.join(root, directory))
+    if (!directoryStat.isDirectory() || directoryStat.isSymbolicLink()) throw new Error('ADMIN_RELEASE_DIRECTORY_INVALID')
+  }
+  async function rejectCandidateWranglerConfig(dir) {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      if (entry.isSymbolicLink()) throw new Error('ENVIRONMENT_WORKER_ARTIFACT_SYMLINK_FORBIDDEN')
+      if (/^wrangler\.(jsonc?|toml)$/i.test(entry.name)) throw new Error('ADMIN_RELEASE_CANDIDATE_CONFIG_FORBIDDEN')
+      if (entry.isDirectory()) await rejectCandidateWranglerConfig(path.join(dir, entry.name))
+    }
+  }
+  await Promise.all(['server', 'client'].map((dir) => rejectCandidateWranglerConfig(path.join(root, dir))))
+  const [{ sha256: bundleSha256 }, { sha256: assetsSha256 }] = await Promise.all(
+    ['server', 'client'].map((dir) => digestEnvironmentWorkerArtifact(path.join(root, dir))),
+  )
   return validateAdminReleaseProfile(manifest, { sourceSha, hyperdriveId, bundleSha256, assetsSha256 })
 }
 
