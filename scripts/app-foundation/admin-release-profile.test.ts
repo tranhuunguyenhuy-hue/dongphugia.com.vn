@@ -58,6 +58,9 @@ describe('proposed integrated Admin declaration', () => {
       await writeFile(path.join(root, 'worker.mjs'), 'changed')
       await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId })).rejects.toThrow('ADMIN_RELEASE_PROFILE_INVALID')
       await writeFile(path.join(root, 'worker.mjs'), 'worker')
+      await writeFile(path.join(root, 'assets', 'app.js'), 'changed')
+      await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId })).rejects.toThrow('ADMIN_RELEASE_PROFILE_INVALID')
+      await writeFile(path.join(root, 'assets', 'app.js'), 'asset')
       await symlink('app.js', path.join(root, 'assets', 'alias.js'))
       await expect(verifyAdminReleaseArtifact(root, manifest, { sourceSha, hyperdriveId })).rejects.toThrow('ENVIRONMENT_WORKER_ARTIFACT_SYMLINK_FORBIDDEN')
     } finally {
