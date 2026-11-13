@@ -514,25 +514,42 @@ async function assertDeferredAdminActionsDenied(
     if (!allowedRoute || allowedRoute.status() !== 200 || page.url() !== `${BASE_URL}${routes.productPath}`) {
       fail(`LOCAL_ACTION_POST_ALLOWED_PRODUCT_ROUTE_FAILED:${suffix}`)
     }
-    const response = await page.evaluate(async ({ captured, deniedActionId }) => {
-      const binary = atob(captured.bodyBase64)
-      const body = Uint8Array.from(binary, (character) => character.charCodeAt(0))
-      const headers = new Headers(captured.headers)
-      headers.set('Next-Action', deniedActionId)
-      const result = await fetch(captured.url, {
-          method: 'POST',
-          headers,
-          body,
-        })
-        return { status: result.status, body: await result.text() }
-    }, { captured: capturedProductEdit, deniedActionId: deferredActionId })
-    const containsPrivateMarker = response.body.includes(privateMarker)
-    const containsOrderNumber = response.body.includes(orderNumber)
-    const containsPhone = response.body.includes(phone)
-    if (response.status !== 500 || containsPrivateMarker || containsOrderNumber || containsPhone) {
+    let replayIntercepted = false
+    let replayBodyMatchesCapture = false
+    await page.route(capturedProductEdit.url, async (route) => {
+      const request = route.request()
+      const headers = await request.allHeaders()
+      if (request.method() !== 'POST' || headers['next-action'] !== capturedProductEdit.actionId) {
+        await route.continue()
+        return
+      }
+      replayIntercepted = true
+      replayBodyMatchesCapture = request.postDataBuffer()?.toString('base64') === capturedProductEdit.bodyBase64
+      await route.continue({
+        headers: { ...headers, 'next-action': deferredActionId },
+        postData: Buffer.from(capturedProductEdit.bodyBase64, 'base64'),
+      })
+    })
+    const productNameInput = page.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN').first()
+    await productNameInput.waitFor({ state: 'visible', timeout: 15_000 })
+    await page.waitForLoadState('networkidle', { timeout: 15_000 })
+    const currentProductName = await productNameInput.inputValue()
+    if (currentProductName !== beforeProduct.name) fail(`LOCAL_ACTION_DENIAL_PRODUCT_FIXTURE_CHANGED:${suffix}`)
+    const responsePromise = page.waitForResponse((candidate) =>
+      candidate.request().method() === 'POST' && candidate.request().url() === capturedProductEdit.url,
+    { timeout: 20_000 })
+    await page.getByRole('button', { name: 'Cập nhật' }).first().click()
+    const actionResponse = await responsePromise
+    const responseBody = await actionResponse.text().catch(() => '')
+    const containsPrivateMarker = responseBody.includes(privateMarker)
+    const containsOrderNumber = responseBody.includes(orderNumber)
+    const containsPhone = responseBody.includes(phone)
+    if (!replayIntercepted || !replayBodyMatchesCapture || actionResponse.status() !== 500
+      || containsPrivateMarker || containsOrderNumber || containsPhone) {
       fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:getAdminOrders:${suffix}:${JSON.stringify({
-        status: response.status, containsPrivateMarker, containsOrderNumber, containsPhone,
-        containsScopeError: response.body.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseBytes: response.body.length,
+        status: actionResponse.status(), replayIntercepted, replayBodyMatchesCapture,
+        containsPrivateMarker, containsOrderNumber, containsPhone,
+        containsScopeError: responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseBytes: responseBody.length,
       })}`)
     }
     const afterSeededOrder = await prisma.orders.findUnique({ where: { id: seededOrder.id }, select: orderSnapshotFields })
