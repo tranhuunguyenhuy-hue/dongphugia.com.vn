@@ -30,7 +30,8 @@ export async function readPublicRows<T>(
   values: readonly (string | number | boolean)[] = [],
 ): Promise<T[]> {
   if (!publicPostgresEnabled()) throw new Error('PUBLIC_DATABASE_MODE_DISABLED')
-  if (!/^\s*(SELECT|WITH)\b/i.test(statement) || statement.includes(';')) {
+  if (!/^\s*SELECT\b/i.test(statement) || statement.includes(';')
+    || /\b(INSERT|UPDATE|DELETE|ALTER|DROP|CREATE|GRANT|REVOKE|TRUNCATE|COPY|CALL)\b/i.test(statement)) {
     throw new Error('PUBLIC_DATABASE_READ_ONLY_REQUIRED')
   }
   const pool = await getPool()
