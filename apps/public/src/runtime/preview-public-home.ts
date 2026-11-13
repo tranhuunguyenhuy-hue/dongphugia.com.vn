@@ -10,7 +10,8 @@ import {
 } from './preview-public-catalogue'
 import { usesPublicSnapshot } from './public-snapshot-mode'
 import { readSnapshotManifest } from './public-snapshot-catalogue'
-import { blogPosts, historicalBlogImage } from './legacy-blog'
+import { historicalBlogImage } from './legacy-blog'
+import { getPublicBlogPosts } from './live-public-blog'
 
 export async function getPublicHomeBanners(): Promise<PublicHomePageData['banners']> {
   if (process.env.APP_ENV !== 'production') return []
@@ -50,6 +51,7 @@ export async function getPublicHomeBanners(): Promise<PublicHomePageData['banner
 }
 
 export async function getPublicHomeContent(): Promise<PublicHomeContent> {
+  const blogPosts = await getPublicBlogPosts()
   const catalogueManifest = usesPublicSnapshot() ? await readSnapshotManifest() : null
   const categories: readonly PublicHomeCategory[] = await Promise.all((await getPreviewCatalogueCategories()).map(async (category) => {
     const listing = category.listings[0]
