@@ -31,13 +31,12 @@ The command checks the URL, connected server address, port, PostgreSQL major
 version, database name, and actual server data directory before running
 `prisma db push` or writing rows. It rejects a password, host other than
 `127.0.0.1`, a forwarded database address, another port/database/schema, or a
-data directory outside the disposable local path. It archives the clean commit
-to a temporary app directory, so ignored `.env*` files and cloud credentials
-cannot enter the Next.js process. The child environment contains only the local
-database URLs, a newly generated local `AUTH_SECRET`, loopback site URL, and
-production-build settings. The disposable archive is built with Next.js and
-served locally so the repository's Content Security Policy accepts its client
-scripts. Browser requests to all other origins are blocked.
+data directory outside the disposable local path. It requires a clean Git
+checkout and refuses local `.env*` files except the tracked `.env.example`.
+The Next.js build and server receive only the local database URLs, a fresh
+local `AUTH_SECRET`, loopback site URL, and production-build settings; provider
+credentials from the caller are not passed through. Browser requests to all
+other origins are blocked.
 
 The first run imports the proposed Public recovery snapshot and keeps its
 explicit Product and Blog IDs. It stores a source identity, source ID, source

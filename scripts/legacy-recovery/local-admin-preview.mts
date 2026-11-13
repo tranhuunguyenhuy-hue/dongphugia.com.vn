@@ -1,7 +1,7 @@
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { once } from 'node:events'
-import { mkdir, mkdtemp, readFile, realpath, rm, symlink } from 'node:fs/promises'
+import { mkdir, readFile, readdir, realpath, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -332,13 +332,12 @@ function safeEnvironment() {
 async function createCleanRuntimeCopy(repoRoot: string) {
   const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: repoRoot, encoding: 'utf8' }).trim()
   if (dirty) fail('LOCAL_ADMIN_PREVIEW_REQUIRES_CLEAN_COMMITTED_SOURCE')
-  const runtimeRoot = await mkdtemp(join(tmpdir(), 'dpg-legacy-admin-runtime-'))
-  const archive = execFileSync('git', ['archive', '--format=tar', 'HEAD'], {
-    cwd: repoRoot, maxBuffer: 512 * 1024 * 1024,
-  })
-  execFileSync('tar', ['-xf', '-', '-C', runtimeRoot], { cwd: repoRoot, input: archive, maxBuffer: 64 * 1024 * 1024 })
-  await symlink(join(repoRoot, 'node_modules'), join(runtimeRoot, 'node_modules'), 'dir')
-  return runtimeRoot
+  const localEnvironmentFiles = (await readdir(repoRoot)).filter((name) => name.startsWith('.env') && name !== '.env.example')
+  if (localEnvironmentFiles.length) fail('LOCAL_ADMIN_PREVIEW_REQUIRES_NO_LOCAL_ENV_FILES')
+  // Build in the clean source checkout. A temp copy with a node_modules symlink
+  // makes Next's standalone tracer escape the temp root on macOS; the sanitized
+  // child environment and the explicit local-env-file check keep this build local.
+  return repoRoot
 }
 
 async function startLocalApp(runtimeRoot: string, env: NodeJS.ProcessEnv) {
@@ -768,7 +767,7 @@ async function main() {
         if (fixtureIds.blogPostId) await tx.blog_posts.deleteMany({ where: { id: fixtureIds.blogPostId, author_name: 'Local Preview Fixture' } })
       }).catch(() => undefined)
     }
-    if (runtimeRoot) await rm(runtimeRoot, { recursive: true, force: true }).catch(() => undefined)
+    if (runtimeRoot && runtimeRoot !== repoRoot) await rm(runtimeRoot, { recursive: true, force: true }).catch(() => undefined)
     await prisma.$disconnect().catch(() => undefined)
   }
 }
