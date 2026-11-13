@@ -1,14 +1,9 @@
-# Public Application
+# V1 Public — Cloudflare deployment runtime
 
-This is the independent New Production Public deployable for
-`https://www.dongphugia.vn`.
+**Current roadmap:** [AGENTS.md](../../AGENTS.md) → [M1 Issue #307](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/307).
 
-The shell intentionally contains no catalogue UI, legacy UI composition,
-Supabase service client, staff session code, or Admin routes. Its approved
-Production runtime target is a Cloudflare Worker with Static Assets; the
-Worker adapter and external Preview resource remain a later, separately gated
-delivery concern.
+This deployable serves `https://www.dongphugia.vn` on existing Worker `dongphugia-v1-public-production`. The verified earlier release was **snapshot-backed**; the urgent M1 task is to reconcile all recovered Products and Blog in **V1 Supabase PostgreSQL** and prove that deployed Public now reads them (cached DB reads permitted). Do not simply load DB while leaving all Public reads pointed to the bundled snapshot.
 
-Build it from the repository root with `npm run build:public`. The root lockfile
-pins the shared toolchain, while this application owns its own Next config,
-environment validation, route tree, and build output.
+Preserve the approved Public UI/SEO/media/price provenance and retain a tested snapshot fallback before DB cutover. After M1, M2 mirrors this UI in the existing `dpg-staging`; Public Staging **may use snapshot**. No remote PR Preview is required. Do not expose Staff/Admin secrets in this bundle.
+
+See `docs/deploy/postgresql-production-adoption-contract.md`, `docs/deploy/cloudflare-staging-production.md`. Existing scripts must be inspected for real build commands instead of trusting old handoff text.

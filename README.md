@@ -1,48 +1,24 @@
-# Đông Phú Gia
+# Đông Phú Gia V1 — restoration project
 
-Website catalogue và báo giá của Đông Phú Gia.
+**Owner-approved roadmap since 2026-11-13: five milestones only.** This is V1 (`tranhuunguyenhuy-hue/dongphugia.com.vn`), **not V2**.
 
-- Public production: `https://www.dongphugia.vn`
-- Runtime/database: xác minh target và deployed SHA hiện hành trước khi vận hành;
-  repository chứa cả AWS và Cloudflare adapters.
-- Media: Bunny CDN
-- Default branch: `main`; working policy, Owner setup checklist and staging plan: [AGENTS.md](AGENTS.md).
+**Start here:** [AGENTS.md](AGENTS.md) (agent policy) · [Current milestone M1 #307](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/307) · [Master #306](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/306) · [Project handbook](docs/PROJECT.md) · [Verified status](docs/ops/project-current-state.md).
 
-## Local development
+## Approved sequence
 
-```bash
-npm ci
-npm run dev
-```
+**M1** DB-backed Production Public + full Products/Blog → **M2** Production-parity `dpg-staging` (snapshot allowed) → **M3** full legacy Admin accepted on Staging with isolated DB → **M4** Admin Production → **M5** holistic audit and future recommendations.
 
-`DATABASE_URL` và các biến runtime chỉ nằm trong môi trường local/Coolify; không
-commit hoặc in giá trị ra log.
+**Environments:** localhost for developer preview; `dpg-staging` fixed Cloudflare Staging; `dongphugia-v1-public-production` fixed Worker Production for `www.dongphugia.vn`. Remote PR Preview is not required. Worker rollback does not undo SQL/data.
 
-## Validation
+## Repo pointers
 
-Run only the commands applicable to the affected scope; required CI remains the
-merge gate:
+- `apps/public/`: deployed Cloudflare Public-oriented runtime.
+- `src/app/admin/`: restored legacy Admin source of truth; not yet proved as hosted Cloudflare Admin.
+- `apps/admin/`: historic separate Admin shell, **not** the target of M3/M4.
+- `prisma/`, `supabase/`, `db/`: data schema, migrations and evidentiary contracts.
+- `scripts/`, `.github/workflows/`: supporting implementation/tests; avoid activating irrelevant legacy pipelines.
+- `docs/deploy/`: **technical evidence and rollback scripts**, not independent priority or authorization.
 
-```bash
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
+## Agent execution
 
-## Codex and delivery
-
-Một phiên Codex chỉ cần đọc [AGENTS.md](AGENTS.md) để nắm mục tiêu, công việc
-đang làm, cấu trúc ứng dụng, nghiệp vụ và quy trình phát hành. Chi tiết được
-**tổng hợp duy nhất** tại [Project Handbook](docs/PROJECT.md), đọc khi cần.
-
-Merge PR không đồng nghĩa với Production. Chỉ deploy sau khi xác minh đúng
-runtime/candidate và có phê duyệt, rồi kiểm tra website thật.
-
-## Repository map
-
-- `src/`: Next.js application
-- `prisma/`: schema, migrations và seed cần thiết
-- `scripts/`: quality, monitoring, SEO và canonical rollout tools
-- `docs/PROJECT.md`: handbook duy nhất; `docs/deploy/` giữ những runbook còn được CI hoặc vận hành phụ thuộc
-- `.github/workflows/`: quality, performance, staging image và manual candidate
+Open only the **active milestone** and relevant code/runbook; implement with localhost + focused tests, one integration PR, then actual deployment evidence/Owner acceptance. Do not revive Phase 2, cart/checkout, Cloudflare Preview, multi-agent parallel pipelines or V2 work. No secrets in repository; before Production writes verify backup and rollback. Historic open PRs are not work orders.

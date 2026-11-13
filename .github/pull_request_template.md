@@ -1,47 +1,25 @@
-## Summary
+## Active milestone only
 
-- What changed:
-- Why:
-- Related Issue and source-only / release-required completion:
+- Milestone / Issue: M1 #307 / M2 #308 / M3 #309 / M4 #310 / M5 #311
+- Why it advances the **current** milestone:
+- What changed (no unrelated features):
 
-## Scope
+## Actual acceptance evidence
 
-- In scope:
-- Out of scope:
+- Source SHA and changed paths:
+- Focused tests + relevant build/typecheck:
+- Functional results on localhost:
+- Staging / Production URL and deployed Worker version **if applicable**:
+- Hosted PostgreSQL count / read-path / CRUD evidence **if applicable**:
+- PASS / FAIL / UNKNOWN (each acceptance criterion):
+- Data/auth risk and documented rollback (Worker rollback ≠ SQL rollback):
 
-## Acceptance
+## Scope and release
 
-- Acceptance source:
-- Done when:
-- Acceptance criterion → verification evidence:
+- [ ] Not a resumed Phase 2, Cloudflare Preview, V2 or duplicate Admin implementation
+- [ ] Verified correct V1 account/target; no credentials or PII committed
+- [ ] No destructive DB operation or unapproved additional costs
+- [ ] Diff reviewed against only the assigned Issue
+- [ ] Owner acceptance and target-specific release permission recorded where required
 
-## Risk
-
-- User impact:
-- Data/runtime/DNS impact: None / describe explicitly
-
-## Validation
-
-- Focused commands and results:
-- Checks marked N/A with reason:
-- Required CI:
-
-## Review
-
-- Self-review against acceptance criteria and any required independent review:
-- Findings resolved:
-
-## Rollout and rollback
-
-- Production: No / separately approved later
-- Candidate and Staging evidence, when applicable:
-- Rollback:
-- Next authorized action:
-
-## Checklist
-
-- [ ] Branch is based on current `main`
-- [ ] No secrets, credentials, PII or generated artifacts are included
-- [ ] Unrelated user changes are excluded
-- [ ] Documentation/tests are updated where behavior changed
-- [ ] Production is unchanged unless explicit approval is recorded
+**PR/CI success alone does not equal runtime acceptance.** See `AGENTS.md`.

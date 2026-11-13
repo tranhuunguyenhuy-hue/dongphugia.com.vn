@@ -1,49 +1,30 @@
-# Production PostgreSQL baseline-adoption contract
+# M1 — Production PostgreSQL adoption and restoration runbook
 
-Status: **NOT AUTHORIZED / contract only**. This document does not mutate,
-connect to, or compare against Production. PM approval and a separately
-scheduled operation with dedicated recovery and approval controls are required
-before any Production command.
+**Active authority:** [M1 #307](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/307), [AGENTS.md](../../AGENTS.md). Replaces the old ARM64/EC2 image-gated adoption process. This runbook does **not** itself attest that hosted DB is populated or authorize destructive operations.
 
-## Required evidence before adoption
+## Target confirmation, before touching data
 
-1. A fresh backup and private restore verification exist for the exact target.
-2. A select-only Production schema comparison covers the same object classes as
-   `db/postgres-migrations/schema-manifest.json` and records the canonical
-   baseline hash, target identity and comparison timestamp.
-3. Baseline provenance is explicit: canonical origin commit, layer checksums,
-   PostgreSQL image/version, runner version and the named execution owner.
-4. Differences are classified as adopt, migrate, preserve or block. No live
-   object is silently overwritten; production-only objects require a separate
-   reviewed migration or an explicit preservation entry.
-5. The migration execution owner, maintenance window, monitoring and exact
-   rollback boundary are named. Transaction rollback is not assumed to undo
-   external effects or irreversible DDL.
-6. The exact immutable ARM64 image digest has passed the isolated Staging path
-   and its source revision matches protected `main`. Promotion uses the same
-   immutable Staging-validated image digest.
-7. No split-brain is possible: one migration lock/owner, one target, and a
-   verified restore/rollback target are recorded before execution.
+1. Verify actual Supabase **V1** project ref, Postgres version/schema (candidate `bonxyxluzlxfkdetryoo/dpg_app`), role boundaries, network path and Worker account. Never access V2.
+2. Preserve and verify a restorable database backup/checkpoint and source artefacts with checksums. Confirm backup recovery separately from a Worker rollback.
+3. **Read-only inventory:** table list and schema drift; Product, SKU, published Product, Blog, published Blog, category, URLs/slugs/media; compare with the best available original/source inventory and audit exceptions. Local restored figures (~17,752/10) are leads, not acceptance numbers.
+4. Estimate free-tier quotas, DB size, query volume/connection pooling and CPU before high-volume import.
 
-## Adoption sequence (future authorized operation)
+## Non-destructive reconciliation
 
-```text
-backup + restore proof
-  → select-only schema comparison
-  → PM approval of adoption/provenance and differences
-  → named migration owner executes canonical PostgreSQL runner
-  → post-migration schema comparison + runtime acceptance
-  → promote the exact Staging-validated image digest
-```
+- Import **only** proven source data, idempotently, with stable primary/unique keys and foreign-key/canonical URL checks. Use bounded batches; no blind truncation, reset or overwrite of legitimate hosted records.
+- Preserve full Blog bodies, slugs, publish dates and media references; restore media separately when missing.
+- Record before/after row counts, duplicate checks, price/source provenance, published totals and precise unresolved differences. Sample real PDP and Blog slugs; broken images/404s are failures.
+- Keep sensitive DB credentials only in provider secrets, not in code, files, issue comments or logs.
 
-The production runner must use a Production-specific marker/role contract and
-must not reuse Staging credentials, volume, network or data. Rollback is the
-pre-agreed restore or reverse-migration boundary, not a best-effort recreate of
-the live database.
+## Public database read path
 
-## Explicit exclusions
+- Connect Production Worker with a least-privileged **read-only** PostgreSQL role and compatible Cloudflare connection adapter (Hyperdrive if proven with actual bindings). Do not expose privileged credentials to browser code.
+- Implement bounded queries/cache and explicit freshness/invalidation. Public may use cached results but its authoritative data origin must be hosted PostgreSQL. Avoid calling an unchanging bundled snapshot a live DB connection.
+- Verify from actual deployed Worker version and representative category/listing/PDP/search/Blog requests. Document the evidence that DB query/projection was used and content reconciliation passed.
+- Preserve a tested switch/rollback to current published snapshot if new DB path fails, without losing current routes or images.
 
-- No Production mutation, migration, reset, restore, credential retrieval or
-  runtime rollout is authorized by this task.
-- No MS885, SEO, RLS/orphan cleanup, Package/Relationship or Family feature
-  work is part of this contract.
+## Release and rollback
+
+Capture Worker version/source/route baseline and DB checkpoint. Run focused localhost integration tests and production-safe read-only smoke, then controlled release to the existing Production Worker. If fault appears, rollback Worker version or select snapshot fallback; **never presume that undoes SQL or imported data**. Document any necessary SQL restore/reverse steps separately.
+
+**M1 DONE** = hosted DB data reconciliation + Production Public **actually serving PostgreSQL Products and Blog** + rollback demonstrable + Owner acceptance. No Admin rollout or schema redesign in M1.
