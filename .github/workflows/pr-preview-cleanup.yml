@@ -1,7 +1,6 @@
 name: PR Preview cleanup
 on:
-  pull_request_target:
-    types: [closed]
+  workflow_dispatch:
 permissions: {}
 concurrency:
   group: pr-preview-publish-${{ github.event.pull_request.number }}

@@ -30,3 +30,7 @@ For Preview failure, restore the previous pinned candidate **on the same `stagin
 - [Previews settings and secrets](https://developers.cloudflare.com/workers/previews/configuration/)
 - [Preview Hyperdrive resource isolation](https://developers.cloudflare.com/workers/previews/resources/)
 - [Wrangler preview](https://developers.cloudflare.com/workers/wrangler/commands/workers/#preview)
+
+## CI/CD release authority
+
+The direct Cloudflare Git build had `npm run build` / `npx wrangler deploy` at repo root (wrong entrypoint), and on 2026-11-13 failed deploying a service binding `WORKER_SELF_REFERENCE` to missing `dongphugia-web`. It is **not an accepted Production pipeline**. Use GitHub's one-step `.github/workflows/v1-worker-release.yml` for controlled actual Public Worker releases from `main`, after required `quality` and milestone acceptance. Cloudflare auto-building each branch/PR and its old Staging Worker deploy workflows are retired. M2/M3 use the single fixed Preview `staging` manually, with explicit Preview test DB/secrets.
