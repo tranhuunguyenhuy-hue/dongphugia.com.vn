@@ -106,7 +106,7 @@ jobs:
     env:
       SOURCE_SHA: ${{ inputs.source_sha }}
       ARTIFACT_SHA256: ${{ needs.review.outputs.artifact_sha256 }}
-      ARTIFACT_ROOT: ${{ runner.temp }}/combined-admin-candidate
+      ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/admin-release-candidate
       HYPERDRIVE_ID: ${{ inputs.hyperdrive_id }}
       HYPERDRIVE_HOST: ${{ inputs.hyperdrive_host }}
       HYPERDRIVE_DATABASE: ${{ inputs.hyperdrive_database }}
