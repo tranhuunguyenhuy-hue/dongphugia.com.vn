@@ -518,7 +518,7 @@ async function assertDeferredAdminActionsDenied(
     let replayBodyMatchesCapture = false
     await page.route(capturedProductEdit.url, async (route) => {
       const request = route.request()
-      const headers = request.headers()
+      const headers = await request.allHeaders()
       if (request.method() !== 'POST' || headers['next-action'] !== capturedProductEdit.actionId) {
         await route.continue()
         return
@@ -526,7 +526,7 @@ async function assertDeferredAdminActionsDenied(
       replayIntercepted = true
       replayBodyMatchesCapture = request.postDataBuffer()?.toString('base64') === capturedProductEdit.bodyBase64
       await route.continue({
-        headers: { 'next-action': deferredActionId },
+        headers: { ...headers, 'next-action': deferredActionId },
         postData: Buffer.from(capturedProductEdit.bodyBase64, 'base64'),
       })
     })
