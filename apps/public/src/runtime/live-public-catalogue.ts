@@ -1,6 +1,7 @@
 // Opt-in M1 PostgreSQL read model. Prices/stock are never asserted from
 // historical unverified values; original database rows remain intact.
 import { cache } from 'react'
+import { sanitizeRichHtml } from '@/lib/html-sanitizer'
 import { readPublicRows } from './public-db'
 import type { SnapshotCategory, SnapshotProduct, SnapshotSearchProduct } from './public-snapshot-catalogue'
 
@@ -10,11 +11,14 @@ type Row = {
   variant_group:string|null; variant_type:string|null; variant_label:string|null
   category_name:string; category_slug:string; listing_name:string; listing_slug:string
   brand_name:string|null; brand_slug:string|null; total_count?:number|string
+  gallery_images?:{image_url:string}[]|null; description_html?:string|null
+  specifications?:Record<string,string>|null; documents?:{name:string;url:string;type:string;size?:number|null}[]|null
+  product_feature_values?:{product_features:{name:string}}[]|null
 }
 const COLS='p.id,p.sku,p.name,p.display_name,p.slug,p.description,p.image_main_url,p.is_featured,p.variant_group,p.variant_type,p.variant_label,c.name AS category_name,c.slug AS category_slug,s.name AS listing_name,s.slug AS listing_slug,b.name AS brand_name,b.slug AS brand_slug'
-const FROM=' FROM dpg_app.products p JOIN dpg_app.categories c ON c.id=p.category_id AND c.is_active=true JOIN dpg_app.subcategories s ON s.id=p.subcategory_id AND s.category_id=c.id AND s.is_active=true LEFT JOIN dpg_app.brands b ON b.id=p.brand_id'
+const FROM=' FROM dpg_app.products p JOIN dpg_app.categories c ON c.id=p.category_id AND c.is_active=true JOIN dpg_app.subcategories s ON s.id=p.subcategory_id AND s.category_id=c.id AND s.is_active=true LEFT JOIN dpg_app.brands b ON b.id=p.brand_id AND b.is_active=true'
 const PUBLIC=" p.is_active=true AND p.publication_status='public' AND p.pdp_visibility='public'"
-const LIST=" p.listing_visibility<>'search_only'"
+const LIST=" p.listing_visibility IN ('default','low_priority')"
 const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const HOSTS=new Set(['cdn.dongphugia.com.vn','dpg-products.b-cdn.net','cdn.hita.com.vn','hita.com.vn','vietceramics.com','tygjmrhandbffjllxveu.supabase.co'])
 function safeImage(s:string|null){
@@ -43,13 +47,13 @@ export function mapLiveProduct(row:Row):SnapshotProduct{
   ...(row.variant_label?{variant_label:row.variant_label}:{}),
  }
 }
-export const getLiveListing=cache(async(category:string,listing:string,page=1)=>{
- if(![category,listing].every(s=>SLUG.test(s))||!Number.isSafeInteger(page)||page<1||page>64)
+export const getLiveListing=cache(async(category:string,listing:string,page=1,pageSize=48)=>{
+ if(![category,listing].every(s=>SLUG.test(s))||!Number.isSafeInteger(page)||page<1||page>64||!Number.isSafeInteger(pageSize)||pageSize<1||pageSize>48)
   return {products:[] as SnapshotProduct[],totalCount:0,page}
  const rows=await readPublicRows<Row>('SELECT '+COLS+',count(*) OVER() AS total_count'+FROM+
    ' WHERE '+PUBLIC+' AND '+LIST+' AND c.slug=$1 AND s.slug=$2'+
-   ' ORDER BY p.listing_priority DESC NULLS LAST,p.sort_order,p.id LIMIT 48 OFFSET $3',
-   [category,listing,(page-1)*48])
+   ' ORDER BY p.listing_priority DESC NULLS LAST,p.sort_order,p.id LIMIT $4 OFFSET $3',
+   [category,listing,(page-1)*pageSize,pageSize])
  return {products:rows.map(mapLiveProduct),totalCount:Number(rows[0]?.total_count??0),page}
 })
 type Count={category_slug:string;category_name:string;listing_slug:string;listing_name:string;total_count:number|string}
@@ -60,7 +64,7 @@ export const getLiveCategories=cache(async():Promise<SnapshotCategory[]>=>{
   ' GROUP BY c.slug,c.name,s.slug,s.name HAVING count(p.id)>0 ORDER BY c.slug,s.name LIMIT 100')
  const brands=await readPublicRows<Brand>('SELECT DISTINCT c.slug AS category_slug,b.slug,b.name'+FROM+
    ' WHERE '+PUBLIC+' AND '+LIST+' AND b.slug IS NOT NULL ORDER BY c.slug,b.slug LIMIT 500')
- const result=await Promise.all(['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat'].map(async slug=>{
+ const result=await Promise.all(['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat'].map(async (slug): Promise<SnapshotCategory | null>=>{
   const byCategory=rows.filter(r=>r.category_slug===slug)
   if(!byCategory.length)return null
   const listings=byCategory.map(r=>({slug:r.listing_slug,name:r.listing_name,thumbnail_url:null,totalCount:Number(r.total_count)}))
@@ -73,20 +77,54 @@ export const getLiveCategories=cache(async():Promise<SnapshotCategory[]>=>{
  }))
  return result.filter((x):x is SnapshotCategory=>x!==null)
 })
-export const getLiveProduct=cache(async(category:string,listing:string,slug:string)=>{
- if(![category,listing,slug].every(s=>SLUG.test(s)))return null
- const rows=await readPublicRows<Row>('SELECT '+COLS+FROM+' WHERE '+PUBLIC+
-   ' AND c.slug=$1 AND s.slug=$2 AND p.slug=$3 LIMIT 1',[category,listing,slug])
+
+export const getLiveBrandsForListing=cache(async(category:string,listing:string)=>{
+ if(![category,listing].every(s=>SLUG.test(s)))return [] as {slug:string;name:string}[]
+ return readPublicRows<{slug:string;name:string}>(
+  'SELECT DISTINCT b.slug,b.name'+FROM+' WHERE '+PUBLIC+' AND '+LIST+
+  ' AND c.slug=$1 AND s.slug=$2 AND b.slug IS NOT NULL ORDER BY b.slug LIMIT 32',
+  [category,listing])
+})
+const loadLiveProduct=async(where:string,values:readonly string[])=>{
+ const detailSelect=`
+  (SELECT COALESCE(jsonb_agg(jsonb_build_object('image_url',i.image_url) ORDER BY i.sort_order,i.id),'[]'::jsonb)
+   FROM (SELECT id,image_url,sort_order FROM dpg_app.product_images WHERE product_id=p.id ORDER BY sort_order,id LIMIT 12) i) AS gallery_images,
+  (SELECT pd.clean_html FROM dpg_app.product_descriptions pd WHERE pd.product_id=p.id ORDER BY pd.updated_at DESC,pd.id DESC LIMIT 1) AS description_html,
+  (SELECT jsonb_object_agg(v.label,v.value) FROM (
+    SELECT sd.label,COALESCE(NULLIF(BTRIM(psv.value_text),''),psv.value_number::text,so.value,psv.value_json#>>'{}',NULLIF(BTRIM(psv.raw_value),'')) AS value
+    FROM dpg_app.product_spec_values psv
+    JOIN dpg_app.spec_definitions sd ON sd.id=psv.spec_definition_id AND sd.is_pdp_visible=true
+    LEFT JOIN dpg_app.spec_options so ON so.id=psv.option_id
+    WHERE psv.product_id=p.id
+    ORDER BY psv.sort_order,psv.id LIMIT 60
+  ) v WHERE v.value IS NOT NULL) AS specifications,
+  (SELECT COALESCE(jsonb_agg(jsonb_build_object('name',d.name,'url',d.url,'type',d.document_type,'size',d.file_size) ORDER BY d.sort_order,d.id),'[]'::jsonb)
+   FROM (SELECT id,name,url,document_type,file_size,sort_order FROM dpg_app.product_documents WHERE product_id=p.id ORDER BY sort_order,id LIMIT 24) d) AS documents,
+  (SELECT COALESCE(jsonb_agg(jsonb_build_object('product_features',jsonb_build_object('name',f.name)) ORDER BY f.sort_order,f.id),'[]'::jsonb)
+   FROM (SELECT f.name,f.sort_order,f.id FROM dpg_app.product_feature_values fv JOIN dpg_app.product_features f ON f.id=fv.feature_id WHERE fv.product_id=p.id ORDER BY f.sort_order,f.id LIMIT 3) f) AS product_feature_values`
+ const rows=await readPublicRows<Row>('SELECT '+COLS+','+detailSelect+FROM+' WHERE '+PUBLIC+' '+where+' LIMIT 1',values)
  if(!rows.length)return null
  const product=mapLiveProduct(rows[0])
- const images=await readPublicRows<{image_url:string}>(
-  'SELECT image_url FROM dpg_app.product_images WHERE product_id=$1 ORDER BY sort_order,id LIMIT 12',
-  [product.id])
- const gallery=[...new Set([product.image_main_url,...images.map(i=>safeImage(i.image_url))]
+ const gallery=[...new Set([product.image_main_url,...(rows[0].gallery_images??[]).map(i=>safeImage(i.image_url))]
   .filter((s):s is string=>Boolean(s)))]
- return {...product,publicContent:{...product.publicContent!,gallery},imageUrl:product.image_main_url,
+ const specifications=Object.fromEntries(Object.entries(rows[0].specifications??{}).filter(([key,value])=>key.trim()&&value.trim()).slice(0,60))
+ const documents=(rows[0].documents??[]).flatMap(doc=>{
+  const url=safeImage(doc.url)
+  return url&&doc.name&&doc.name.length<=240? [{name:doc.name.slice(0,240),url,type:doc.type.slice(0,80),size:doc.size===null||doc.size===undefined?'':String(doc.size)}]:[]
+ })
+ const descriptionHtml=rows[0].description_html?sanitizeRichHtml(rows[0].description_html):undefined
+ return {...product,product_feature_values:rows[0].product_feature_values??[],publicContent:{...product.publicContent!,gallery,
+  specifications,...(descriptionHtml?{descriptionHtml}:{}),documents},imageUrl:product.image_main_url,
   brand:product.brands??{name:'',slug:''},categoryName:product.categories.name,listingName:product.subcategories.name,
-  categoryPath:'/'+category,listingPath:'/'+category+'/'+listing,productPath:product.url,priceDisplay:product.price_display}
+  categoryPath:'/'+product.categories.slug,listingPath:'/'+product.categories.slug+'/'+product.subcategories.slug,productPath:product.url,priceDisplay:product.price_display}
+}
+export const getLiveProduct=cache(async(category:string,listing:string,slug:string)=>{
+ if(![category,listing,slug].every(s=>SLUG.test(s)))return null
+ return loadLiveProduct('AND c.slug=$1 AND s.slug=$2 AND p.slug=$3',[category,listing,slug])
+})
+export const getLiveProductByCategory=cache(async(category:string,slug:string)=>{
+ if(![category,slug].every(s=>SLUG.test(s)))return null
+ return loadLiveProduct('AND c.slug=$1 AND p.slug=$2',[category,slug])
 })
 export async function searchLiveProducts(raw:string,page:number,limit:number){
  const query=raw.trim().slice(0,120)

@@ -3,11 +3,11 @@ import {
   blogPostPath,
   formatLegacyBlogDate,
   historicalBlogImage,
-  type LegacyBlogPost,
+  type PublicLegacyBlogPost,
 } from '../runtime/legacy-blog'
 
 export function LegacyBlogCard({ post, featured = false }: {
-  post: LegacyBlogPost
+  post: PublicLegacyBlogPost
   featured?: boolean
 }) {
   const image = historicalBlogImage(post.thumbnail_url ?? post.cover_image_url)

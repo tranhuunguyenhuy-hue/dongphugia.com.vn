@@ -9,6 +9,7 @@ import {
     PUBLIC_SNAPSHOT_LISTING_MAX_PAGES,
     PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,
     type PublicSnapshotListingShard,
+    type PublicSnapshotListingProduct,
 } from './snapshot-listing-contract'
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -33,7 +34,7 @@ export async function getPublicSnapshotListingShard(
         if (!/^[a-f0-9]{40}$/.test(checkpoint)) {
             throw new Error('PUBLIC_DATABASE_SOURCE_ID_REQUIRED')
         }
-        const products = live.products.map(p => ({
+        const products: PublicSnapshotListingProduct[] = live.products.map(p => ({
             id: p.id, name: p.name, display_name: p.display_name,
             slug: p.slug, sku: p.sku, price: p.price, price_display: p.price_display,
             stock_status: p.stock_status, image_main_url: p.image_main_url,

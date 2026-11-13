@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug } = await params
   const category = await getPublicBlogCategory(categorySlug)
   if (!category) return { title: 'Không tìm thấy chuyên mục', robots: { index: false, follow: false } }
-  const count = await getPublicBlogPostsForCategory(categorySlug).length
+  const count = (await getPublicBlogPostsForCategory(categorySlug)).length
   return {
     title: category.seo_title || category.name,
     description: category.seo_description || category.description || `Bài viết chuyên mục ${category.name} tại Đông Phú Gia.`,

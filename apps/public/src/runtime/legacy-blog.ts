@@ -5,6 +5,11 @@ export type LegacyBlogCategory = (typeof archive.categories)[number]
 export type LegacyBlogPost = (typeof archive.posts)[number] & {
   category: LegacyBlogCategory
 }
+export type PublicLegacyBlogPost = Pick<LegacyBlogPost,
+  | 'id' | 'title' | 'slug' | 'excerpt' | 'content' | 'category_id'
+  | 'thumbnail_url' | 'cover_image_url' | 'seo_title' | 'seo_description'
+  | 'reading_time' | 'status' | 'published_at' | 'author_name' | 'updated_at'
+> & { category: LegacyBlogCategory }
 
 if (archive.contract !== 'dpg:verified-legacy-blog-snapshot:v1') {
   throw new Error('LEGACY_BLOG_SNAPSHOT_CONTRACT_INVALID')
@@ -55,7 +60,7 @@ export function formatLegacyBlogDate(value: string) {
   })
 }
 
-export function blogPostPath(post: LegacyBlogPost) {
+export function blogPostPath(post: Pick<PublicLegacyBlogPost, 'category' | 'slug'>) {
   return `/blog/${post.category.slug}/${post.slug}`
 }
 

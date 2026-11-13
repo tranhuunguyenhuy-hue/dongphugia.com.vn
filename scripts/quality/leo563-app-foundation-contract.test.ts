@@ -55,8 +55,15 @@ describe('LEO-563 application foundation contract', () => {
 
   it('keeps Public and Admin imports/runtime/session seams separate', () => {
     expect(sourceImports(resolve(root, 'apps/public'))).not.toEqual(expect.arrayContaining([
-      expect.stringMatching(/apps\/admin|admin-auth|admin-session|supabase|service.role|prisma|\bpg\b|database/i),
+      expect.stringMatching(/apps\/admin|admin-auth|admin-session|supabase|service.role|prisma/i),
     ]))
+    const publicSources = filesUnder(resolve(root, 'apps/public'))
+    const pgImportSources = publicSources.filter((filePath) =>
+      /(?:from\s+|import\s*\()(['\"])pg\1/.test(readFileSync(filePath, 'utf8')),
+    )
+    expect(pgImportSources).toEqual([resolve(root, 'apps/public/src/runtime/public-db.ts')])
+    expect(readFileSync(resolve(root, 'apps/public/src/runtime/public-db.ts'), 'utf8'))
+      .toContain('PUBLIC_DATABASE_READ_ONLY_REQUIRED')
     expect(sourceImports(resolve(root, 'apps/admin'))).not.toEqual(expect.arrayContaining([
       expect.stringMatching(/apps\/public|public-cookie|src\/lib\/prisma|src\/lib\/auth|service.role|prisma|\bpg\b|database/i),
     ]))

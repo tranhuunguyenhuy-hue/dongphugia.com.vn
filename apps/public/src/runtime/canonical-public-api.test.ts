@@ -1,4 +1,7 @@
 import {describe,it,expect,vi} from 'vitest'
+const dbMocks=vi.hoisted(()=>({enabled:false,getBrands:vi.fn(),getListing:vi.fn(),getProduct:vi.fn()}))
+vi.mock('./public-db',()=>({publicPostgresEnabled:()=>dbMocks.enabled}))
+vi.mock('./live-public-catalogue',()=>({getLiveBrandsForListing:dbMocks.getBrands,getLiveListing:dbMocks.getListing,getLiveProductByCategory:dbMocks.getProduct}))
 const products=Array.from({length:60},(_,i)=>({id:i,slug:'p-'+i,name:'P'+i,brands:{name:i<50?'A':'B',slug:i<50?'a':'b'},is_featured:false,price:null,stock_status:'contact'}))
 vi.mock('./public-snapshot-catalogue',()=>({
  getSnapshotCategories:async()=>[{slug:'thiet-bi-bep',listings:[{slug:'voi-rua-chen',name:'Vòi rửa chén',totalCount:60}]}],
@@ -17,6 +20,29 @@ describe('canonical Preview public snapshot seam',()=>{
   expect(result.total).toBe(10);expect(result.products).toHaveLength(5);expect(result.products[0].id).toBe(55)
   expect(result.products.every(p=>p.price===null&&p.stock_status==='contact')).toBe(true)
  })
+ it('uses bounded database results for product filters and PDP related cards',async()=>{
+  dbMocks.enabled=true
+  dbMocks.getBrands.mockResolvedValueOnce([{slug:'acme',name:'Acme'}])
+  dbMocks.getListing.mockResolvedValueOnce({products:products.slice(0,6),totalCount:60,page:1})
+  const filters=await getAvailableFiltersBySubcategory('voi-rua-chen',undefined,'thiet-bi-bep')
+  expect(filters.brands.map(b=>b.slug)).toEqual(['acme'])
+  const related=await getPublicProducts({category_slug:'thiet-bi-bep',subcategory_slug:'voi-rua-chen',pageSize:5,page:1})
+  expect(dbMocks.getListing).toHaveBeenCalledWith('thiet-bi-bep','voi-rua-chen',1,6)
+  expect(related.products).toHaveLength(5)
+  expect(related.total).toBe(60)
+  dbMocks.enabled=false
+ })
+
+ it('reads a database PDP by category and slug without probing every listing',async()=>{
+  dbMocks.enabled=true
+  dbMocks.getProduct.mockResolvedValueOnce({id:7,slug:'live-product',name:'Live',price:null,stock_status:'contact',
+   publicContent:{summary:'Live summary',descriptionBlocks:[],specifications:{},gallery:[],referencePrice:null}})
+  const product=await getPublicProductBySlug('thiet-bi-bep','live-product')
+  expect(dbMocks.getProduct).toHaveBeenCalledWith('thiet-bi-bep','live-product')
+  expect(product?.description).toBe('<p>Live summary</p>')
+  dbMocks.enabled=false
+ })
+
  it('offers only public brand identities, with no invented facets or private specs',async()=>{
   const f=await getAvailableFiltersBySubcategory('voi-rua-chen',undefined,'thiet-bi-bep')
   expect(f.brands.map(b=>b.slug)).toEqual(['a','b']);expect(f.materials).toEqual([])

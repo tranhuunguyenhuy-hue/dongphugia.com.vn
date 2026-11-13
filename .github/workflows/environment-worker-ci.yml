@@ -1,9 +1,7 @@
 name: Local Preview and Staging Worker CI
 
 on:
-  pull_request:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -4,6 +4,8 @@ import {cache} from 'react'
 import type * as Original from '../../../../src/lib/public-api-products'
 export type {VariantSibling,ListingRuntimeConfig} from '../../../../src/lib/public-api-products'
 import {getSnapshotCategories,getSnapshotProducts,getSnapshotProduct,getSnapshotVariantSiblings} from './public-snapshot-catalogue'
+import {publicPostgresEnabled} from './public-db'
+import {getLiveBrandsForListing,getLiveListing,getLiveProductByCategory} from './live-public-catalogue'
 
 const allProducts=cache(async(category:string,sub?:string)=> {
  const c=(await getSnapshotCategories()).find(c=>c.slug===category)
@@ -18,13 +20,21 @@ export const getPublicListingLeaves:typeof Original.getPublicListingLeaves=async
 export const getPublicListingLeaf:typeof Original.getPublicListingLeaf=async(category,sub)=>(await getPublicListingLeaves(category)).find(l=>l.slug===sub)??null
 export const getListingRuntimeConfig:typeof Original.getListingRuntimeConfig=()=>({snapshotMode:true,profileKey:null,hideColorFilter:true,enableSpecFilters:false,enableProductTypeTabs:false,readyForRefactor:false,relationPriority:['brand']})
 export const getAvailableFiltersBySubcategory:typeof Original.getAvailableFiltersBySubcategory=async(sub,_type,category)=>{
- const products=await allProducts(category??'thiet-bi-ve-sinh',sub)
- const brands=Array.from(new Map(products.filter(p=>p.brands).map(p=>[p.brands!.slug,p.brands!])).values())
- return {brands:brands.map(b=>({...b,logo_url:null})),subcategories:(await getPublicListingLeaves(category??'thiet-bi-ve-sinh')).map(l=>({...l,icon_name:null})),materials:[],origins:[],features:[],colors:[]}
+ const categorySlug=category??'thiet-bi-ve-sinh'
+ const brands=publicPostgresEnabled()
+  ?await getLiveBrandsForListing(categorySlug,sub)
+  :Array.from(new Map((await allProducts(categorySlug,sub)).filter(p=>p.brands).map(p=>[p.brands!.slug,p.brands!])).values())
+ return {brands:brands.map(b=>({...b,logo_url:null})),subcategories:(await getPublicListingLeaves(categorySlug)).map(l=>({...l,icon_name:null})),materials:[],origins:[],features:[],colors:[]}
 }
 export const getPublicProducts:typeof Original.getPublicProducts=async(f={})=>{
  // Listing HTML and Flight share a neutral shell. The browser loads the exact
  // immutable shards and applies URL filters; PDP related cards keep their data.
+ if(publicPostgresEnabled()&&f.pageSize===5&&typeof f.subcategory_slug==='string'
+   &&!f.brand_slug&&!f.is_featured&&!f.feature_slugs&&!f.material_slug&&!f.origin_slug&&!f.color_slug){
+  const live=await getLiveListing(f.category_slug??'thiet-bi-ve-sinh',f.subcategory_slug,f.page??1,6)
+  const size=f.pageSize??5,total=live.totalCount
+  return {products:live.products.slice(0,size),total,totalPages:Math.max(1,Math.ceil(total/size)),currentPage:f.page??1,page:f.page??1,pageSize:size} as unknown as Awaited<ReturnType<typeof Original.getPublicProducts>>
+ }
  if((f.pageSize===12||f.pageSize===24)&&typeof f.subcategory_slugs==='string'){
   const category=(await getSnapshotCategories()).find(c=>c.slug===f.category_slug)
   const listing=category?.listings.find(l=>l.slug===f.subcategory_slugs)
@@ -46,6 +56,14 @@ function publicDescription(content:{summary:string|null;specifications:Record<st
  return rows.length?'<ul>'+rows.map(([key,value])=>'<li>'+escapePublicText(key)+': '+escapePublicText(value)+'</li>').join('')+'</ul>':null
 }
 export const getPublicProductBySlug:typeof Original.getPublicProductBySlug=async(category,slug)=>{
+ if(publicPostgresEnabled()){
+  const p=await getLiveProductByCategory(category,slug)
+  return p?{...p,description:publicDescription(p.publicContent),features:null,colors:p.colors??null,
+   product_images:(p.publicContent?.gallery??[]).map(image_url=>({image_url,alt_text:p.name})),
+   product_feature_values:p.product_feature_values??[],variant_group:p.variant_group??null,
+   original_price:p.original_price??null,list_price:p.list_price??null,sale_price:p.sale_price??null,
+   online_discount_amount:p.online_discount_amount??null} as unknown as Awaited<ReturnType<typeof Original.getPublicProductBySlug>>:null
+ }
  const c=(await getSnapshotCategories()).find(c=>c.slug===category)
  for(const l of c?.listings??[]) {
   const p=await getSnapshotProduct(category,l.slug,slug)
