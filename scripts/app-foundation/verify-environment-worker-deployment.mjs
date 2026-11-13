@@ -24,8 +24,24 @@ async function fetchChecked(fetchImpl, url, init, expectedStatus, sourceSha, app
   return response
 }
 
+export async function verifyHeadRuntime({
+  fetchImpl = fetch,
+  origin,
+  pathname,
+  sourceSha,
+  app,
+}) {
+  const response = await fetchChecked(fetchImpl, `${origin}${pathname}`, {
+    method: 'HEAD',
+    cache: 'no-store',
+  }, 200, sourceSha, app)
+  if ((await response.text()) !== '') fail('ENVIRONMENT_WORKER_RUNTIME_HEAD_BODY_INVALID')
+  return { status: response.status, sourceSha, app, noindex: true }
+}
+
 async function verifyRuntime({ fetchImpl = fetch, origin, sourceSha }) {
   const publicResponse = await fetchChecked(fetchImpl, `${origin}/`, { cache: 'no-store' }, 200, sourceSha, 'public')
+  await verifyHeadRuntime({ fetchImpl, origin, pathname: '/', sourceSha, app: 'public' })
   const publicHtml = await publicResponse.text()
   if (publicResponse.headers.get('x-dpg-data-source') !== 'production-published-public-catalogue'
     || !publicHtml.includes('Dữ liệu sản phẩm và giá được đọc trực tiếp từ catalogue công khai')) {
@@ -85,11 +101,11 @@ async function verifyRuntime({ fetchImpl = fetch, origin, sourceSha }) {
       fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_AUTH_SIDE_EFFECT_UI_NOT_DISABLED')
     }
   }
-  const healthResponse = await fetchChecked(fetchImpl, `${origin}/admin/api/health`, { cache: 'no-store' }, 200, sourceSha, 'admin')
-  const adminHealth = await healthResponse.json()
+  const adminHealthResponse = await fetchChecked(fetchImpl, `${origin}/admin/api/health`, { cache: 'no-store' }, 200, sourceSha, 'admin')
+  const adminHealth = await adminHealthResponse.json()
   if (adminHealth.application !== 'admin' || adminHealth.status !== 'ok'
     || Object.keys(adminHealth).some((key) => /staff|customer|role|email|credential|database/i.test(key))
-    || healthResponse.headers.has('set-cookie')) {
+    || adminHealthResponse.headers.has('set-cookie')) {
     fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_HEALTH_LEAK')
   }
   const privateApi = await fetchChecked(fetchImpl, `${origin}/admin/api/orders`, { cache: 'no-store' }, 307, sourceSha, 'admin')
@@ -97,8 +113,7 @@ async function verifyRuntime({ fetchImpl = fetch, origin, sourceSha }) {
     fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_PRIVATE_API_NOT_GATED')
   }
 
-  const headResponse = await fetchChecked(fetchImpl, `${origin}/admin/login`, { method: 'HEAD', cache: 'no-store' }, 200, sourceSha, 'admin')
-  if ((await headResponse.text()) !== '') fail('ENVIRONMENT_WORKER_RUNTIME_ADMIN_HEAD_BODY_INVALID')
+  await verifyHeadRuntime({ fetchImpl, origin, pathname: '/admin/login', sourceSha, app: 'admin' })
 
   const unknownRoute = await fetchChecked(fetchImpl, `${origin}/admin/unknown`, { cache: 'no-store' }, 307, sourceSha, 'admin')
   if (!unknownRoute.headers.get('location')?.includes('/admin/login')) {
