@@ -533,9 +533,12 @@ async function exerciseViewport(
       const url = status === 'all' ? '/admin/products' : `/admin/products?publication_status=${status}`
       const response = await page.goto(`${BASE_URL}${url}`, { waitUntil: 'domcontentloaded' })
       if (!response || response.status() !== 200) fail(`LOCAL_FULL_PRODUCT_FILTER_HTTP_FAILED:${suffix}:${status}`)
-      const renderedCount = page.getByText(/Hiển thị\s+[\d,.]+\s*\/\s*[\d,.]+\s+sản phẩm/)
       try {
-        await renderedCount.waitFor({ state: 'visible', timeout: 25_000 })
+        await page.waitForFunction(
+          () => /Hiển thị\s+[\d,.]+\s*\/\s*[\d,.]+\s+sản phẩm/.test(document.body.innerText),
+          undefined,
+          { timeout: 25_000 },
+        )
       } catch {
         const excerpt = (await page.locator('body').innerText().catch(() => '')).slice(-1200)
         await page.screenshot({ path: join(evidenceDir, `admin-products-filter-unrendered-${status}-${suffix}.png`), fullPage: true }).catch(() => undefined)
