@@ -88,8 +88,14 @@ The full importer preserves explicit IDs and every captured source table that
 has a matching legacy Prisma model, including the 2,016 variant groups,
 descriptions, images, documents, specs, features, taxon and source mappings,
 package rows, and product relationships. The generated `search_vector` is
-omitted because it is a derived unsupported `tsvector`. It stores a local
-row-digest and idempotency ledger keyed by source table and ID. `public` and
+omitted because it is a derived unsupported `tsvector`. It stores each source
+row digest and idempotency key in a local ledger keyed by source table and ID.
+Before a page is inserted or replay-checked, the importer verifies its exact
+bytes against the digest captured during validation; a changed page aborts the
+transaction. A no-op replay checks target row contents as well as ledger entries
+and counts, and reports conflicts without overwriting changed rows. `updated_at`
+and Blog `view_count` are mutable runtime metadata and are ignored for this
+content comparison. `public` and
 `private` remain source states; the Public 5,223-ID subset is checked against
 the full set. The 10 recovered Blog posts are loaded from the verified local
 archive. Orders and customers remain empty, and only fresh local synthetic

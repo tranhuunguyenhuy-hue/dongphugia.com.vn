@@ -1,5 +1,6 @@
 'use server'
 
+import { assertAdminLaunchModuleEnabled } from '@/lib/admin-launch-scope'
 import prisma from '@/lib/prisma'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
@@ -348,6 +349,7 @@ export async function deleteBlogPost(id: number, expectedVersion: number) {
 }
 
 export async function createBlogTag(data: unknown) {
+    assertAdminLaunchModuleEnabled('blog-tags')
     await requirePermission('blog:write')
 
     const validated = blogTagSchema.safeParse(data)
@@ -374,6 +376,7 @@ export async function createBlogTag(data: unknown) {
 }
 
 export async function deleteBlogTag(id: number) {
+    assertAdminLaunchModuleEnabled('blog-tags')
     await requirePermission('blog:write')
 
     try {

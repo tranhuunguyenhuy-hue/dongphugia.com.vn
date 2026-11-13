@@ -1,11 +1,25 @@
 'use server'
 
+import { assertAdminLaunchModuleEnabled } from '@/lib/admin-launch-scope'
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { requirePermission, getCurrentUser } from '@/lib/auth/get-current-user'
 import { toWriteFreezeActionResult } from '@/lib/write-freeze'
 
-export async function updateQuoteData(quoteId: number, data: any) {
+type QuoteData = {
+    vat_rate?: number
+    shipping_fee?: number
+    admin_notes?: string | null
+    items: Array<{ id: number; admin_unit_price?: number; admin_quantity?: number }>
+    phone: string
+    name: string
+    email?: string | null
+    quote_number?: string | null
+    id?: number
+}
+
+export async function updateQuoteData(quoteId: number, data: QuoteData) {
+    assertAdminLaunchModuleEnabled('quote-requests')
     try {
         await requirePermission('quotes:update')
 
@@ -41,7 +55,8 @@ export async function updateQuoteData(quoteId: number, data: any) {
     }
 }
 
-export async function completeQuote(quoteId: number, data: any) {
+export async function completeQuote(quoteId: number, data: QuoteData) {
+    assertAdminLaunchModuleEnabled('quote-requests')
     try {
         await requirePermission('quotes:update')
 
@@ -96,6 +111,7 @@ export async function completeQuote(quoteId: number, data: any) {
 }
 
 export async function assignQuote(quoteId: number, userId: number | null) {
+    assertAdminLaunchModuleEnabled('quote-requests')
     try {
         await requirePermission('quotes:update')
         
@@ -120,10 +136,10 @@ export async function assignQuote(quoteId: number, userId: number | null) {
         revalidatePath('/admin/quote-requests')
         revalidatePath(`/admin/quote-requests/${quoteId}/builder`)
         return { success: true }
-    } catch (error: any) {
+    } catch (error: unknown) {
         const freezeResult = toWriteFreezeActionResult(error)
         if (freezeResult) return freezeResult
         console.error('Failed to assign quote:', error)
-        return { success: false, error: 'Lỗi khi giao báo giá: ' + error.message }
+        return { success: false, error: 'Lỗi khi giao báo giá: ' + (error instanceof Error ? error.message : String(error)) }
     }
 }

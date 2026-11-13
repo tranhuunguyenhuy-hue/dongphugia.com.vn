@@ -17,6 +17,7 @@ type FullCapture = {
   manifest: CaptureManifest
   ids: number[]
   pages: string[]
+  pageDigests: Record<string, string>
   references: Record<string, JsonRow[]>
 }
 
@@ -69,6 +70,14 @@ function readArray(value: unknown, table: string): JsonRow[] {
   return value as JsonRow[]
 }
 
+export async function readValidatedCapturePage(capture: Pick<FullCapture, 'root' | 'pageDigests'>, filename: string) {
+  const expectedDigest = capture.pageDigests[filename]
+  if (!expectedDigest) fail(`FULL_SOURCE_PAGE_DIGEST_MISSING:${filename}`)
+  const bytes = await readFile(join(capture.root, 'pages', filename))
+  if (sha256(bytes) !== expectedDigest) fail(`FULL_SOURCE_PAGE_DIGEST_MISMATCH:${filename}`)
+  return JSON.parse(bytes.toString('utf8')) as Record<string, unknown>
+}
+
 export async function readFullSourceCapture(root: string, blogCategories: JsonRow[], blogPosts: JsonRow[]): Promise<{
   capture: FullCapture
   sourceIdentity: string
@@ -95,6 +104,7 @@ export async function readFullSourceCapture(root: string, blogCategories: JsonRo
   const pages = (await readdir(pageRoot)).filter((path) => /^\d{4}\.json$/.test(path)).sort()
   if (pages.length !== 888 || pages.length !== manifest.capture?.pages) fail('FULL_SOURCE_PAGE_COUNT_INVALID')
   const pageManifest: Array<[string, string]> = []
+  const pageDigests: Record<string, string> = {}
   const relationCounts: Record<string, number> = Object.fromEntries(RELATION_TABLES.map((table) => [table, 0]))
   const relationIds: Record<string, Set<number>> = Object.fromEntries(RELATION_TABLES.map((table) => [table, new Set<number>()]))
   const ledger: ReturnType<typeof idempotencyRow>[] = []
@@ -104,7 +114,9 @@ export async function readFullSourceCapture(root: string, blogCategories: JsonRo
   for (const [pageIndex, filename] of pages.entries()) {
     if (filename !== `${String(pageIndex).padStart(4, '0')}.json`) fail(`FULL_SOURCE_PAGE_GAP:${filename}`)
     const bytes = await readFile(join(pageRoot, filename))
-    pageManifest.push([filename, sha256(bytes)])
+    const pageDigest = sha256(bytes)
+    pageDigests[filename] = pageDigest
+    pageManifest.push([filename, pageDigest])
     const page = JSON.parse(bytes.toString('utf8')) as Record<string, unknown>
     const products = readArray(page.products, 'products')
     const expectedIds = ids.slice(pageIndex * 20, (pageIndex + 1) * 20)
@@ -166,7 +178,7 @@ export async function readFullSourceCapture(root: string, blogCategories: JsonRo
   for (const [table, rows] of Object.entries(references)) counts[table] = rows.length
   counts.blog_categories = blogCategories.length
   counts.blog_posts = blogPosts.length
-  const capture: FullCapture = { root, manifest, ids, pages, references }
+  const capture: FullCapture = { root, manifest, ids, pages, pageDigests, references }
   return { capture, sourceIdentity, ledger, counts }
 }
 
@@ -200,7 +212,7 @@ async function streamPageTable(tx: Prisma.TransactionClient, capture: FullCaptur
     count += await insertMany(tx, table, rows)
   }
   for (const filename of capture.pages) {
-    const page = JSON.parse(await readFile(join(capture.root, 'pages', filename), 'utf8')) as Record<string, unknown>
+    const page = await readValidatedCapturePage(capture, filename)
     for (const row of readArray(page[table], table)) {
       pending.push(row)
       if (pending.length >= PAGE_SIZE) await flush()
@@ -222,6 +234,90 @@ async function insertLedger(tx: Prisma.TransactionClient, rows: ReturnType<typeo
   }
 }
 
+const REPLAY_IGNORED_COLUMNS = new Set(['updated_at', 'view_count'])
+
+function normalizeNumeric(value: string) {
+  return value.replace(/(\.\d*?[1-9])0+$/, '$1').replace(/\.0+$/, '').replace(/^-0$/, '0')
+}
+
+function replayValueMatches(sourceValue: unknown, targetValue: unknown): boolean {
+  if (sourceValue === targetValue) return true
+  if (targetValue instanceof Date) {
+    if (sourceValue instanceof Date) return sourceValue.getTime() === targetValue.getTime()
+    return typeof sourceValue === 'string' && Date.parse(sourceValue) === targetValue.getTime()
+  }
+  if (typeof targetValue === 'bigint') {
+    return (typeof sourceValue === 'number' || typeof sourceValue === 'string')
+      && normalizeNumeric(String(sourceValue)) === targetValue.toString()
+  }
+  if (targetValue && typeof targetValue === 'object'
+    && typeof (targetValue as { toFixed?: unknown }).toFixed === 'function') {
+    return (typeof sourceValue === 'number' || typeof sourceValue === 'string')
+      && normalizeNumeric(String(sourceValue)) === normalizeNumeric((targetValue as { toFixed(): string }).toFixed())
+  }
+  if (Array.isArray(sourceValue) && Array.isArray(targetValue)) {
+    return sourceValue.length === targetValue.length
+      && sourceValue.every((value, index) => replayValueMatches(value, targetValue[index]))
+  }
+  if (sourceValue && targetValue && typeof sourceValue === 'object' && typeof targetValue === 'object') {
+    const source = sourceValue as JsonRow
+    const target = targetValue as JsonRow
+    const keys = Object.keys(source)
+    return keys.length === Object.keys(target).length
+      && keys.every((key) => Object.hasOwn(target, key) && replayValueMatches(source[key], target[key]))
+  }
+  return false
+}
+
+async function verifyReplayBatch(tx: Prisma.TransactionClient, table: string, sourceRows: JsonRow[]) {
+  if (!sourceRows.length) return
+  const model = (tx as unknown as Record<string, {
+    findMany(args: { where: { id: { in: number[] } }; select: Record<string, true> }): Promise<JsonRow[]>
+  }>)[table]
+  if (!model?.findMany) fail(`FULL_SOURCE_PRISMA_MODEL_MISSING:${table}`)
+  const fields = [...new Set(sourceRows.flatMap((row) => Object.keys(row)))].filter((key) => !REPLAY_IGNORED_COLUMNS.has(key))
+  if (!fields.includes('id')) fail(`FULL_SOURCE_REPLAY_ID_MISSING:${table}`)
+  const ids = sourceRows.map((row) => Number(row.id))
+  const actualRows = await model.findMany({
+    where: { id: { in: ids } },
+    select: Object.fromEntries(fields.map((field) => [field, true])) as Record<string, true>,
+  })
+  const actualById = new Map(actualRows.map((row) => [Number(row.id), row]))
+  for (const sourceRow of sourceRows) {
+    const id = Number(sourceRow.id)
+    const targetRow = actualById.get(id)
+    if (!targetRow) fail(`FULL_SOURCE_REPLAY_ROW_MISSING:${table}:${id}`)
+    for (const field of fields) {
+      if (REPLAY_IGNORED_COLUMNS.has(field)) continue
+      if (!replayValueMatches(sourceRow[field], targetRow[field])) {
+        fail(`FULL_SOURCE_REPLAY_ROW_CONFLICT:${table}:${id}:${field}`)
+      }
+    }
+  }
+}
+
+async function verifyReplayRows(tx: Prisma.TransactionClient, capture: FullCapture, blogCategories: JsonRow[], blogPosts: JsonRow[]) {
+  for (const table of REFERENCE_ORDER) await verifyReplayBatch(tx, table, capture.references[table] ?? [])
+  for (const table of ['products', ...RELATION_TABLES]) {
+    let pending: JsonRow[] = []
+    const flush = async () => {
+      if (!pending.length) return
+      await verifyReplayBatch(tx, table, pending)
+      pending = []
+    }
+    for (const filename of capture.pages) {
+      const page = await readValidatedCapturePage(capture, filename)
+      for (const row of readArray(page[table], table)) {
+        pending.push(row)
+        if (pending.length >= PAGE_SIZE) await flush()
+      }
+    }
+    await flush()
+  }
+  await verifyReplayBatch(tx, 'blog_categories', blogCategories)
+  await verifyReplayBatch(tx, 'blog_posts', blogPosts)
+}
+
 async function setSequences(tx: Prisma.TransactionClient) {
   for (const table of SEQUENCE_TABLES) {
     await tx.$queryRawUnsafe(
@@ -233,7 +329,7 @@ async function setSequences(tx: Prisma.TransactionClient) {
 async function insertCanonicalLinks(tx: Prisma.TransactionClient, capture: FullCapture) {
   const rows: Array<{ id: number; canonical_product_id: number }> = []
   for (const filename of capture.pages) {
-    const page = JSON.parse(await readFile(join(capture.root, 'pages', filename), 'utf8')) as Record<string, unknown>
+    const page = await readValidatedCapturePage(capture, filename)
     for (const product of readArray(page.products, 'products')) {
       if (product.canonical_product_id !== null && product.canonical_product_id !== undefined) rows.push({ id: Number(product.id), canonical_product_id: Number(product.canonical_product_id) })
     }
@@ -281,6 +377,7 @@ export async function importFullSource(prisma: PrismaClient, data: {
           || prior.idempotency_key !== entry.idempotency_key.trim()) fail(`FULL_SOURCE_LEDGER_CONFLICT:${entry.source_table}:${entry.source_id}`)
       }
       for (const table of sourceTables) if (dataCounts[table] !== (data.counts[table] ?? 0)) fail(`FULL_SOURCE_REPLAY_COUNT_CONFLICT:${table}`)
+      await verifyReplayRows(tx, data.capture, blogCategories, blogPosts)
       const staff = await tx.admin_users.findMany({ select: { email: true, username: true, role: true } })
       const allowedStaff = new Set(['local-preview-admin@dpg.test|local-preview-admin|admin', 'local-preview-manager@dpg.test|local-preview-manager|sale_manager'])
       if (staff.length > 2 || staff.some((user) => !allowedStaff.has(`${user.email}|${user.username}|${user.role}`))) fail('FULL_SOURCE_REPLAY_SYNTHETIC_STAFF_PRESENT')
@@ -294,7 +391,7 @@ export async function importFullSource(prisma: PrismaClient, data: {
     const productWriter = (tx as unknown as Record<string, { createMany(args: { data: JsonRow[] }): Promise<{ count: number }> }>).products
     let pendingProducts: JsonRow[] = []
     for (const filename of data.capture.pages) {
-      const page = JSON.parse(await readFile(join(data.capture.root, 'pages', filename), 'utf8')) as Record<string, unknown>
+      const page = await readValidatedCapturePage(data.capture, filename)
       for (const row of readArray(page.products, 'products')) {
         const product = { ...row, canonical_product_id: null }
         pendingProducts.push(product)

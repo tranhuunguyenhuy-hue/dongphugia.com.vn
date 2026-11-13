@@ -1,5 +1,6 @@
 'use server'
 
+import { assertAdminLaunchModuleEnabled } from '@/lib/admin-launch-scope'
 import prisma from '@/lib/prisma'
 
 // ─── TYPES ───────────────────────────────────────────────────────────────────
@@ -19,6 +20,7 @@ export interface RevenueDataPoint {
  * Single query: pending quotes, pending orders, total revenue this month, active products.
  */
 export async function getDashboardStats() {
+    assertAdminLaunchModuleEnabled('dashboard')
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -96,6 +98,7 @@ export async function getDashboardStats() {
  * DATE_TRUNC natively. Safe: no user input is used in the query.
  */
 export async function getRevenueChart(period: RevenuePeriod = 'month'): Promise<RevenueDataPoint[]> {
+    assertAdminLaunchModuleEnabled('dashboard')
   let truncUnit: string
   let intervalDays: number
 
@@ -147,6 +150,7 @@ export async function getRevenueChart(period: RevenuePeriod = 'month'): Promise<
  * Returns the 5 most recent pending quotes for the Dashboard Action Items card.
  */
 export async function getPendingQuotes() {
+    assertAdminLaunchModuleEnabled('dashboard')
   const quotes = await prisma.quote_requests.findMany({
     where: { status: 'pending' },
     orderBy: { created_at: 'desc' },
@@ -180,6 +184,7 @@ export async function getPendingQuotes() {
  * Returns the 5 most recent pending orders for the Dashboard Action Items card.
  */
 export async function getPendingOrders() {
+    assertAdminLaunchModuleEnabled('dashboard')
   const orders = await prisma.orders.findMany({
     where: { status: 'pending' },
     orderBy: { created_at: 'desc' },
@@ -211,6 +216,7 @@ export async function getPendingOrders() {
  * Used by the "SP bán chạy" card on the Dashboard.
  */
 export async function getTopProductsBySales(limit = 5) {
+    assertAdminLaunchModuleEnabled('dashboard')
   const rows = await prisma.$queryRawUnsafe<
     {
       product_id: number
@@ -251,6 +257,7 @@ export async function getTopProductsBySales(limit = 5) {
  * Used as fallback "hot products" metric when sales data is sparse.
  */
 export async function getTopProductsByQuotes(limit = 5) {
+    assertAdminLaunchModuleEnabled('dashboard')
   const rows = await prisma.$queryRawUnsafe<
     {
       product_id: number

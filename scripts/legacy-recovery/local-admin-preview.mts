@@ -26,6 +26,12 @@ const TEST_ADMIN = { email: 'local-preview-admin@dpg.test', username: 'local-pre
 const TEST_MANAGER = { email: 'local-preview-manager@dpg.test', username: 'local-preview-manager', name: 'Local Preview Manager', role: 'sale_manager' }
 const TEST_USERS = [TEST_ADMIN, TEST_MANAGER] as const
 const SAFE_NEXT_ENV_KEYS = ['PATH', 'HOME', 'TMPDIR'] as const
+type CapturedBrowserActionPost = {
+  url: string
+  actionId: string
+  headers: Record<string, string>
+  bodyBase64: string
+}
 const args = process.argv.slice(2)
 const sourceArg = args.find((arg) => arg.startsWith('--source='))
 const sourceDir = sourceArg?.slice('--source='.length)
@@ -443,6 +449,149 @@ async function assertDeferredModulesDenied(page: Page, suffix: string) {
   return { notFound: deniedPaths, home: 'redirected-to-products' }
 }
 
+async function assertDeferredAdminActionsDenied(
+  page: Page,
+  prisma: PrismaClient,
+  routes: { productId: number; productPath: string },
+  capturedProductEdit: CapturedBrowserActionPost | undefined,
+  suffix: string,
+) {
+  const manifest = JSON.parse(await readFile(join(process.cwd(), '.next/server/server-reference-manifest.json'), 'utf8')) as {
+    node: Record<string, { filename: string; exportedName: string }>
+  }
+  const deferredActionId = Object.entries(manifest.node).find(([, reference]) =>
+    reference.filename === 'lib/order-actions.ts' && reference.exportedName === 'getAdminOrders',
+  )?.[0]
+  const allowedProductActionId = Object.entries(manifest.node).find(([, reference]) =>
+    reference.filename === 'lib/product-actions.ts' && reference.exportedName === 'updateProduct',
+  )?.[0]
+  if (!deferredActionId || !allowedProductActionId) fail(`LOCAL_ACTION_REFERENCE_MISSING:${suffix}`)
+  if (!capturedProductEdit || capturedProductEdit.actionId !== allowedProductActionId
+    || !capturedProductEdit.headers['next-router-state-tree']
+    || !capturedProductEdit.headers['content-type']
+    || !capturedProductEdit.bodyBase64) {
+    fail(`LOCAL_ALLOWED_PRODUCT_ACTION_POST_NOT_CAPTURED:${suffix}`)
+  }
+  const orderCount = await prisma.orders.count()
+  const customerCount = await prisma.customers.count()
+  if (orderCount !== 0 || customerCount !== 0) fail(`LOCAL_DEFERRED_ACTION_COMMERCE_NOT_EMPTY:${suffix}`)
+  const token = randomBytes(6).toString('hex').toUpperCase()
+  const orderNumber = `L${token}`
+  const privateMarker = `SCOPE_DENIAL_PRIVATE_${token}`
+  const phone = `09${BigInt(`0x${token}`).toString().padStart(10, '0').slice(-10)}`
+  const seededOrder = await prisma.orders.create({ data: {
+    order_number: orderNumber,
+    customer_name: privateMarker,
+    customer_phone: phone,
+    customer_email: `${privateMarker.toLowerCase()}@example.test`,
+    note: privateMarker,
+    subtotal: 0,
+    shipping_fee: 0,
+    total: 0,
+  } })
+  const orderSnapshotFields = {
+    order_number: true,
+    customer_name: true,
+    customer_phone: true,
+    customer_email: true,
+    note: true,
+    subtotal: true,
+    shipping_fee: true,
+    total: true,
+    status: true,
+    payment_status: true,
+    updated_at: true,
+  } as const
+  let seededOrderUnchanged = false
+  let beforeProduct: { name: string; updated_at: Date } | null = null
+  let productAuditCountBefore = -1
+  try {
+    const beforeSeededOrder = await prisma.orders.findUnique({ where: { id: seededOrder.id }, select: orderSnapshotFields })
+    beforeProduct = await prisma.products.findUnique({ where: { id: routes.productId }, select: { name: true, updated_at: true } })
+    productAuditCountBefore = await prisma.audit_logs.count({ where: { entity_type: 'product', entity_id: routes.productId } })
+    if (!beforeSeededOrder || !beforeProduct) fail(`LOCAL_ACTION_DENIAL_FIXTURE_READ_FAILED:${suffix}`)
+    const allowedRoute = await page.goto(`${BASE_URL}${routes.productPath}`, { waitUntil: 'domcontentloaded' })
+    if (!allowedRoute || allowedRoute.status() !== 200 || page.url() !== `${BASE_URL}${routes.productPath}`) {
+      fail(`LOCAL_ACTION_POST_ALLOWED_PRODUCT_ROUTE_FAILED:${suffix}`)
+    }
+    let replayIntercepted = false
+    let replayBodyMatchesCapture = false
+    await page.route(capturedProductEdit.url, async (route) => {
+      const request = route.request()
+      const headers = request.headers()
+      if (request.method() !== 'POST' || headers['next-action'] !== capturedProductEdit.actionId) {
+        await route.continue()
+        return
+      }
+      replayIntercepted = true
+      replayBodyMatchesCapture = request.postDataBuffer()?.toString('base64') === capturedProductEdit.bodyBase64
+      await route.continue({
+        headers: { 'next-action': deferredActionId },
+        postData: Buffer.from(capturedProductEdit.bodyBase64, 'base64'),
+      })
+    })
+    const productNameInput = page.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN').first()
+    await productNameInput.waitFor({ state: 'visible', timeout: 15_000 })
+    await page.waitForLoadState('networkidle', { timeout: 15_000 })
+    const currentProductName = await productNameInput.inputValue()
+    if (currentProductName !== beforeProduct.name) fail(`LOCAL_ACTION_DENIAL_PRODUCT_FIXTURE_CHANGED:${suffix}`)
+    const responsePromise = page.waitForResponse((candidate) =>
+      candidate.request().method() === 'POST' && candidate.request().url() === capturedProductEdit.url,
+    { timeout: 20_000 })
+    await page.getByRole('button', { name: 'Cập nhật' }).first().click()
+    const actionResponse = await responsePromise
+    let responseReadTimer: NodeJS.Timeout | undefined
+    const responseRead = await Promise.race([
+      actionResponse.text().then((body) => ({ completed: true, body })).catch(() => ({ completed: false, body: '' })),
+      new Promise<{ completed: false; body: string }>((resolveTimeout) => {
+        responseReadTimer = setTimeout(() => resolveTimeout({ completed: false, body: '' }), 10_000)
+      }),
+    ])
+    if (responseReadTimer) clearTimeout(responseReadTimer)
+    const responseBody = responseRead.body
+    const containsPrivateMarker = responseBody.includes(privateMarker)
+    const containsOrderNumber = responseBody.includes(orderNumber)
+    const containsPhone = responseBody.includes(phone)
+    if (!replayIntercepted || !replayBodyMatchesCapture || actionResponse.status() !== 500
+      || !responseRead.completed || containsPrivateMarker || containsOrderNumber || containsPhone) {
+      fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:getAdminOrders:${suffix}:${JSON.stringify({
+        status: actionResponse.status(), replayIntercepted, replayBodyMatchesCapture,
+        containsPrivateMarker, containsOrderNumber, containsPhone,
+        containsScopeError: responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseReadCompleted: responseRead.completed,
+        responseBytes: responseBody.length, responseContentType: actionResponse.headers()['content-type'] ?? null,
+      })}`)
+    }
+    const afterSeededOrder = await prisma.orders.findUnique({ where: { id: seededOrder.id }, select: orderSnapshotFields })
+    seededOrderUnchanged = Boolean(afterSeededOrder
+      && JSON.stringify(normalized(afterSeededOrder)) === JSON.stringify(normalized(beforeSeededOrder)))
+    if (!seededOrderUnchanged) fail(`LOCAL_DEFERRED_ACTION_POST_CHANGED_ORDER_ROW:${suffix}`)
+  } finally {
+    await prisma.orders.deleteMany({ where: { id: seededOrder.id } })
+  }
+  const [remainingOrders, remainingCustomers, seededOrderRemaining, afterProduct, productAuditCountAfter] = await Promise.all([
+    prisma.orders.count(), prisma.customers.count(), prisma.orders.count({ where: { id: seededOrder.id } }),
+    prisma.products.findUnique({ where: { id: routes.productId }, select: { name: true, updated_at: true } }),
+    prisma.audit_logs.count({ where: { entity_type: 'product', entity_id: routes.productId } }),
+  ])
+  if (remainingOrders !== 0 || remainingCustomers !== 0 || seededOrderRemaining !== 0
+    || !afterProduct || afterProduct.name !== beforeProduct.name
+    || afterProduct.updated_at.getTime() !== beforeProduct.updated_at.getTime()
+    || productAuditCountAfter !== productAuditCountBefore) {
+    fail(`LOCAL_DEFERRED_ACTION_POST_CHANGED_DATABASE:${suffix}:${JSON.stringify({
+      remainingOrders, remainingCustomers, seededOrderRemaining,
+      productUnchanged: Boolean(afterProduct && afterProduct.name === beforeProduct.name
+        && afterProduct.updated_at.getTime() === beforeProduct.updated_at.getTime()),
+      productAuditUnchanged: productAuditCountAfter === productAuditCountBefore,
+      seededOrderUnchanged,
+    })}`)
+  }
+  return {
+    positiveControl: 'updateProduct browser POST persisted the edited fixture before capture replay',
+    deniedPost: 'getAdminOrders dispatched from the captured Product update request and returned no private fields',
+    databaseAfter: { orders: remainingOrders, customers: remainingCustomers, productUnchanged: true, productAuditUnchanged: true, seededOrderUnchanged, seededOrderRemoved: seededOrderRemaining === 0 },
+  }
+}
+
 async function captureNoSession(page: Page, suffix: string, evidenceDir: string) {
   for (const path of ['/admin/products', '/admin/blog/posts']) {
     await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' })
@@ -479,6 +628,7 @@ async function editLocalFixtures(
   page: Page,
   prisma: PrismaClient,
   fixtures: { product: { id: number; name: string }; blogPost: { id: number; title: string } },
+  browserActionPosts: { productEdit?: CapturedBrowserActionPost },
   suffix: string,
   evidenceDir: string,
   diagnostics: string[],
@@ -510,6 +660,16 @@ async function editLocalFixtures(
     submittedProductName, persistedName: editedProduct?.name ?? null, fixtureSku: editedProduct?.sku ?? null,
     updatedAt: editedProduct?.updated_at?.toISOString() ?? null, action: productActionSignals, browser: diagnostics,
   })}`)
+  const completedProductRequest = productAction.request()
+  const completedProductBody = completedProductRequest.postDataBuffer()
+  const completedProductActionId = completedProductRequest.headers()['next-action']
+  const capturedProductPost = browserActionPosts.productEdit
+  if (completedProductRequest.method() !== 'POST' || !completedProductBody || !completedProductActionId
+    || !capturedProductPost || capturedProductPost.url !== completedProductRequest.url()
+    || capturedProductPost.actionId !== completedProductActionId
+    || capturedProductPost.bodyBase64 !== completedProductBody.toString('base64')) {
+    fail(`LOCAL_PRODUCT_ACTION_CAPTURE_NOT_MATCHED_TO_SUCCESSFUL_EDIT:${suffix}`)
+  }
   await page.screenshot({ path: join(evidenceDir, `local-product-edit-${suffix}.png`), fullPage: true })
 
   const blogEdit = await page.goto(`${BASE_URL}/admin/blog/posts/${fixtures.blogPost.id}`, { waitUntil: 'domcontentloaded' })
@@ -561,6 +721,25 @@ async function exerciseViewport(
   const context = await isolateBrowserContext(browser, viewport)
   const page = await context.newPage()
   const diagnostics: string[] = []
+  const browserActionPosts: { productEdit?: CapturedBrowserActionPost } = {}
+  page.on('request', (request) => {
+    const headers = request.headers()
+    const requestUrl = new URL(request.url())
+    if (request.method() !== 'POST' || requestUrl.origin !== BASE_URL || !headers['next-action']) return
+    if (!requestUrl.pathname.startsWith('/admin/products/')) return
+    const body = request.postDataBuffer()
+    if (!body) return
+    const replayHeaderNames = ['accept', 'content-type', 'next-router-state-tree', 'next-url', 'rsc', 'x-deployment-id']
+    const replayHeaders = Object.fromEntries(replayHeaderNames.flatMap((name) =>
+      headers[name] === undefined ? [] : [[name, headers[name]]],
+    ))
+    browserActionPosts.productEdit = {
+      url: request.url(),
+      actionId: headers['next-action'],
+      headers: replayHeaders,
+      bodyBase64: body.toString('base64'),
+    }
+  })
   page.on('pageerror', (error) => diagnostics.push(`pageerror:${error.message.slice(0, 240)}`))
   page.on('console', (message) => { if (message.type() === 'error') diagnostics.push(`console:${message.text().slice(0, 240)}`) })
   page.on('requestfailed', (request) => diagnostics.push(`requestfailed:${new URL(request.url()).pathname}:${request.failure()?.errorText ?? 'unknown'}`))
@@ -628,7 +807,11 @@ async function exerciseViewport(
   await page.getByText(sample.blogPost.title.slice(0, 12), { exact: false }).first().waitFor({ state: 'visible', timeout: 25_000 })
   await page.screenshot({ path: join(evidenceDir, `admin-blog-${suffix}.png`), fullPage: true })
 
-  const edits = await editLocalFixtures(page, prisma, fixtures, suffix, evidenceDir, diagnostics)
+  const edits = await editLocalFixtures(page, prisma, fixtures, browserActionPosts, suffix, evidenceDir, diagnostics)
+  const deferredActionPosts = await assertDeferredAdminActionsDenied(page, prisma, {
+    productId: fixtures.product.id,
+    productPath: `/admin/products/${fixtures.product.id}`,
+  }, browserActionPosts.productEdit, suffix)
   await context.close()
 
   const manager = await isolateBrowserContext(browser, viewport)
@@ -697,6 +880,7 @@ async function exerciseViewport(
     productStatusFilters: fullListingCounts,
     blogList: 'read-ok',
     launchNavigation,
+    deferredActionPosts,
     deferredModules,
     managerProductRead: 'allowed',
     managerBlogRead: 'redirected-to-products',
