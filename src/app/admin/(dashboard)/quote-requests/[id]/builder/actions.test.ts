@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { WRITE_FREEZE_ERROR_CODE, WriteFreezeError } from '@/lib/write-freeze'
 
 const mocks = vi.hoisted(() => ({
+    assertAdminLaunchModuleEnabled: vi.fn(),
     requirePermission: vi.fn(),
     getCurrentUser: vi.fn(),
     revalidatePath: vi.fn(),
@@ -10,6 +12,10 @@ const mocks = vi.hoisted(() => ({
     customerCreate: vi.fn(),
     customerUpdate: vi.fn(),
     auditCreate: vi.fn(),
+}))
+
+vi.mock('@/lib/admin-launch-scope', () => ({
+    assertAdminLaunchModuleEnabled: mocks.assertAdminLaunchModuleEnabled,
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -45,30 +51,32 @@ const quoteData = {
     quote_number: 'STG-DEMO-QUOTE',
 }
 
-describe('deferred quote builder action access', () => {
+describe('quote builder write-freeze behavior', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         mocks.requirePermission.mockResolvedValue({ id: 1, role: 'admin' })
     })
 
-    it('denies quote updates before permission checks or writes', async () => {
-        await expect(updateQuoteData(1, quoteData)).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
+    it('returns the structured contract and performs no follow-on work', async () => {
+        mocks.quoteUpdate.mockRejectedValueOnce(new WriteFreezeError('quote-update'))
 
-        expect(mocks.requirePermission).not.toHaveBeenCalled()
-        expect(mocks.quoteUpdate).not.toHaveBeenCalled()
+        const result = await updateQuoteData(1, quoteData)
+
+        expect(result).toMatchObject({ code: WRITE_FREEZE_ERROR_CODE, statusCode: 503 })
         expect(mocks.itemUpdate).not.toHaveBeenCalled()
         expect(mocks.revalidatePath).not.toHaveBeenCalled()
     })
 
-    it('denies quote completion before reading or changing customer/order data', async () => {
-        await expect(completeQuote(1, quoteData)).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
+    it('stops completeQuote when its save step is frozen', async () => {
+        mocks.quoteUpdate.mockRejectedValueOnce(new WriteFreezeError('quote-update'))
 
-        expect(mocks.requirePermission).not.toHaveBeenCalled()
-        expect(mocks.quoteUpdate).not.toHaveBeenCalled()
+        const result = await completeQuote(1, quoteData)
+
+        expect(result).toMatchObject({ code: WRITE_FREEZE_ERROR_CODE, statusCode: 503 })
         expect(mocks.customerFind).not.toHaveBeenCalled()
         expect(mocks.customerCreate).not.toHaveBeenCalled()
         expect(mocks.customerUpdate).not.toHaveBeenCalled()
-        expect(mocks.auditCreate).not.toHaveBeenCalled()
+        expect(mocks.quoteUpdate).toHaveBeenCalledOnce()
         expect(mocks.revalidatePath).not.toHaveBeenCalled()
     })
 })

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+    assertAdminLaunchModuleEnabled: vi.fn(),
     getCurrentUser: vi.fn(),
     hashPassword: vi.fn(),
     requirePermission: vi.fn(),
@@ -12,6 +13,10 @@ const mocks = vi.hoisted(() => ({
     countUsers: vi.fn(),
     findUserByEmail: vi.fn(),
     createUser: vi.fn(),
+}))
+
+vi.mock('@/lib/admin-launch-scope', () => ({
+    assertAdminLaunchModuleEnabled: mocks.assertAdminLaunchModuleEnabled,
 }))
 
 vi.mock('@/lib/prisma', () => ({
@@ -55,7 +60,7 @@ const activeAdmin = {
     is_active: true,
 }
 
-describe('deferred user action access', () => {
+describe('saveUser session invalidation', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         mocks.getCurrentUser.mockResolvedValue({ role: 'admin' })
@@ -65,38 +70,45 @@ describe('deferred user action access', () => {
         mocks.transaction.mockResolvedValue([])
     })
 
-    it('denies password changes before hashing or writing', async () => {
-        await expect(saveUser({ ...activeAdmin, password: 'new-password' }))
-            .rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
+    it('updates the password and invalidates sessions in one transaction', async () => {
+        const result = await saveUser({ ...activeAdmin, password: 'new-password' })
 
-        expect(mocks.hashPassword).not.toHaveBeenCalled()
-        expect(mocks.updateUser).not.toHaveBeenCalled()
+        expect(result).toEqual({ success: true })
+        expect(mocks.updateUser).toHaveBeenCalledWith(expect.objectContaining({
+            where: { id: activeAdmin.id },
+            data: expect.objectContaining({ password_hash: 'hashed-password' }),
+        }))
+        expect(mocks.deleteSessions).toHaveBeenCalledWith({
+            where: { user_id: activeAdmin.id },
+        })
+        expect(mocks.transaction).toHaveBeenCalledWith([
+            { operation: 'update-user' },
+            { operation: 'delete-sessions' },
+        ])
+    })
+
+    it('does not invalidate sessions for a profile-only update', async () => {
+        const result = await saveUser(activeAdmin)
+
+        expect(result).toEqual({ success: true })
+        expect(mocks.updateUser).toHaveBeenCalledOnce()
         expect(mocks.deleteSessions).not.toHaveBeenCalled()
         expect(mocks.transaction).not.toHaveBeenCalled()
     })
 
-    it('denies profile-only changes before reading or writing', async () => {
-        await expect(saveUser(activeAdmin)).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
-
-        expect(mocks.getCurrentUser).not.toHaveBeenCalled()
-        expect(mocks.findUser).not.toHaveBeenCalled()
-        expect(mocks.updateUser).not.toHaveBeenCalled()
-        expect(mocks.deleteSessions).not.toHaveBeenCalled()
-        expect(mocks.transaction).not.toHaveBeenCalled()
-    })
-
-    it('denies user deactivation before reading or changing sessions', async () => {
+    it('invalidates sessions when a user is deactivated', async () => {
         mocks.findUser.mockResolvedValue({ role: 'sale' })
 
-        await expect(saveUser({
+        const result = await saveUser({
             ...activeAdmin,
             role: 'sale',
             is_active: false,
-        })).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
+        })
 
-        expect(mocks.findUser).not.toHaveBeenCalled()
-        expect(mocks.updateUser).not.toHaveBeenCalled()
-        expect(mocks.deleteSessions).not.toHaveBeenCalled()
-        expect(mocks.transaction).not.toHaveBeenCalled()
+        expect(result).toEqual({ success: true })
+        expect(mocks.deleteSessions).toHaveBeenCalledWith({
+            where: { user_id: activeAdmin.id },
+        })
+        expect(mocks.transaction).toHaveBeenCalledOnce()
     })
 })

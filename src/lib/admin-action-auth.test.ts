@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+    assertAdminLaunchModuleEnabled: vi.fn(),
     requireAuth: vi.fn(),
     requirePermission: vi.fn(),
     revalidatePath: vi.fn(),
@@ -12,6 +13,10 @@ const mocks = vi.hoisted(() => ({
     orderFindMany: vi.fn(),
     orderCount: vi.fn(),
     orderUpdate: vi.fn(),
+}))
+
+vi.mock('@/lib/admin-launch-scope', () => ({
+    assertAdminLaunchModuleEnabled: mocks.assertAdminLaunchModuleEnabled,
 }))
 
 vi.mock('@/lib/auth/get-current-user', () => ({
@@ -55,13 +60,13 @@ describe('admin Server Action authorization', () => {
         vi.clearAllMocks()
     })
 
-    it('keeps Product and Blog writes authenticated and defers other CMS mutations', async () => {
+    it('blocks CMS mutations before writing to the database', async () => {
         mocks.requirePermission.mockRejectedValue(new Error('UNAUTHORIZED'))
 
         await expect(createProduct({})).rejects.toThrow('UNAUTHORIZED')
         await expect(createBlogPost({})).rejects.toThrow('UNAUTHORIZED')
-        await expect(createPartner({} as never)).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
-        await expect(createProject({} as never)).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
+        await expect(createPartner({} as never)).rejects.toThrow('UNAUTHORIZED')
+        await expect(createProject({} as never)).rejects.toThrow('UNAUTHORIZED')
 
         expect(mocks.productCreate).not.toHaveBeenCalled()
         expect(mocks.blogCreate).not.toHaveBeenCalled()
@@ -69,25 +74,38 @@ describe('admin Server Action authorization', () => {
         expect(mocks.projectCreate).not.toHaveBeenCalled()
     })
 
-    it('denies deferred order listing before authentication or database reads', async () => {
+    it('requires an authenticated session before listing admin orders', async () => {
         mocks.requireAuth.mockRejectedValue(new Error('UNAUTHORIZED'))
 
-        await expect(getAdminOrders({})).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
+        await expect(getAdminOrders({})).rejects.toThrow('UNAUTHORIZED')
 
-        expect(mocks.requireAuth).not.toHaveBeenCalled()
         expect(mocks.orderFindMany).not.toHaveBeenCalled()
         expect(mocks.orderCount).not.toHaveBeenCalled()
     })
 
-    it('denies deferred order writes before checking assignment or touching the database', async () => {
+    it('lets sale users update only orders assigned to them', async () => {
         mocks.requirePermission.mockResolvedValue({ id: 7, role: 'sale' })
         mocks.orderFindUnique.mockResolvedValue({ assigned_to: 7 })
         mocks.orderUpdate.mockResolvedValue({})
 
-        await expect(updateOrderStatus(123, 'confirmed')).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
+        await expect(updateOrderStatus(123, 'confirmed')).resolves.toEqual({ success: true })
 
-        expect(mocks.requirePermission).not.toHaveBeenCalled()
-        expect(mocks.orderFindUnique).not.toHaveBeenCalled()
+        expect(mocks.orderFindUnique).toHaveBeenCalledWith({
+            where: { id: 123 },
+            select: { assigned_to: true },
+        })
+        expect(mocks.orderUpdate).toHaveBeenCalledWith(expect.objectContaining({
+            where: { id: 123 },
+            data: expect.objectContaining({ status: 'confirmed' }),
+        }))
+    })
+
+    it('blocks sale users from updating orders assigned to someone else', async () => {
+        mocks.requirePermission.mockResolvedValue({ id: 7, role: 'sale' })
+        mocks.orderFindUnique.mockResolvedValue({ assigned_to: 8 })
+
+        await expect(updateOrderStatus(123, 'confirmed')).rejects.toThrow('FORBIDDEN')
+
         expect(mocks.orderUpdate).not.toHaveBeenCalled()
     })
 })
