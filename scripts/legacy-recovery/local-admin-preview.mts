@@ -474,13 +474,31 @@ async function editLocalFixtures(
   const previousBlog = await prisma.blog_posts.findUnique({ where: { id: fixtures.blogPost.id }, select: { version: true } })
   if (!previousBlog) fail(`LOCAL_BLOG_EDIT_FIXTURE_MISSING:${suffix}`)
   const blogTitle = `Local preview draft edited ${suffix}`
-  await page.locator('form input:not([type="hidden"])').first().fill(blogTitle)
+  const blogTitleInput = page.getByPlaceholder('VD: Top 5 xu hướng gạch ốp lát 2026 đẹp nhất')
+  await blogTitleInput.waitFor({ state: 'visible', timeout: 15_000 })
+  await page.waitForLoadState('networkidle', { timeout: 15_000 })
+  await page.waitForTimeout(500) // Let BlogPostForm's controlled input hydrate before changing it.
+  await blogTitleInput.fill(blogTitle)
+  const submittedBlogTitle = await blogTitleInput.inputValue()
+  if (submittedBlogTitle !== blogTitle) fail(`LOCAL_BLOG_EDIT_FIELD_NOT_SET:${suffix}`)
   const blogAction = await waitForActionResponse(page, () => page.getByRole('button', { name: 'Cập nhật', exact: true }).click(), 'blog-edit', diagnostics)
   if (blogAction.status() < 200 || blogAction.status() >= 300) fail(`LOCAL_BLOG_EDIT_ACTION_FAILED:${suffix}`)
+  const blogActionText = await blogAction.text().catch(() => '')
+  const blogActionSignals = {
+    success: /success.{0,12}true/i.test(blogActionText),
+    validation: /fieldErrors|invalid_type|too_small|too_big/i.test(blogActionText),
+    forbidden: /FORBIDDEN/i.test(blogActionText),
+    writeFreeze: /WRITE_FREEZE_ACTIVE/i.test(blogActionText),
+  }
+  diagnostics.push(`blog-action:${JSON.stringify({ status: blogAction.status(), ...blogActionSignals })}`)
   await page.waitForURL((url) => url.pathname === '/admin/blog/posts', { timeout: 20_000 })
-  const editedBlog = await prisma.blog_posts.findUnique({ where: { id: fixtures.blogPost.id }, select: { title: true, status: true, version: true } })
+  const editedBlog = await prisma.blog_posts.findUnique({ where: { id: fixtures.blogPost.id }, select: { title: true, status: true, version: true, updated_at: true } })
   if (editedBlog?.title !== blogTitle || editedBlog.status !== 'draft' || editedBlog.version !== previousBlog.version + 1) {
-    fail(`LOCAL_BLOG_EDIT_NOT_PERSISTED:${suffix}`)
+    fail(`LOCAL_BLOG_EDIT_NOT_PERSISTED:${suffix}:${JSON.stringify({
+      submittedBlogTitle, persistedTitle: editedBlog?.title ?? null, status: editedBlog?.status ?? null,
+      versionBefore: previousBlog.version, versionAfter: editedBlog?.version ?? null,
+      updatedAt: editedBlog?.updated_at?.toISOString() ?? null, action: blogActionSignals, browser: diagnostics,
+    })}`)
   }
   await page.screenshot({ path: join(evidenceDir, `local-blog-edit-${suffix}.png`), fullPage: true })
   return { product: 'edited-through-legacy-admin', blogPost: 'draft-edited-through-legacy-admin' }
