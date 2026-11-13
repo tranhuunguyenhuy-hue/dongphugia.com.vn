@@ -457,15 +457,19 @@ async function assertDeferredAdminActionsDenied(
   suffix: string,
 ) {
   const manifest = JSON.parse(await readFile(join(process.cwd(), '.next/server/server-reference-manifest.json'), 'utf8')) as {
-    node: Record<string, { filename: string; exportedName: string }>
+    node: Record<string, { filename: string; exportedName: string; workers: Record<string, unknown> }>
   }
   const deferredActionId = Object.entries(manifest.node).find(([, reference]) =>
-    reference.filename === 'lib/order-actions.ts' && reference.exportedName === 'getAdminOrders',
+    reference.filename === 'lib/blog-actions.ts' && reference.exportedName === 'createBlogTag',
   )?.[0]
+  const deferredActionReference = deferredActionId ? manifest.node[deferredActionId] : undefined
   const allowedProductActionId = Object.entries(manifest.node).find(([, reference]) =>
     reference.filename === 'lib/product-actions.ts' && reference.exportedName === 'updateProduct',
   )?.[0]
-  if (!deferredActionId || !allowedProductActionId) fail(`LOCAL_ACTION_REFERENCE_MISSING:${suffix}`)
+  if (!deferredActionId || !allowedProductActionId
+    || !deferredActionReference?.workers['app/admin/(dashboard)/blog/posts/page']) {
+    fail(`LOCAL_ACTION_REFERENCE_MISSING:${suffix}`)
+  }
   if (!capturedProductEdit || capturedProductEdit.actionId !== allowedProductActionId
     || !capturedProductEdit.headers['next-router-state-tree']
     || !capturedProductEdit.headers['content-type']
@@ -541,7 +545,7 @@ async function assertDeferredAdminActionsDenied(
     const containsPhone = responseBody.includes(phone)
     if (!replayBodyMatchesCapture || actionResponse.status() !== 500
       || !responseRead.completed || containsPrivateMarker || containsOrderNumber || containsPhone) {
-      fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:getAdminOrders:${suffix}:${JSON.stringify({
+      fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:createBlogTag:${suffix}:${JSON.stringify({
         status: actionResponse.status(), replayBodyMatchesCapture,
         containsPrivateMarker, containsOrderNumber, containsPhone,
         containsScopeError: responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseReadCompleted: responseRead.completed,

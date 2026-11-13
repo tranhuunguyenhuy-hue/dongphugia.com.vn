@@ -55,13 +55,13 @@ describe('admin Server Action authorization', () => {
         vi.clearAllMocks()
     })
 
-    it('blocks CMS mutations before writing to the database', async () => {
+    it('keeps Product and Blog writes authenticated and defers other CMS mutations', async () => {
         mocks.requirePermission.mockRejectedValue(new Error('UNAUTHORIZED'))
 
         await expect(createProduct({})).rejects.toThrow('UNAUTHORIZED')
         await expect(createBlogPost({})).rejects.toThrow('UNAUTHORIZED')
-        await expect(createPartner({} as never)).rejects.toThrow('UNAUTHORIZED')
-        await expect(createProject({} as never)).rejects.toThrow('UNAUTHORIZED')
+        await expect(createPartner({} as never)).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
+        await expect(createProject({} as never)).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
 
         expect(mocks.productCreate).not.toHaveBeenCalled()
         expect(mocks.blogCreate).not.toHaveBeenCalled()
@@ -69,38 +69,25 @@ describe('admin Server Action authorization', () => {
         expect(mocks.projectCreate).not.toHaveBeenCalled()
     })
 
-    it('requires an authenticated session before listing admin orders', async () => {
+    it('denies deferred order listing before authentication or database reads', async () => {
         mocks.requireAuth.mockRejectedValue(new Error('UNAUTHORIZED'))
 
-        await expect(getAdminOrders({})).rejects.toThrow('UNAUTHORIZED')
+        await expect(getAdminOrders({})).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
 
+        expect(mocks.requireAuth).not.toHaveBeenCalled()
         expect(mocks.orderFindMany).not.toHaveBeenCalled()
         expect(mocks.orderCount).not.toHaveBeenCalled()
     })
 
-    it('lets sale users update only orders assigned to them', async () => {
+    it('denies deferred order writes before checking assignment or touching the database', async () => {
         mocks.requirePermission.mockResolvedValue({ id: 7, role: 'sale' })
         mocks.orderFindUnique.mockResolvedValue({ assigned_to: 7 })
         mocks.orderUpdate.mockResolvedValue({})
 
-        await expect(updateOrderStatus(123, 'confirmed')).resolves.toEqual({ success: true })
+        await expect(updateOrderStatus(123, 'confirmed')).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
 
-        expect(mocks.orderFindUnique).toHaveBeenCalledWith({
-            where: { id: 123 },
-            select: { assigned_to: true },
-        })
-        expect(mocks.orderUpdate).toHaveBeenCalledWith(expect.objectContaining({
-            where: { id: 123 },
-            data: expect.objectContaining({ status: 'confirmed' }),
-        }))
-    })
-
-    it('blocks sale users from updating orders assigned to someone else', async () => {
-        mocks.requirePermission.mockResolvedValue({ id: 7, role: 'sale' })
-        mocks.orderFindUnique.mockResolvedValue({ assigned_to: 8 })
-
-        await expect(updateOrderStatus(123, 'confirmed')).rejects.toThrow('FORBIDDEN')
-
+        expect(mocks.requirePermission).not.toHaveBeenCalled()
+        expect(mocks.orderFindUnique).not.toHaveBeenCalled()
         expect(mocks.orderUpdate).not.toHaveBeenCalled()
     })
 })
