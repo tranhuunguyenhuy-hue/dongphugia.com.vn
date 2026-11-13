@@ -392,12 +392,55 @@ async function login(page: Page, user: { username: string; password: string }, s
   await page.locator('#password').fill(user.password)
   await page.getByRole('button', { name: 'Đăng nhập' }).click()
   try {
-    await page.waitForURL((url) => url.pathname === '/admin', { timeout: 25_000, waitUntil: 'domcontentloaded' })
+    await page.waitForURL((url) => url.pathname === '/admin/products', { timeout: 25_000, waitUntil: 'domcontentloaded' })
   } catch {
     const body = await page.locator('body').innerText().catch(() => '')
     await page.screenshot({ path: join(evidenceDir, `admin-login-failure-${suffix}.png`), fullPage: true }).catch(() => undefined)
     fail(`LOCAL_ADMIN_LOGIN_REDIRECT_FAILED:${suffix}:${JSON.stringify({ url: page.url(), body: body.slice(-800) })}`)
   }
+}
+
+async function assertLaunchNavigation(page: Page, suffix: string, evidenceDir: string) {
+  if (suffix === 'mobile') await page.getByRole('button', { name: 'Toggle Sidebar' }).click()
+  const sidebar = page.locator('[data-sidebar="sidebar"]:visible').first()
+  await sidebar.waitFor({ state: 'visible', timeout: 10_000 })
+  const sidebarText = await sidebar.innerText()
+  const required = ['Tất cả sản phẩm', 'Blog Posts']
+  const deferredLabels = ['Overview', 'Danh mục', 'CMS/PIM Foundation', 'Khách hàng', 'Đơn hàng', 'Báo giá', 'Banner chiến dịch', 'Banner trang chủ', 'Đối tác', 'Dự án', 'Nhân viên']
+  const missing = required.filter((label) => !sidebarText.includes(label))
+  const visibleDeferred = deferredLabels.filter((label) => sidebarText.includes(label))
+  if (missing.length || visibleDeferred.length) {
+    fail(`LOCAL_ADMIN_LAUNCH_NAV_INVALID:${suffix}:${JSON.stringify({ missing, visibleDeferred })}`)
+  }
+  await page.screenshot({ path: join(evidenceDir, `admin-launch-navigation-${suffix}.png`), fullPage: true })
+  return { visible: required, hidden: deferredLabels }
+}
+
+async function assertDeferredModulesDenied(page: Page, suffix: string) {
+  const deniedPaths = [
+    '/admin/orders',
+    '/admin/customers',
+    '/admin/quote-requests',
+    '/admin/categories',
+    '/admin/pim',
+    '/admin/content/banners',
+    '/admin/banners',
+    '/admin/doi-tac',
+    '/admin/du-an',
+    '/admin/users',
+    '/admin/blog/tags',
+  ]
+  for (const path of deniedPaths) {
+    const response = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' })
+    if (!response || response.status() !== 404) {
+      fail(`LOCAL_DEFERRED_ADMIN_MODULE_NOT_DENIED:${suffix}:${path}:${response?.status() ?? 'NO_RESPONSE'}`)
+    }
+  }
+  const homeResponse = await page.goto(`${BASE_URL}/admin`, { waitUntil: 'domcontentloaded' })
+  if (!homeResponse || page.url() !== `${BASE_URL}/admin/products`) {
+    fail(`LOCAL_ADMIN_DASHBOARD_ROUTE_NOT_REPLACED:${suffix}:${JSON.stringify({ status: homeResponse?.status() ?? null, url: page.url() })}`)
+  }
+  return { notFound: deniedPaths, home: 'redirected-to-products' }
 }
 
 async function captureNoSession(page: Page, suffix: string, evidenceDir: string) {
@@ -523,6 +566,8 @@ async function exerciseViewport(
   page.on('requestfailed', (request) => diagnostics.push(`requestfailed:${new URL(request.url()).pathname}:${request.failure()?.errorText ?? 'unknown'}`))
   const noSession = await captureNoSession(page, suffix, evidenceDir)
   await login(page, staff.users[0], suffix, evidenceDir)
+  const launchNavigation = await assertLaunchNavigation(page, suffix, evidenceDir)
+  const deferredModules = await assertDeferredModulesDenied(page, suffix)
 
   let fullListingCounts: { unfilteredTotal: number; sourceRows: number; public: number; private: number } | undefined
   if (fullCatalogue) {
@@ -592,7 +637,7 @@ async function exerciseViewport(
   const allowedProducts = await managerPage.goto(`${BASE_URL}/admin/products`, { waitUntil: 'domcontentloaded' })
   if (!allowedProducts || allowedProducts.status() !== 200) fail(`LOCAL_MANAGER_PRODUCT_READ_DENIED:${suffix}`)
   const deniedBlog = await managerPage.goto(`${BASE_URL}/admin/blog/posts`, { waitUntil: 'domcontentloaded' })
-  await managerPage.waitForURL((url) => url.pathname === '/admin', { timeout: 20_000 })
+  await managerPage.waitForURL((url) => url.pathname === '/admin/products', { timeout: 20_000 })
   if (!deniedBlog || deniedBlog.status() !== 200) fail(`LOCAL_MANAGER_BLOG_ROUTE_DENIAL_FAILED:${suffix}`)
   const dashboardText = await managerPage.locator('body').innerText()
   if (dashboardText.includes(sample.blogPost.title) || dashboardText.includes(fixtures.blogPost.title)) {
@@ -618,6 +663,13 @@ async function exerciseViewport(
   managerPage.on('console', (message) => { if (message.type() === 'error') deniedDiagnostics.push(`console:${message.text().slice(0, 240)}`) })
   managerPage.on('requestfailed', (request) => deniedDiagnostics.push(`requestfailed:${new URL(request.url()).pathname}:${request.failure()?.errorText ?? 'unknown'}`))
   const deniedAction = await waitForActionResponse(managerPage, () => managerPage.getByRole('button', { name: 'Cập nhật' }).first().click(), 'manager-product-edit', deniedDiagnostics)
+  const deniedActionText = await deniedAction.text().catch(() => '')
+  if (deniedAction.status() < 200 || deniedAction.status() >= 300 || !/không có quyền cập nhật sản phẩm/i.test(deniedActionText)) {
+    fail(`LOCAL_MANAGER_PRODUCT_WRITE_DENIAL_RESPONSE_INVALID:${suffix}:${JSON.stringify({
+      status: deniedAction.status(), expectedPermissionMessage: /không có quyền cập nhật sản phẩm/i.test(deniedActionText),
+      browser: deniedDiagnostics,
+    })}`)
+  }
   const afterDeniedWrite = await prisma.products.findUnique({
     where: { id: fixtures.product.id }, select: { name: true, updated_at: true },
   })
@@ -635,6 +687,8 @@ async function exerciseViewport(
     productList: 'read-ok',
     productStatusFilters: fullListingCounts,
     blogList: 'read-ok',
+    launchNavigation,
+    deferredModules,
     managerProductRead: 'allowed',
     managerBlogRead: 'redirected-to-admin',
     managerProductWrite: `denied-no-write-http-${deniedAction.status()}`,

@@ -1,7 +1,6 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { getCurrentUser } from "@/lib/auth/get-current-user"
 import { redirect } from "next/navigation"
-import prisma from "@/lib/prisma"
 import SidebarNav from "./sidebar-nav"
 import "../admin.css"
 
@@ -20,16 +19,9 @@ export default async function AdminLayout({
     const user = await getCurrentUser()
     if (!user) redirect("/admin/login")
 
-    const pendingQuotes = await prisma.quote_requests.count({ where: { status: 'pending' } })
-    const pendingOrders = await prisma.orders.count({ where: { status: 'pending' } })
-
     return (
         <SidebarProvider className="admin-theme bg-stone-100 w-full h-screen overflow-hidden">
-            <SidebarNav
-                pendingQuotes={pendingQuotes}
-                pendingOrders={pendingOrders}
-                currentUser={user}
-            />
+            <SidebarNav currentUser={user} />
             <SidebarInset className="bg-transparent p-2 pr-2 md:p-3 md:pr-3 h-full overflow-hidden">
                 <div className="flex flex-col flex-1 bg-white border border-border/60 rounded-[1rem] shadow-[0_4px_12px_rgba(0,0,0,0.02)] overflow-hidden h-full relative">
                     <div className="absolute top-4 left-4 z-10 md:hidden">
