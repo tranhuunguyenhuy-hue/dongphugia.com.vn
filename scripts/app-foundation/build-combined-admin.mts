@@ -163,11 +163,14 @@ async function main() {
   }
   const dispatchSource = await readFile(path.join(repositoryRoot, 'apps/public/combined-dispatch.mjs'), 'utf8')
   const workerSource = sourceEntrypoint
-    .split('\n').filter((line) => !ENTRYPOINT_IMPORTS.includes(line)).join('\n')
     .replace(ENTRYPOINT_IMPORT, '')
     .replace(ENTRYPOINT_DEFAULT, '')
   const workerPath = path.join(combinedRoot, 'worker.mjs')
-  await writeFile(workerPath, `${workerSource.trim()}\n\n${dispatchSource.trim()}\n\n${ENTRYPOINT_DEFAULT}\n`, 'utf8')
+  const combinedWorkerSource = `${workerSource.trim()}\n\n${dispatchSource.trim()}\n\n${ENTRYPOINT_DEFAULT}\n`
+  if (!ENTRYPOINT_IMPORTS.every((statement) => combinedWorkerSource.includes(`${statement}\n`))) {
+    throw new Error('COMBINED_ADMIN_WORKER_SERVER_IMPORTS_MISSING')
+  }
+  await writeFile(workerPath, combinedWorkerSource, 'utf8')
 
   const [publicServerDigest, adminServerDigest, assetsDigest] = await Promise.all([
     digestEnvironmentWorkerArtifact(publicServer),
