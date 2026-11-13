@@ -1,307 +1,69 @@
-# Đông Phú Gia — Project handbook
+# Đông Phú Gia V1 — technical handbook (CURRENT)
 
-> **Consolidated technical and product reference.** Root `AGENTS.md` is
-> sufficient for every new Codex session; open this document **on demand**
-> for a task involving implementation decisions, data, architecture, security
-> boundaries or release. It replaces fragmented general process manuals,
-> outdated wireframe handoffs, duplicate glossaries and speculative roadmaps.
-> Snapshot: **2026-11-06**. Dated facts are leads, not live runtime proof.
+Effective: **2026-11-13**, supersedes former V1 roadmap/Phase 2 and dated AWS/Preview handoffs. **For execution authority read root `AGENTS.md` and the current milestone Issue.**
 
-## 1. Business goal and current work
+## Goal and hard milestone sequence
 
-Đông Phú Gia sells building materials through a Vietnamese catalogue storefront
-with product discovery, product detail pages (PDP), manufacturer information,
-editorial content, contact/quote flows and staff-confirmed order requests.
-Product sectors: **Thiết bị vệ sinh; Gạch ốp lát; Thiết bị nước; Thiết bị bếp**.
+| Gate | Owner outcome | Issue | Validation |
+| --- | --- | --- | --- |
+| **M1 ACTIVE** | Production Public uses V1 PostgreSQL; **all recovered Products/SKUs and Blog** loaded, counted, verified, served on Public | [#307](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/307) | Hosted row counts + source reconciliation + actual Worker DB read-path + production URL smoke + snapshot fallback |
+| M2 QUEUED | Cloudflare `dpg-staging` visually/functionally matches Public Production; **snapshot allowed** | [#308](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/308) | Staging URL, UI/Blog/PLP/PDP responsive parity, real Worker deployment and rollback |
+| M3 QUEUED | **Entire existing legacy Admin**, not new Admin shell, usable on Staging with isolated DB | [#309](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/309) | Module inventory + login/session/RBAC + product/blog CRUD + end-to-end Staging data persistence |
+| M4 QUEUED | Deploy accepted Admin to same-origin Production `/admin` | [#310](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/310) | Owner acceptance, backup, Production login/CRUD/fresh Public, rollback |
+| M5 QUEUED | Audit website and propose future backlog | [#311](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/311) | Issue-level findings with URLs, priority, estimates; no automatic feature work |
 
-**Operational priority:** make `https://www.dongphugia.vn` usable, accurate
-and consistent with the approved public UI. Restore listings, PDPs, prices,
-media, search, SEO and navigation before speculative capabilities. Protect
-customer orders and catalogue integrity.
+Master tracker: [#306](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/306). Milestones are sequential; only M1 is active until accepted.
 
-| Workstream | Tracked work | What to do |
-| --- | --- | --- |
-| P0 public recovery | [Issue #260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260) | Listings, PDP, pricing, media, search, SEO, canonical UI. |
-| Phase 2 features | [Issue #270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270) | Product-line options, footer parity, guest cart/order, full Admin CMS. |
-| Cart / order delivery | [PR #272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272) | Separate scoped change; recheck PR state before modifying overlapping code. |
-| Delivery / docs cleanup | [PR #282](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/282) | Single Codex context, fewer redundant documents, risk-based workflow. |
+## Live environment architecture and provenance
 
-These entries are an **as-of-date index**. GitHub Issues/PRs and current
-source code give authoritative task status. Never claim a PR is merged, a
-Worker is deployed, DNS is cut over or a provider restored from this table
-alone. Unrelated catalogue reconciliation (TOTO, INAX, etc.) is its own work,
-not an automatic blocker for Public UI restoration.
+- Cloudflare V1 account: `d54f3402b9d112ab64d6135e0e3f1fb1` (revalidate before modifying).
+- Production Worker: `dongphugia-v1-public-production`, custom domains `www.dongphugia.vn`, `dongphugia.vn`. Last observed deployed version `7d0194d7-b007-4fb0-9fd9-d365ca9de834`, 2026-11-04 15:05 UTC. Current Public catalogue is **snapshot-backed**, NOT confirmed live PostgreSQL.
+- Staging Worker: `dpg-staging`, workers.dev enabled, no custom domain. Last observed version `f0cabc41-f024-46cc-8978-510c3d8c1216`, 2026-11-13 06:13 UTC. Its prior deployed Admin sign-in shell **does not prove** authenticated/Admin CRUD support.
+- At last Cloudflare read-only check, neither Worker had a Hyperdrive DB binding or Worker secrets; both had `nodejs_compat`. Cloudflare versions/deployments can be rolled back; database writes/migrations cannot.
+- Supabase V1 candidate `bonxyxluzlxfkdetryoo`, application schema candidate `dpg_app`; **confirm hosted identity, schema, rows, permissions and actual owner**. Never confuse with V2.
+- PR #300: legacy Products/Blog Admin source recovered locally. PR #301: local Workerd/Prisma test only. PR #304: proposed least-privilege DB role tested locally. **None constitutes hosted Admin or Production database import proof.** Reported 17,752 Products and 10 Blogs are local recovery evidence until independently reconciled on hosted DB.
 
-## 2A. Phase 2 continuation — scope, sequencing and unresolved decisions
+## M1 — Production database recovery contract
 
-**Owner request:** [Issue #270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270)
-is the task authority for restoring the remaining legacy experience in a
-**later, independent candidate**. [PR #272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272)
-is the existing cart/order implementation, not a branch to overwrite casually.
-Check live GitHub status, current `main`, task-branch ownership, Preview and
-available datasets before editing; avoid simultaneous writes by separate
-agents. P0 [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
-remained open at this snapshot; do not assume Phase 2 can be deployed until
-its actual Production target, P0 state and rollback are confirmed.
+1. Inventory source and destination: source of truth, 27-table historical backup/other supported recovery assets, products vs SKU semantics, public status, unique keys, category, slug, price source, media, Blog posts/slugs/body/images. Determine actual definitive counts from verified source; do not hardcode 17,752/10 as success threshold.
+2. Verify hosted V1 database target and safety: fresh backup and testable restore point, migration parity, read-only reporting, free-tier size/CPU/cost limits. No blind destructive restore, overwrite or schema changes.
+3. Import or reconcile missing source content idempotently with duplicate-safe keys; report totals, published totals, exact-SKU coverage, image references, Blog status and broken routes, unresolved discrepancies.
+4. Add a **read-only** Worker-to-PostgreSQL adapter (Hyperdrive if measured compatible), scoped credentials/secret, finite query pagination, caching/freshness, graceful handling of DB unavailability. Keep canonical Public UI. No service credentials in browser.
+5. Prove **actual** Production Public read path uses hosted PostgreSQL, not just a DB population. Validate sampled category/PLP/PDP/search and all published Blog routes. Keep snapshot as pretested fallback; document Worker rollback and DB restoration separately.
+6. No price, stock, family or Blog publication assertions without evidence. If price unverified show `Liên hệ báo giá`; historical reference price needs clear provenance label.
 
-**Execution order for a Codex session:**
+M1 is complete **only when hosted DB is reconciled AND Production Public visibly serves it.**
 
-1. **Inventory (read-only, narrow):** current `apps/public` and
-   `apps/admin` runtime seams; legacy components/routes; verified Product/SKU
-   groupings; current data/Auth authority; existing PR #272; actual Preview
-   readiness. Record only differences necessary for the active Phase 2 slice.
-2. **PDP/Dòng:** compare 17 currently tracked groups / 51 Products with
-   old catalogue relationships; do not infer siblings from SKU prefixes.
-   Test Product-changing versus SKU-only selection, default/override
-   price/media/availability, valid dependent axes, canonical URL and
-   search/PDP behavior. Provide coverage samples and responsive screenshots.
-3. **Footer:** reproduce the approved former Production desktop/mobile
-   structure, links, policies and contact actions, with working URLs and
-   keyboard/accessibility checks. A screenshot alone does not prove links work.
-4. **Cart and Order:** preserve Retail Cart versus Quote Cart. Show
-   Product/SKU/quantity and authoritative effective pricing; checkout is
-   guest-first, and the server creates a **persisted** `NEW`, `UNPAID`
-   request with an idempotency/retry boundary. Do not display fake submission
-   success, treat pending shipping/installation as zero, request bank transfer
-   before staff confirms commercial totals, or duplicate an Order on retry.
-   Verify browser `cart → checkout → acknowledgment`, database result
-   and negative cases. See ADR 0021 for the durable commercial invariants.
-5. **Admin/CMS:** distinguish *restoring old functionality* from *adopting
-   the separate V1 Admin/Auth design*. Functional inventory spans staff
-   login/invite/recovery, dashboard, Product/SKU/line management, media and
-   publication readiness, Retail Orders, Quotes/Sales, content/campaigns,
-   Contact Requests/customer care, staff/roles and managed bank-transfer
-   settings. Restore only the slice the Owner accepts; server-side permission
-   denials and module-by-module user flows are required for any activated
-   staff operations.
+## M2 — Staging
 
-**Two material choices still open in #270:** whether full Admin/CMS means
-porting legacy monolith or completing `apps/admin` with Supabase Auth/RLS,
-and which old checkout/payment + staff fulfillment actions and persistent
-order target must be restored first. Do **not** invent the answers or merge
-two incompatible Admin/data authorities.
+One existing Cloudflare Worker `dpg-staging`; localhost replaces remote Preview. Match current Production visuals and behavior, including HeroBanner, categories, SKU search, PDP and Blog. Staging may read published snapshot/allowlisted Public assets at this milestone, but it must not claim fresher data than Production. Evidence: URL, source Worker version, desktop/mobile parity, rollback. Staging Admin in M3 uses **isolated** test database with no Production write pathway.
 
-**Design provenance and approval:** older 2026-09 V1 Figma handoffs included
-a global `V1 WIREFRAME APPROVED / FROZEN` gate and several review-candidate
-screens. Their implementation details are preserved in Git history after
-documentation consolidation. The 2026-11 Phase 2 recovery issue separately
-authorizes bounded implementation/source restoration; it does **not**
-implicitly approve a redesigned V1 schema, production DB mutation, changes
-to staff privileges or new Auth rollout. When a chosen slice depends on
-unfrozen V1 design, obtain a specific Owner decision before coding its
-high-impact contract. Do not use the old global freeze wording as a
-ceremonial blocker for independent reversible UI fixes.
+## M3 — legacy Admin source and end-to-end functional scope
 
-**Done evidence for Phase 2:** representative real variant coverage,
-before/after desktop/mobile Footer, repeat-safe persisted order without
-duplicate, staff capability deny tests and per-module Admin acceptance,
-focused CI, actual reachable Preview and Owner review. Any live data/Auth
-mutation requires exact target-specific permission, recoverable copy and
-rollback proof. Phase 2 Production promotion is a separate GO for the exact
-candidate and target; source PR merge does not authorize it.
+Target the canonical old `src/app/admin` and associated server modules, not a new `apps/admin` design. First compare original Admin route inventory to restored code: dashboard, auth and account lifecycle, Products/SKUs, Blog and other existing modules. Explicitly list present, missing, disabled and unsupported functions; **Products+Blog only is not “full Admin.”** Restore missing legacy functions within actual historic scope; do not invent new commerce features.
 
-## 2. Repository / application topology
+Hosted Workerd compatibility test must establish real login/session, permission denials, streamed SSR, Prisma/connection pooling, Cloudflare CPU budget, Product/Blog writes, audit and reload persistence using an isolated test PostgreSQL DB. Build/test locally first, promote to Staging for real integration. Do not unlock private pages by disabling Auth, do not share privileged DB access with Public and do not rely on a login-shell HTTP 200.
 
-```text
-AGENTS.md                 <- always-loaded Codex context
-docs/PROJECT.md           <- this on-demand consolidated handbook
-src/app/(public)/         <- established public UI layout and pages
-src/components/           <- legacy/public reusable components
-src/lib/                  <- legacy services and runtime helpers
-apps/public/              <- separate Cloudflare-oriented Public deployable
-apps/admin/               <- staff-only Admin deployable
-packages/                 <- framework-neutral app contracts
-prisma/                   <- legacy database/schema evidence
-supabase/, db/            <- newer schema, policies, data migrations
-scripts/                  <- domain utilities, tests, build/recovery gates
-.github/workflows/        <- CI, preview, promotions and operational jobs
-docs/deploy/, docs/adr/   <- narrow executable/decision references only
-```
+## M4 — Production promotion
 
-The legacy Public UI's visual hierarchy is an Owner-approved reference.
-During Cloudflare migration, preserve the canonical component composition
-and adapt data/interactions across runtime boundaries; **do not fork a new
-unrelated storefront design** merely to bypass server dependencies.
-Cloudflare Public and staff Admin have separate origins, configuration,
-runtime, cookies and privileged access. Pure types may be shared; staff
-secrets and permission checks are never browser/shared-public resources.
+After M1–M3/Owner acceptance: use reviewed artifact/code, same-origin `/admin`, V1 Production credentials with least privileges and recovery/backup. Validate Production read + bounded reversible write, actual Public refresh/invalidation and complete logged-in Admin smoke. Roll back Worker version as needed; SQL changes require their own restore/reverse plan. Never interpret successful upload as successful running Admin.
 
-Source history includes both AWS EC2/Coolify/ARM64 Docker/Prisma/PostgreSQL
-and Cloudflare Workers/Static Assets/Supabase Data API/RPC. A later plan may
-describe Cloudflare as the desired authority while an older baseline describes
-AWS as Production. **Resolve actual runtime identity from the live deployment,
-DNS, Workers/Coolify and GitHub run evidence before release**. Do not silently
-choose a target using historical snapshots.
+## M5 and exclusions
 
-## 3. Catalogue: canonical identity and publication
+Only post-recovery audit for broken images/routes, product data, Blog media, SEO, design parity, CPU and performance, auth and backup correctness. Defer all elective features until new approval. Explicitly canceled: Phase 2 cart/order/checkout, new Admin platform and independent Admin domain, variant research/crawler, multi-agent parallel orchestration, PR previews, old AWS/EC2/Coolify staging, speculative infrastructure and separate approvals to prepare each local test.
 
-- **Product**: one manufacturer model and one canonical PDP/SEO identity.
-  Products with different URLs are separate Products.
-- **SKU**: exact sellable variant/configuration within a Product; one Product
-  can have multiple real SKUs. Snapshot exact Product/SKU when a customer
-  requests an order or Quote.
-- **Dòng sản phẩm / Product Line**: zero-or-one membership per Product; a
-  selection/navigation grouping, not an independently priced product.
-- **Trục lựa chọn / Axis**: 1–3 ordered, **dependent** axes per Dòng.
-  Only actual valid paths exist; never create a Cartesian matrix or invent
-  missing combinations. An option path resolves to an existing Product
-  (navigate to its canonical PDP) or a sellable SKU of the current Product
-  (same PDP URL). Dòng owns no SKU/price/stock/SEO/availability.
-- **SKU override**: SKU-specific price, sale price, online discount,
-  availability and media override Product defaults only where explicitly
-  supplied; missing SKU values fall back to Product. Resolve effective
-  values server-side.
-- **Package/BOM** and **Collection** differ from a Product Line: the former is
-  an assembly/inclusion relation; the latter is editorial curation.
-- **Brand**: manufacturer entity. **Category**: one primary leaf in the
-  four-sector taxonomy. Ancestor categories derive from the tree; filters
-  for size, colour, style, material, room etc. are attributes/facets rather
-  than newly invented category branches.
-- **Public Product**: eligible for indexable listing/PDP only when its approved
-  category, media, provenance, positive public price and availability/publication
-  conditions pass. Do not publish inferred or incomplete records.
-- **Availability**: `InStock`, `PreOrder`, `QuoteOnly`, `Discontinued`;
-  unknown legacy values require explicit mapping, not silent coercion.
-- **Deletion/SEO**: preserve historic Order snapshots and real redirects.
-  Only redirect a retired URL to a manually verified equivalent Public
-  Product; do not blindly redirect to a category/homepage.
+## Source structure and data rules
 
-The current selector rules supersede older Product Family / retailer-package
-handoffs. For a data-model/selection implementation, consult
-[ADR 0022](adr/0022-v1-product-line-axis-option-family-model.md).
+- Canonical prior UI in `src/app/(public)/`, `src/components/`; deployed Public runtime `apps/public/` is adapted to Worker. Avoid unrelated UI rewrites.
+- Legacy Admin in `src/app/admin/`; new `apps/admin/` is archival/experimental, not M3/M4 target.
+- Database source in `prisma/`, `db/`, `supabase/`; code/SQL migrations must not be auto-applied just because checked in.
+- Product identity, SKU, category, status, prices, slug, canonical path and Blog publication are first-class; manufacturer/document provenance is evidence, not licence to infer current price.
+- External media remains Bunny-compatible; verify image bytes, not merely stored URL.
+- Preserve rollback SQL/sha256, backups, imports, provenance and required CI even when deleting old **policy** documentation; these remain technical assets, not active work tickets.
 
-## 4. Public pricing and commerce
+See `docs/deploy/cloudflare-staging-production.md` and `docs/deploy/postgresql-production-adoption-contract.md`. Snapshot evidence is kept in `docs/ops/project-current-state.md`, but **live provider verification overrides date-stamped observations**.
 
-**Current V1 pricing model:**
 
-```text
-display_price  = sale_price ?? price
-online_payable = display_price - (voucher_online_discount_amount ?? 0)
-```
+## Legacy data-security evidence retained for audit only
 
-`price` is the regular Dong Phu Gia public selling price.
-`sale_price` is optional, positive and strictly below `price`.
-`voucher_online_discount_amount` is an optional extra fixed discount for
-online ordering; not a general coupon engine. Unknown price, invalid discount
-or insufficient evidence must not become a fabricated selling price. SKU
-override follows the same semantics. Preserve price inputs and actual
-discounts in immutable order/quote lines.
-See [ADR 0020](adr/0020-v1-product-pricing-contract.md).
-
-**Historical Public recovery exception:** a read-only snapshot may display
-eligible restored legacy prices sourced from explicitly validated manual/Hita
-provenance; such prices are **not** equivalent to confirmed current commerce
-prices. Its contract is [ADR 0024](adr/0024-restore-historical-public-prices-on-cloudflare.md).
-Public UI must label uncertainty rather than claim confirmation or charge an
-unknown amount.
-
-**Retail Order:** guest checkout submits a **request**, not an accepted paid
-order. Flow `NEW → CONTACTED → CONFIRMED → PROCESSING → COMPLETED`;
-`CANCELLED` is a terminal branch where allowed. Methods: COD and
-BANK_TRANSFER. Default payment status is UNPAID. Staff confirms commercial
-facts and any unknown shipping/installation fees before final total.
-`pending` is semantically different from free `0đ`. Bank-transfer payment
-instructions are actionable only after commercial confirmation. A staff
-status change never marks money paid without a recorded payment event.
-Client-supplied Product/SKU/price is not authoritative.
-See [ADR 0021](adr/0021-v1-retail-order-staff-confirmation-and-pending-fees.md).
-
-**Quote Request** stores immutable customer intention and selected Product/SKU
-facts. **Quote** is the staff-negotiated offer. A public share token produces
-a read-only view; it does not grant edit, Admin or customer-account rights.
-
-## 5. Public UI / content / SEO
-
-- Reuse the existing Public component tree and established design tokens.
-  Prefer the effective CSS/Tailwind `@theme` tokens in
-  `src/app/globals.css` and existing components to stale mockup values.
-  Do not revive old Airbnb-style experiments as a redesign directive.
-- Tailwind CSS v4: preserve `@source` declarations; do not add a legacy
-  `tailwind.config.js`. Legacy theme reference `brand-500` uses `#2D90AF`
-  in the old application guide; verify active tokens in the changed runtime.
-- React/Next: Server Components load data; Client Components own interaction;
-  await Promise-valued `params`/`searchParams`; validate at boundaries,
-  avoid unguarded navigation and preserve server authorization.
-- Public pages need keyboard/focus/accessibility, responsive behavior, and
-  correct Vietnamese copy. Preserve the approved homepage hero, navigation,
-  product cards, listing/PDP, editorial/news and footer presentation.
-- Site canonical base is `https://www.dongphugia.vn`. Preserve SEO metadata,
-  title template, sitemaps, Product/Breadcrumb/Organization structured data,
-  validated 301/410 routing, real canonical PDP URLs and noindex for Preview.
-  Avoid treating a historical static export's product count as a live count.
-- Publishing Blog Post, category and tag belong to one controlled model.
-  Managed Media is media owned and verified for publication, not an
-  unverified hotlink. Agents use dedicated Machine Identity and capabilities;
-  public routes cannot invoke staff/agent-only publishing actions.
-
-## 6. Data, permissions and media
-
-- **Data authority depends on target:** legacy application used Prisma and
-  AWS PostgreSQL; V1 Cloudflare-oriented work uses Supabase PostgreSQL,
-  explicit RPC/Edge/service boundaries and RLS. Migration scripts/snapshots
-  do not automatically prove a Production cutover. Preview/Staging must not
-  write to Production or treat its database as disposable. An explicitly
-  authorized read-only environment may consume the fixed public catalogue
-  Production has published; this is not a database copy or permission to read
-  private data. Never assume two datastores can be written independently.
-- Data-changing migrations need an exact source/target, schema/version
-  provenance, reversible or recoverable copy, isolation from real customer
-  traffic and narrowly scoped approval. An unrelated UI tweak never triggers
-  this procedure.
-- Separate staff authentication, roles and capabilities from browser-visible
-  Public. Keep restricted server-side credentials/authorization, least
-  privilege and database RLS. Preserve session/CSP and input validation.
-  Never print or check in tokens, service-role keys, API passwords, customer
-  details, raw database rows or credential-bearing URLs.
-- Bunny-compatible media: media file bytes, CDN URL, database metadata and
-  product image references are **different things**. Verify actual object
-  availability before changing a domain or rewriting large sets of URLs.
-  Preserve known canonical product image identities and existing CSP/Next
-  image allowlists unless media changes are explicitly in scope.
-- Legacy backup/media inventories and dated zone counts are **historical
-  evidence**, not current live access guarantees. Use targeted recovery
-  instructions only during a specifically authorized media/data incident.
-
-When work actually touches sensitive boundaries, read just the matching
-operational detail, for example [media recovery](deploy/leo-565-media-recovery-baseline.md),
-[Supabase security](deploy/supabase-runtime-security-boundary.md),
-[isolated staging](deploy/isolated-staging-foundation.md) or
-[backup/recovery](deploy/runtime-backup-recovery.md). Do not make them startup
-prerequisites for content, layout or ordinary product changes.
-
-## 7. Delivery policy
-
-Root [AGENTS.md](../AGENTS.md) is the sole working-policy source for assignment,
-autonomy, validation, review/merge/release, Issue closure, setup and staging planning.
-This handbook supplies technical and product reference only.
-
-## 8. Operational files retained because automation still depends on them
-
-These are not startup context. Open only one when its workflow or risky
-operation directly applies:
-
-- **Isolated PostgreSQL Staging deployment foundation:** [isolated staging](deploy/isolated-staging-foundation.md); the
-  [CI-only disposable database fixtures](deploy/staging-db-bootstrap/RUNBOOK.md)
-  are **not** a Staging or Production runtime procedure.
-- **Migration implementation and budget:** [canonical baseline](deploy/migration-implementation-baseline.md),
-  [free-tier policy](deploy/migration-free-tier-policy.md) — migration only.
-- **Supabase runtime security:** [security boundary](deploy/supabase-runtime-security-boundary.md);
-  authorizations and provider facts must be verified before a database write.
-- **Publishing and data recovery:** [publishing runbook](deploy/publishing-api-v1-runbook.md),
-  [runtime backup](deploy/runtime-backup-recovery.md),
-  [recovery baseline](deploy/leo-565-media-recovery-baseline.md).
-- **Source delivery:** use **one standard workflow and risk-proportionate**
-  validation/recovery controls from root AGENTS.md, not separate release tracks.
-
-Some tests validate these files literally by path and key contract wording.
-Do not rename/delete an operational reference unless its executable
-consumer and rollback procedure are updated together.
-
-## 9. Documentation maintenance
-
-Maintain working policy only in root AGENTS.md. Keep this file for on-demand
-technical/product context, and retain specialized runbooks/ADRs required by tests,
-operations or external integrations. Preserve executable references when editing.
-Code/schema define implementation; Issues/PRs record task state; live provider and
-Actions evidence establish deployment state. Revalidate dated facts before use.
-Update the relevant reference when behavior changes; avoid per-ticket process docs.
+The historical LEO-539 synthetic Supabase security proof is located at `docs/deploy/supabase-runtime-security-boundary.md` and project `tlmgudfhsyzayiazuugf`. It is **not** the current V1 Production database, **not** authorized for data import or Admin testing, and does not supersede #307. Keep its source SQL/security tests intact as provenance, but do not initiate its discontinued delivery track.

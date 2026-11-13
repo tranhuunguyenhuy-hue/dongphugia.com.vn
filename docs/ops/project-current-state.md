@@ -1,110 +1,36 @@
-# Project current state
+# V1 — current state / evidence boundary
 
-Last verified: 2026-08-21. This is a dated operational snapshot, not release
-authority. Revalidate live state immediately before any runtime mutation.
+**Last read-only Cloudflare verification: 2026-11-13.** This file records observations, **not** a claim that recovery is complete. Revalidate before applying any Production changes.
 
-## Cloudflare Preview version reconciliation — 2026-10-29
+## Decision and milestone state
 
-Read-only inspection after run `40823454239` confirmed Worker version
-`17fe81fb-9f43-43b9-85d0-33952cff74d6` and exactly the 10 version IDs recorded
-in that run's preflight plus the uploaded version. Its `pr-201` alias and source
-SHA match the upload receipt. Deployment `6e7022d5-5f4d-4f51-8ab3-01850503a711`
-is unchanged and still assigns 100% to bootstrap version
-`d4658ffa-2fcd-465b-bae7-7967bb1c7f78`; there are no Worker routes or custom
-domains. Workers.dev remains disabled and Preview URLs enabled. The failed
-post-upload inspection was caused by reading only the default 10-version page.
-LUNA-01 source correction and validation are tracked in PR #206 and
-`luna-01-worker-version-reconciliation-2026-10-29.md`. This evidence does not
-accept the Preview UI or authorize a new upload, Production, or DNS change.
+- [Master #306](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/306) — approved V1 reset / sole authority.
+- [M1 #307](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/307): **ACTIVE, NOT YET ACCEPTED**. Hosted DB completeness and Production DB-backed Public routes: **UNKNOWN / not demonstrated**.
+- [M2 #308](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/308): **QUEUED**. Existing Staging Worker was deployed, but Production-parity Public including Blog/UI **not verified**.
+- [M3 #309](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/309): **QUEUED**. Legacy Admin source restored; hosted full Admin not verified.
+- [M4 #310](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/310): **QUEUED**. No current Admin Production deploy verified.
+- [M5 #311](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/311): **QUEUED**.
 
-## Production baseline
+## Provider observations
 
-- Application: `dongphugia-web-production-dark`
-- Immutable image digest:
-  `sha256:5826df04c8b052b7c834a07ac956d54596537def964646dc2d3013c242dacf2c`
-- Source provenance: `d7cd7dffac72894fd42359df58b9959c133280ef`
-- Observed status: healthy; Blog Managed Media CSP incident resolved.
+| Item | Last observed | Limitations |
+| --- | --- | --- |
+| Cloudflare primary account | `d54f3402b9d112ab64d6135e0e3f1fb1` | V1 only; do not use V2 account |
+| Staging Worker | `dpg-staging`; version `f0cabc41-f024-46cc-8978-510c3d8c1216` deployed 2026-11-13 06:13 UTC | Deployment exists; functional parity and real Admin not accepted |
+| Production Worker | `dongphugia-v1-public-production`; version `7d0194d7-b007-4fb0-9fd9-d365ca9de834` deployed 2026-11-04 15:05 UTC | Public snapshot, not verified live PostgreSQL |
+| Public domains | `www.dongphugia.vn`, `dongphugia.vn` → Production Worker | Staging no custom domain |
+| Worker bindings | Both `nodejs_compat` and assets; **no Hyperdrive binding**, no listed Worker secrets | Does not prove external DB cannot be used by other paths; actual code path must be inspected |
+| Supabase V1 candidate | `bonxyxluzlxfkdetryoo`, schema proposed `dpg_app` | Hosted schema/rows, auth and source-of-truth **not reverified** |
+| Recovery source | PR #300 legacy Admin Products/Blog; PR #301 local Workerd; PR #304 local scoped DB role | Local proof only, no hosted production DB import or Admin acceptance |
+| Local recovery count | about **17,752 Products, 10 Blog posts** in a documented local restoration | Reconcile actual source and hosted target; never treat as already in Supabase |
 
-## Runtime architecture
+## Next real work
 
-GitHub → GitHub Actions → Docker ARM64 → GHCR → Coolify → AWS EC2.
-The application uses Next.js, React, Node.js, Prisma, AWS PostgreSQL, and
-Bunny for managed media/CDN delivery.
+Agent assigned to M1 must: verify actual target/source; capture backup and restore proof; reconcile hosted product/blog inventory; implement live read-only Product+Blog Public path with cached DB reads; keep snapshot rollback; verify actual Production URL and counts. **No Phase 2 or remote Preview work.**
 
-## Current constraints
+After M1 succeeds, update this file with deployed SHA, measured DB counts, source/freshness evidence, acceptance URL, rollback and remaining issues. Keep UNKNOWNs visible rather than inventing success.
 
-- Verify the actual running digest after a Coolify deployment; a completed
-  deployment record does not prove runtime identity.
-- Media-related acceptance includes rendered browser, health, HTTP, CSP, and
-  direct-host checks where applicable.
-- The publishing CDN hostname is required in both Next image allowlisting and
-  Production `img-src` CSP.
-- The isolated PostgreSQL Staging foundation is the canonical database-backed
-  candidate path; see `deploy/isolated-staging-foundation.md` and ADR 0013.
-- The shared Production-data/media Staging path is legacy and historical only;
-  see `deploy/staging-coolify.md` and ADR 0010.
 
-## LEO-527 Staging topology transition
+## Archived identity — never confuse with V1 Production
 
-As of 2026-08-27, the approved architecture target is:
-
-- Production remains on its existing Production-owned host.
-- Isolated Staging is intended to become canonical on a dedicated EC2 stack
-  defined in `infra/dedicated-staging/` after the LEO-527 acceptance gate.
-- The old Production + legacy Staging co-host is deprecated/superseded for
-  Staging and is not cleaned up by LEO-527; residual cleanup belongs to LEO-528.
-
-Runtime acceptance is recorded separately from this architecture source:
-dedicated EC2 identity, SSM start-to-success probe, contract attestation,
-Production-derived restore, exact candidate revision, and side-effect/isolation
-proof must all be freshly revalidated before downstream LEO-525 work. Until
-that evidence is recorded, dedicated-host runtime readiness is `UNKNOWN`.
-
-## Deferred scopes
-
-Separate PM authorization is required before resuming:
-
-- PR #69 investigation and Issue #68 shared-data migration.
-- Cloudflare or Vercel migration; Coolify replacement.
-- LCP optimization or Production promotion.
-- MS885, Phase 2 catalogue/PIM, and unrelated refactoring.
-- Permanent deletion of the 2026-08-04 consolidation quarantine.
-
-For routing and current authority, use root `AGENTS.md`; for detailed
-background consult `docs/PROJECT.md`. This dated snapshot is **not** current
-Production evidence or a replacement for live verification.
-
-## LEO-539 isolated Supabase target evidence
-
-Verified 2026-08-28. This evidence is target-specific and does not change the
-Production runtime baseline above.
-
-- Organization: `pjouohhhwurycbqvhxzn`; plan `free` immediately before
-  creation; quoted project cost `USD 0/month`.
-- New target: `dongphugia-runtime`; ref `tlmgudfhsyzayiazuugf`; region
-  `ap-southeast-1`; status `ACTIVE_HEALTHY`; PostgreSQL 17.
-- Pre-creation inventory: one active legacy project and two inactive projects.
-  Creation required no pause, restore, deletion, replacement, or mutation of
-  an existing project. No existing project was changed.
-- Recorded migrations: `leo539_security_boundary`,
-  `leo539_control_rls_hardening`, and
-  `leo539_login_and_fail_closed_writes`.
-- Capability roles are `NOLOGIN`, `NOINHERIT`, non-superuser, non-creator,
-  non-replication, and `NOBYPASSRLS`. Each restricted target-local login is a
-  member of exactly one capability role; its generated credential was neither
-  returned nor retrieved.
-- Rollback-only SQL proved authenticated owner access, cross-owner isolation,
-  and denial of anonymous, read-only, non-synthetic, and migration-owner
-  writes. The projected 350 MiB guard failed closed as required.
-- Supabase security and performance advisors returned no findings after the
-  boundary was applied. Final evidence recorded Auth users `0`, Storage objects
-  `0`, probe rows `0`, public application tables `0`, and database size
-  `10,464,403` bytes (`WITHIN_BUDGET`).
-- Platform Postgres logs were available without a paid Log Drain. Repeating
-  provider-internal `realtime.subscription does not exist` entries were observed;
-  the Realtime relation was absent and Realtime is unused by LEO-539. Treat any
-  future application-facing recurrence as a stop and investigate separately;
-  LEO-539 did not mutate the provider-managed Realtime schema.
-- No Production database, credential, row, object, or derived data was accessed
-  or placed in this target. No GitHub, Cloudflare, DNS, AWS, traffic, cutover, or
-  legacy Supabase mutation occurred.
+Historical LEO-539 isolated, synthetic-only Supabase test project: `tlmgudfhsyzayiazuugf`, name `dongphugia-runtime`, Singapore `ap-southeast-1`. This is **historical evidence, not the selected Production target**; it is kept here solely to preserve security-boundary provenance and avoid accidental use in M1. The active candidate V1 project requires fresh verification as described above.
