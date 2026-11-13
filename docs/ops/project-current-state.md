@@ -1,4 +1,13 @@
-# Project current state
+# Project current state — historical snapshots only
+
+> **ARCHIVED OPERATIONAL EVIDENCE (reclassified 2026-11-13).** The 2026-08
+> through 2026-10 AWS/Coolify and Cloudflare observations below are not live
+> deployment status, a current Production baseline, or an AI handoff.
+> Use [AGENTS.md](../../AGENTS.md) as the single startup policy and
+> [docs/PROJECT.md](../PROJECT.md) when more detail is needed. Before any hosted
+> action, recheck current Issues/PRs, provider deployment, DNS and real smoke.
+> Do not create another general-purpose context ledger here.
+
 
 Last verified: 2026-08-21. This is a dated operational snapshot, not release
 authority. Revalidate live state immediately before any runtime mutation.

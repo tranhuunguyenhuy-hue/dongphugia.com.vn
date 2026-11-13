@@ -5,7 +5,7 @@
 > for a task involving implementation decisions, data, architecture, security
 > boundaries or release. It replaces fragmented general process manuals,
 > outdated wireframe handoffs, duplicate glossaries and speculative roadmaps.
-> Snapshot: **2026-11-06**. Dated facts are leads, not live runtime proof.
+> Snapshot refreshed: **2026-11-13** (GitHub source/Issue/PR evidence, not a hosted verification). Dated facts are leads, not live runtime proof.
 
 ## 1. Business goal and current work
 
@@ -19,12 +19,16 @@ and consistent with the approved public UI. Restore listings, PDPs, prices,
 media, search, SEO and navigation before speculative capabilities. Protect
 customer orders and catalogue integrity.
 
-| Workstream | Tracked work | What to do |
+| Workstream | Verified GitHub state 2026-11-13 | Boundary |
 | --- | --- | --- |
-| P0 public recovery | [Issue #260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260) | Listings, PDP, pricing, media, search, SEO, canonical UI. |
-| Phase 2 features | [Issue #270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270) | Product-line options, footer parity, guest cart/order, full Admin CMS. |
-| Cart / order delivery | [PR #272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272) | Separate scoped change; recheck PR state before modifying overlapping code. |
-| Delivery / docs cleanup | [PR #282](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/282) | Single Codex context, fewer redundant documents, risk-based workflow. |
+| P0 Public recovery | [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260) **closed** | Live Production and data coverage still need independent observation. |
+| Phase 2 | [#270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270) **open** | Not authorization for Production. |
+| Bounded isolated Preview | [#290](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/290) **open** | Synthetic separate DB, verified URLs and authenticated E2E still needed. |
+| Integration candidate | [PR #291](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/291) **open, unmerged** | Source CI and hosted Preview are distinct gates. |
+| Legacy Admin source | [PR #300](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/300) **merged** | Local Products/Blog-only source; not a hosted release. |
+| Admin Workerd | [PR #301](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/301) **draft** | CPU, hosted Hyperdrive and Public freshness unproven. |
+| Combined release and role | [PR #303](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/303) **draft**, [#304](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/304) **open** | Artifact, hosted DDL, Production gates not completed. |
+| Staging publisher repair | [PR #302](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/302) **merged** | `/blog` 503 observed; do not infer browser/hosted acceptance. |
 
 These entries are an **as-of-date index**. GitHub Issues/PRs and current
 source code give authoritative task status. Never claim a PR is merged, a
@@ -41,8 +45,9 @@ is the existing cart/order implementation, not a branch to overwrite casually.
 Check live GitHub status, current `main`, task-branch ownership, Preview and
 available datasets before editing; avoid simultaneous writes by separate
 agents. P0 [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
-remained open at this snapshot; do not assume Phase 2 can be deployed until
-its actual Production target, P0 state and rollback are confirmed.
+is now closed on GitHub, but this alone does not prove live Production
+acceptance. Confirm actual deployed identity, data, smoke and rollback before
+any Phase 2 Production proposal.
 
 **Execution order for a Codex session:**
 
@@ -75,11 +80,11 @@ its actual Production target, P0 state and rollback are confirmed.
    denials and module-by-module user flows are required for any activated
    staff operations.
 
-**Two material choices still open in #270:** whether full Admin/CMS means
-porting legacy monolith or completing `apps/admin` with Supabase Auth/RLS,
-and which old checkout/payment + staff fulfillment actions and persistent
-order target must be restored first. Do **not** invent the answers or merge
-two incompatible Admin/data authorities.
+**Admin path update (2026-11-13):** PR #300 merged a *bounded source-only*
+legacy root Admin Products/Blog slice. This does not decide full Admin/CMS
+restoration, the separate `apps/admin` Phase 2 architecture, hosted
+authentication, or checkout/payment/fulfillment data ownership. Do **not**
+merge two incompatible Admin/data authorities by assumption.
 
 **Design provenance and approval:** older 2026-09 V1 Figma handoffs included
 a global `V1 WIREFRAME APPROVED / FROZEN` gate and several review-candidate
@@ -100,16 +105,44 @@ mutation requires exact target-specific permission, recoverable copy and
 rollback proof. Phase 2 Production promotion is a separate GO for the exact
 candidate and target; source PR merge does not authorize it.
 
+## 2B. November 13 handoff — distinct release tracks
+
+This checkpoint is **GitHub/source evidence**, not a Production attestation.
+
+| Track | Source facts | Still UNKNOWN / not released |
+| --- | --- | --- |
+| Phase 2 | [#272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272) and [#284–#288](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/284) are separate open PRs; [#291](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/291) is an open integration candidate under #290. | Isolated synthetic DB, real protected Preview URL, Auth/commerce browser E2E, Owner acceptance. |
+| Legacy root Admin | [#300](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/300) merged Products/Blog-only source. Local capture: **17,752 Products**, **10 Blog bodies**; current Public snapshot in that PR: **5,223 Products**. | No hosted import proof, no live Admin release, and no automatic refresh of Public snapshots after Admin edits. |
+| Workerd and release | [#301](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/301) is a local-only spike; [#303](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/303) plans a combined Worker artifact gate. | Real combined artifact, CPU/runtime fit, safe routing, binding/Hyperdrive permissions, production review, rollback and E2E. |
+| Admin DB permission | [#304](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/304) proposes a local-tested least-privilege role. | Hosted migration, credential binding and target-specific authorization **not** done. |
+| Read-only environment Worker | [#294](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/294), [#295](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/295), [#302](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/302) merged source. | #302 still reports `/blog` 503 and does not independently establish provider deployment identity or authenticated Admin. |
+
+**Do not conflate the two Previews.** The Local Preview and `dpg-staging`
+environment Worker described in AGENTS.md are GET/HEAD-only and read
+Production-published catalogue content; they provide **no writable Auth/DB
+Admin path**. Issue #290 instead allows only an **isolated, non-Production,
+synthetic** Phase 2 Preview, and forbids test mutations of the
+production-derived Supabase project `bonxyxluzlxfkdetryoo`.
+
+**Next decisions:** Choose the specific ticket/track first; avoid clobbering
+#291 with the later #300 merged root Admin or cherry-picking overlapping
+migrations blindly. Verify architecture compatibility and source provenance,
+then demonstrate the exact artifact, isolated/authorized DB target, hosted
+login/denial tests, content-publication freshness and rollback. Leave each
+missing proof **UNKNOWN** rather than declaring a release.
+
 ## 2. Repository / application topology
 
 ```text
 AGENTS.md                 <- always-loaded Codex context
 docs/PROJECT.md           <- this on-demand consolidated handbook
 src/app/(public)/         <- established public UI layout and pages
+src/app/admin/            <- legacy root Admin Products/Blog source
 src/components/           <- legacy/public reusable components
 src/lib/                  <- legacy services and runtime helpers
 apps/public/              <- separate Cloudflare-oriented Public deployable
-apps/admin/               <- staff-only Admin deployable
+apps/admin/               <- earlier separate staff Admin path
+apps/environment-worker/ <- read-only Local Preview / Staging Worker
 packages/                 <- framework-neutral app contracts
 prisma/                   <- legacy database/schema evidence
 supabase/, db/            <- newer schema, policies, data migrations
@@ -305,3 +338,5 @@ operations or external integrations. Preserve executable references when editing
 Code/schema define implementation; Issues/PRs record task state; live provider and
 Actions evidence establish deployment state. Revalidate dated facts before use.
 Update the relevant reference when behavior changes; avoid per-ticket process docs.
+The dated [historical ops snapshot](ops/project-current-state.md) is not an
+alternate handoff or current Production topology source.

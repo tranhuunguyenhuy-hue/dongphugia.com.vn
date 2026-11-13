@@ -6,32 +6,21 @@ handoffs, ADRs, runbooks, or a second context file.** Use
 [`docs/PROJECT.md`](docs/PROJECT.md) only if the active task needs detailed
 domain, architecture, deployment, or troubleshooting reference.
 
-## Project and objective (snapshot: 2026-11-06)
+## Project and objective (GitHub snapshot: 2026-11-13)
 
 - Repo: `tranhuunguyenhuy-hue/dongphugia.com.vn`, base branch `main`.
 - Customer website: `https://www.dongphugia.vn`; staff application target:
   `https://admin.dongphugia.vn`.
 - Business: Vietnamese building-materials retailer. Four catalogue sectors:
   Thiết bị vệ sinh, Gạch ốp lát, Thiết bị nước, Thiết bị bếp.
-- **Current delivery tracks:** P0 Public recovery (#260) is still open;
-  do not assume it is complete or deployed. **Phase 2 (#270) is the next
-  requested source-work track**: verified PDP variants, footer parity,
-  durable guest cart/order and staff Admin/CMS. Keep Phase 2 isolated from
-  the P0 Production candidate; do not fold either into unrelated migration.
-- Work authority: GitHub [#260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260)
-  (P0 Public recovery), [#270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270)
-  (Phase 2), [PR #272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272)
-  (cart/order), [PR #282](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/282)
-  (workflow/docs). **These are dated pointers, not confirmed current status:
-  inspect the relevant GitHub item only when the request touches it.**
-- **Phase 2 handoff:** first inspect Issue #270 and existing PR #272/branch
-  ownership; continue an active owned PR rather than starting a conflicting
-  branch. Verify 17-group/51-product variant coverage against real source,
-  footer desktop/mobile parity, persistent and idempotent guest orders, and
-  denied unauthorized Admin actions. UI/source work may proceed without a
-  blanket database-backup gate; DB/Auth/provider writes require their own
-  exact approval and recoverable data. The choice between legacy Admin
-  restoration and new Supabase Auth/Admin remains **UNDECIDED** in #270.
+- **P0 Public recovery:** [Issue #260](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/260) is **closed** as of 2026-11-13. Issue closure is not proof of complete live public URLs, DNS, prices or deployed digest.
+- **Phase 2:** [Issue #270](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/270) and bounded isolated Preview [#290](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/290) remain open. Integration [PR #291](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/291) is unmerged; [#272](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/272) and [#284–#288](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/284) remain separate source PRs. Preserve owners and branch dependencies.
+- **Legacy Admin:** [PR #300](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/300) merged source on 2026-11-13 for root Admin Products/Blog and local recovery: 17,752 source Products and 10 Blog bodies. **Not a hosted Admin release.** The separately published Public snapshot has 5,223 products in that report; Admin writes do not currently republish it.
+- **Admin runtime/release proposals:** [#301](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/301) Workerd spike is draft/local-only; [#303](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/303) combined-artifact release gate is draft; [#304](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/304) least-privilege database role is open and **not hosted-applied**. Do not interpret local tests, combined artifact design or a merged legacy app as Production readiness.
+- **Staging:** source PRs [#294](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/294), [#295](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/295) and [#302](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/pull/302) are merged. #302 observed `/blog` HTTP 503 and lacked independent provider-side deployment identity; shell 200 for `/admin/login` does not prove authenticated Admin.
+- **Authority and data isolation:** GitHub current Issue/PR/source are task evidence; live provider/deploy/browser evidence is needed for runtime claims. #290 authorizes an **isolated synthetic Preview**, never mutation of production-derived Supabase `bonxyxluzlxfkdetryoo`. Shared DB/Auth/Production/DNS/secrets/cost changes need their own authorization.
+- **Repository boundary:** this is **V1**, independent of the `dongphugia.vn` V2 repository; never transfer V2 scope or migrations here.
+
 - The 2026-09 V1 design handoffs had a global wireframe-freeze condition.
   They were consolidated, **not converted into blanket authorization** for
   new V1 schema/architecture implementation. The newer Phase 2 recovery
@@ -138,6 +127,26 @@ do not request secrets in chat or ask again for authority already granted.
    before closure; avoid automatic closing keywords for release-dependent tickets.
    Ready for review, merged and deployed are distinct states.
 
+## Agent handoff and ticket hygiene
+
+Classify each assignment as **audit-only**, **source-only**, **isolated
+Preview**, or **Production/shared-data**. Respect the narrowest approved scope;
+an audit-only ticket is read-only unless it explicitly authorizes a bounded fix.
+Inspect current base/head, existing Issue/PR, owner and actual runtime before
+making changes. Keep a single mutating agent/branch owner per workstream.
+
+Leave the continuation checkpoint **in the existing Issue/PR**, not in another
+general-purpose handoff file: objective and acceptance; exact base/head SHA
+and branch; changed contracts/files; focused tests and CI links; Preview/live
+URLs with verified status or UNKNOWN; blockers/Owner decisions; next executable
+action and rollback. Report capabilities separately as **SOURCE / TESTED /
+INTEGRATED / PREVIEW VERIFIED / OWNER ACCEPTED / PRODUCTION VERIFIED**.
+
+Do not overwrite a stacked branch, start a duplicate PR, merge conflicting
+Admin/data architectures by assumption, or call green CI a completed release.
+After two repeated failures of the same approach, change the diagnostic method
+and continue nonblocking work.
+
 ## Current Preview and Staging contract
 
 - Local Preview runs only on the developer machine. Start it with
@@ -156,6 +165,9 @@ do not request secrets in chat or ask again for authority already granted.
   staff/customer data remains unavailable. Reject every non-GET/HEAD request
   before asset or app dispatch. `Path=/admin` is not browser isolation on a
   shared origin.
+- **Status caution (2026-11-13):** PR #302 recorded `/blog` HTTP 503 in
+  Local Preview and Staging. Login-page HTTP 200 is not authenticated Admin
+  acceptance or proof of deployed identity or publication freshness.
 - Production runtime, domains, DNS, data and Auth remain unchanged. Do not
   change Production database roles/RLS/Auth, deploy Production, rotate tokens,
   add paid scope, or merge without the separate required authorization.
