@@ -313,7 +313,7 @@ function safeEnvironment() {
   for (const key of SAFE_NEXT_ENV_KEYS) if (process.env[key]) inherited[key] = process.env[key]!
   return {
     ...inherited,
-    NODE_ENV: 'development',
+    NODE_ENV: 'production',
     DATABASE_URL,
     DIRECT_URL: DATABASE_URL,
     AUTH_SECRET: randomBytes(32).toString('hex'),
@@ -338,8 +338,12 @@ async function createCleanRuntimeCopy(repoRoot: string) {
 }
 
 async function startLocalApp(runtimeRoot: string, env: NodeJS.ProcessEnv) {
-  const app: ChildProcess = spawn(process.execPath, [join(runtimeRoot, 'node_modules/next/dist/bin/next'),
-    'dev', '--webpack', '-H', '127.0.0.1', '-p', '3107'], {
+  const nextBin = join(runtimeRoot, 'node_modules/next/dist/bin/next')
+  execFileSync(process.execPath, [nextBin, 'build', '--webpack'], {
+    cwd: runtimeRoot, env, stdio: 'pipe', maxBuffer: 64 * 1024 * 1024,
+  })
+  const app: ChildProcess = spawn(process.execPath, [nextBin,
+    'start', '--hostname', '127.0.0.1', '--port', '3107'], {
     cwd: runtimeRoot, env, stdio: ['ignore', 'ignore', 'ignore'],
   })
   for (let attempt = 0; attempt < 60; attempt++) {
@@ -686,7 +690,7 @@ async function main() {
     const sessionCount = await prisma.admin_sessions.count({ where: { user_id: { in: syntheticStaffIds } } })
     if (sessionCount < TEST_USERS.length) fail('LOCAL_ADMIN_PREVIEW_BCRYPT_SESSIONS_NOT_CREATED')
     process.stdout.write(`${JSON.stringify({
-      status: 'PASS', localOnly: true, localUrl: BASE_URL, server: 'Node 24 / Next.js dev / webpack',
+      status: 'PASS', localOnly: true, localUrl: BASE_URL, server: 'Node 24 / Next.js production build',
       database: { ...target, serverVersion: identity.version_num, dataDirectory: basename(expectedDataPath) },
       sourceLockState: lock.proposalState, sourceCheckpoint: plan.source.checkpoint,
       imported: plan.counts, persistentImport: importResult, tableCounts: { ...counts, staff: staff.records.length, syntheticSessionsCreated: sessionCount },

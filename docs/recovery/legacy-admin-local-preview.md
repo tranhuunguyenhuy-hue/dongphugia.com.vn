@@ -35,7 +35,9 @@ data directory outside the disposable local path. It archives the clean commit
 to a temporary app directory, so ignored `.env*` files and cloud credentials
 cannot enter the Next.js process. The child environment contains only the local
 database URLs, a newly generated local `AUTH_SECRET`, loopback site URL, and
-development settings. Browser requests to all other origins are blocked.
+production-build settings. The disposable archive is built with Next.js and
+served locally so the repository's Content Security Policy accepts its client
+scripts. Browser requests to all other origins are blocked.
 
 The first run imports the proposed Public recovery snapshot and keeps its
 explicit Product and Blog IDs. It stores a source identity, source ID, source
