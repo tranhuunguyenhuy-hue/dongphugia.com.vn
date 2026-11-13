@@ -1,3 +1,5 @@
+import { publicPostgresEnabled } from '../../../src/runtime/public-db'
+import { searchLiveProducts } from '../../../src/runtime/live-public-catalogue'
 import {getSnapshotSearchProducts} from '../../../src/runtime/public-snapshot-catalogue'
 import {searchSnapshot} from '../../../src/runtime/snapshot-search'
 
@@ -14,7 +16,9 @@ export async function GET(request:Request){
    return new Response('Invalid search.',{status:400})
  if(q.trim().length<2)return Response.json({results:[],total:0,page,limit,query:q.trim()},{headers:{'Cache-Control':'public, max-age=60'}})
  try{
-  const result=searchSnapshot(await getSnapshotSearchProducts(),q,page,limit)
+  const result=publicPostgresEnabled()
+    ?await searchLiveProducts(q,page,limit)
+    :searchSnapshot(await getSnapshotSearchProducts(),q,page,limit)
   return Response.json(result,{headers:{'Cache-Control':'public, max-age=60'}})
  }catch{return new Response('Search temporarily unavailable.',{status:503,headers:{'Cache-Control':'private, no-store'}})}
 }

@@ -1,3 +1,4 @@
+import { publicPostgresEnabled, readPublicRows } from '../../../src/runtime/public-db'
 import { usesPublicSnapshot, usesProductionPublishedCatalogue } from '../../../src/runtime/public-snapshot-mode'
 import { readSnapshotManifest } from '../../../src/runtime/public-snapshot-catalogue'
 import { APPLICATIONS } from '@dpg/app-contracts'
@@ -12,6 +13,21 @@ export async function GET() {
   const appEnvironment = getPublicAppEnvironment()
   const productionPublishedCatalogue = usesProductionPublishedCatalogue()
   let snapshot: { checkpoint: string; products: number; listingProducts: number; m3RunId: string } | null = null
+  if (publicPostgresEnabled()) {
+    try {
+      const [row] = await readPublicRows<{products:string;active_products:string;blog_posts:string}>(
+        "SELECT (SELECT count(*) FROM dpg_app.products) AS products,"
+        + "(SELECT count(*) FROM dpg_app.products WHERE is_active=true AND publication_status='public') AS active_products,"
+        + "(SELECT count(*) FROM dpg_app.blog_posts WHERE status='published') AS blog_posts",
+      )
+      return Response.json({application:APPLICATIONS.public.name,status:'ok',catalogueMode:'postgresql',
+        products:Number(row?.products??0),activeProducts:Number(row?.active_products??0),
+        publishedBlogs:Number(row?.blog_posts??0)}, {headers:{'Cache-Control':'private, no-store'}})
+    } catch {
+      return Response.json({application:APPLICATIONS.public.name,status:'unavailable',catalogueMode:'postgresql'},
+        {status:503,headers:{'Cache-Control':'private, no-store'}})
+    }
+  }
   if (usesPublicSnapshot()) {
     try { snapshot = await readSnapshotManifest() }
     catch { return Response.json({

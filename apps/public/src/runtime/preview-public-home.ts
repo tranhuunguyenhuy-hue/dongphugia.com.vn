@@ -1,3 +1,4 @@
+import { publicPostgresEnabled } from './public-db'
 import type {
   PublicHomeCategory,
   PublicHomeContent,
@@ -52,7 +53,7 @@ export async function getPublicHomeBanners(): Promise<PublicHomePageData['banner
 
 export async function getPublicHomeContent(): Promise<PublicHomeContent> {
   const blogPosts = await getPublicBlogPosts()
-  const catalogueManifest = usesPublicSnapshot() ? await readSnapshotManifest() : null
+  const catalogueManifest = usesPublicSnapshot() && !publicPostgresEnabled() ? await readSnapshotManifest() : null
   const categories: readonly PublicHomeCategory[] = await Promise.all((await getPreviewCatalogueCategories()).map(async (category) => {
     const listing = category.listings[0]
     const products = listing

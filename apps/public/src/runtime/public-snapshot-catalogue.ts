@@ -1,4 +1,6 @@
 import { cache } from 'react'
+import { publicPostgresEnabled } from './public-db'
+import { getLiveCategories,getLiveListing,getLiveProduct,getLiveVariantSiblings } from './live-public-catalogue'
 import { usesPublicSnapshot, usesProductionPublishedCatalogue, publicSnapshotCheckpoint } from './public-snapshot-mode'
 import { buildSnapshotCategoryRoot } from './public-category-root'
 import { readBoundedPublicAssetText } from './bounded-public-asset'
@@ -161,6 +163,7 @@ async function fetchProductionCatalogueAsset(path:string,knownManifest?:Manifest
 export const readSnapshotManifest=cache(async()=>readAsset<Manifest>('manifest.json'))
 export type SnapshotSearchProduct={id:number;sku:string;name:string;slug:string;url:string;price:number|null;original_price:number|null;list_price:number|null;sale_price:number|null;online_discount_amount:number|null;final_online_price:number|null;price_display:string|null;image_main_url:string|null;category_slug:string;subcategory_slug:string;brand_name:string|null;product_feature_values:{product_features:{name:string}}[];colors:{name:string;hex_code:string|null}|null}
 export async function getSnapshotSearchProducts(){
+ if(publicPostgresEnabled()) throw new Error('USE_PARAMETERIZED_DATABASE_SEARCH');
  const manifest=await readSnapshotManifest()
  if(!Array.isArray(manifest.searchShards)||manifest.searchShards.join(',')!=='0,1,2,3'
    ||!Number.isSafeInteger(manifest.searchProducts)||manifest.searchProducts===undefined
@@ -171,19 +174,21 @@ export async function getSnapshotSearchProducts(){
  return products
 }
 export async function getSnapshotVariantSiblings(group:string,currentId:number){
+ if(publicPostgresEnabled()) return getLiveVariantSiblings(group,currentId);
  if(!/^public-[1-9][0-9]*$/.test(group)||!Number.isSafeInteger(currentId))return []
  const members=(await readSnapshotManifest()).variantGroups?.[group]
  if(!Array.isArray(members)||members.length<2||members.length>8
    ||!members.some(p=>p.id===currentId)||members.some(p=>p.variant_group!==group))return []
  return members.filter(p=>p.id!==currentId)
 }
-export async function getSnapshotCategories() { return (await readSnapshotManifest()).categories }
+export async function getSnapshotCategories() { return publicPostgresEnabled()?getLiveCategories():(await readSnapshotManifest()).categories }
 export async function getSnapshotCategoryRoot(categorySlug:string,brandSlugs:readonly string[]=[]){
   if(!SLUG.test(categorySlug)||brandSlugs.some(brandSlug=>!SLUG.test(brandSlug)))return null
   const category=(await getSnapshotCategories()).find(c=>c.slug===categorySlug)
   return category?buildSnapshotCategoryRoot(category,brandSlugs):null
 }
 export async function getSnapshotProducts(category:string,listing:string,page=1) {
+ if(publicPostgresEnabled()) return getLiveListing(category,listing,page);
   if(!SLUG.test(category)||!SLUG.test(listing)||!Number.isSafeInteger(page)||page<1) return {products:[],totalCount:0,page}
   const categoryRecord=(await getSnapshotCategories()).find(c=>c.slug===category)
   const list=categoryRecord?.listings.find(l=>l.slug===listing)
@@ -200,6 +205,7 @@ export async function getSnapshotProducts(category:string,listing:string,page=1)
 }
 
 export async function getSnapshotProduct(category:string,listing:string,slug:string) {
+ if(publicPostgresEnabled()) return getLiveProduct(category,listing,slug);
   if(![category,listing,slug].every(s=>SLUG.test(s))) return null
   const path=`/${category}/${listing}/${slug}`
   const hash=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(path)))

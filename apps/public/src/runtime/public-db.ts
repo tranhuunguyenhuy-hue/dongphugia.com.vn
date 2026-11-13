@@ -1,22 +1,19 @@
-// Database reads are opt-in. No connection string or privileged key is committed.
-import type { QueryResultRow } from 'pg'
-
-export type PublicHyperdrive = { connectionString: string }
+// M1: read-only connection to V1 Supabase through a scoped Cloudflare Hyperdrive.
+// Disabled by default; never insert connection strings or service keys in source.
 let poolPromise: Promise<import('pg').Pool> | undefined
-
+export type PublicHyperdrive = { connectionString: string }
 export function publicPostgresEnabled() {
   return process.env.PUBLIC_CATALOGUE_SOURCE === 'postgresql'
 }
-
-async function publicPool() {
+async function getPool() {
   if (!poolPromise) {
     poolPromise = (async () => {
       const { env } = await import('cloudflare:workers')
-      const binding = (env as { PUBLIC_DB?: PublicHyperdrive }).PUBLIC_DB
-      if (!binding?.connectionString) throw new Error('PUBLIC_DATABASE_BINDING_REQUIRED')
+      const hyperdrive = (env as { PUBLIC_DB?: PublicHyperdrive }).PUBLIC_DB
+      if (!hyperdrive?.connectionString) throw new Error('PUBLIC_DATABASE_BINDING_REQUIRED')
       const { Pool } = await import('pg')
       return new Pool({
-        connectionString: binding.connectionString,
+        connectionString: hyperdrive.connectionString,
         max: 2,
         idleTimeoutMillis: 1000,
         connectionTimeoutMillis: 3000,
@@ -27,17 +24,16 @@ async function publicPool() {
   try { return await poolPromise }
   catch (error) { poolPromise = undefined; throw error }
 }
-
-/** Only fixed, parameterized SELECT statements may use this interface. */
-export async function readPublicRows<T extends QueryResultRow>(
+/** Fixed SELECT only; all dynamic parameters are bound, no Postgres writes allowed. */
+export async function readPublicRows<T>(
   statement: string,
   values: readonly (string | number | boolean)[] = [],
 ): Promise<T[]> {
   if (!publicPostgresEnabled()) throw new Error('PUBLIC_DATABASE_MODE_DISABLED')
-  if (!/^\s*(SELECT|WITH)\b/i.test(statement) || /;/.test(statement)) {
+  if (!/^\s*(SELECT|WITH)\b/i.test(statement) || statement.includes(';')) {
     throw new Error('PUBLIC_DATABASE_READ_ONLY_REQUIRED')
   }
-  const pool = await publicPool()
-  const result = await pool.query<T>(statement, [...values])
-  return result.rows
+  const pool = await getPool()
+  const response = await pool.query(statement, [...values])
+  return response.rows as T[]
 }

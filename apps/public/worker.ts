@@ -74,11 +74,19 @@ export default {
       })
     }
 
-    const prerendered=await servePrerenderedCatalogue(request,environment,__DPG_BUILD_SOURCE_SHA__)
-    if(prerendered)return prerendered
+    const databaseMode = environment.PUBLIC_CATALOGUE_SOURCE === 'postgresql'
+    if (databaseMode && !environment.PUBLIC_DB) {
+      return new Response('Database temporarily unavailable.', {status:503,headers:{
+        'Cache-Control':PRIVATE_CACHE_CONTROL,...robotHeaders,...sourceIdentityHeader,
+      }})
+    }
+    if (!databaseMode) {
+      const prerendered=await servePrerenderedCatalogue(request,environment,__DPG_BUILD_SOURCE_SHA__)
+      if(prerendered)return prerendered
+    }
     const pathname = new URL(request.url).pathname
     const catalogueRequest = pathname === '/' || ['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat'].some(root => pathname === `/${root}` || pathname.startsWith(`/${root}/`))
-    if (publicSnapshotCheckpoint() && catalogueRequest) {
+    if (!databaseMode && publicSnapshotCheckpoint() && catalogueRequest) {
       const assets = environment.ASSETS as { fetch?: (url: string) => Promise<Response> } | undefined
       let ready = false
       try {
