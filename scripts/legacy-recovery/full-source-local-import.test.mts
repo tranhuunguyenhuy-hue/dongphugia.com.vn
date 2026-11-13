@@ -155,4 +155,16 @@ describe('full source local importer integrity', () => {
     const result = await importFullSource(prisma, replay as unknown as Parameters<typeof importFullSource>[1], [], [])
     expect(result.mode).toBe('identical-noop')
   })
+
+  it('compares Blog mapper Date values by instant', async () => {
+    const row = { id: 1, title: 'Recovered Blog post', published_at: new Date('2026-08-26T03:21:32.578Z') }
+    const replay = replayData(row, { ...row, published_at: new Date('2026-08-26T03:21:32.578Z') })
+    const { prisma } = fakePrisma({
+      ledger: replay.existingLedger,
+      counts: { categories: 1 },
+      targetRows: replay.targetRows,
+    })
+    const result = await importFullSource(prisma, replay as unknown as Parameters<typeof importFullSource>[1], [], [])
+    expect(result.mode).toBe('identical-noop')
+  })
 })

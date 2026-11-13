@@ -243,6 +243,7 @@ function normalizeNumeric(value: string) {
 function replayValueMatches(sourceValue: unknown, targetValue: unknown): boolean {
   if (sourceValue === targetValue) return true
   if (targetValue instanceof Date) {
+    if (sourceValue instanceof Date) return sourceValue.getTime() === targetValue.getTime()
     return typeof sourceValue === 'string' && Date.parse(sourceValue) === targetValue.getTime()
   }
   if (typeof targetValue === 'bigint') {
