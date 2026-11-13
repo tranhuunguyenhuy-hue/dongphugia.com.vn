@@ -389,10 +389,26 @@ async function captureNoSession(page: Page, suffix: string, evidenceDir: string)
   return { viewport: suffix, products: 'redirected-to-login', blog: 'redirected-to-login' }
 }
 
-async function waitForActionResponse(page: Page, click: () => Promise<void>) {
-  const response = page.waitForResponse((candidate) => Boolean(candidate.request().headers()['next-action']), { timeout: 20_000 })
-  await click()
-  return response
+async function waitForActionResponse(page: Page, click: () => Promise<void>, label: string) {
+  const observedRequests: string[] = []
+  const recordRequest = (request: import('playwright').Request) => {
+    if (new URL(request.url()).origin === BASE_URL) {
+      observedRequests.push(`${request.method()} ${new URL(request.url()).pathname} action=${Boolean(request.headers()['next-action'])}`)
+    }
+  }
+  page.on('request', recordRequest)
+  try {
+    const response = page.waitForResponse((candidate) => Boolean(candidate.request().headers()['next-action']), { timeout: 20_000 })
+    await click()
+    return await response
+  } catch {
+    const invalidFields = await page.locator('[aria-invalid="true"]').evaluateAll((nodes) => nodes.map((node) =>
+      (node as HTMLInputElement).name || (node as HTMLElement).getAttribute('aria-label') || node.tagName,
+    ))
+    fail(`LOCAL_ADMIN_ACTION_NOT_OBSERVED:${label}:${JSON.stringify({ observedRequests, invalidFields })}`)
+  } finally {
+    page.off('request', recordRequest)
+  }
 }
 
 async function editLocalFixtures(
@@ -406,7 +422,8 @@ async function editLocalFixtures(
   if (!productEdit || productEdit.status() !== 200) fail(`LOCAL_PRODUCT_EDIT_HTTP_FAILED:${suffix}`)
   const productName = `Local preview edited ${suffix}`
   await page.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN').fill(productName)
-  const productAction = await waitForActionResponse(page, () => page.getByRole('button', { name: 'Cập nhật' }).first().click())
+  await page.waitForTimeout(1500) // Allow the large ProductForm client bundle to hydrate after navigation.
+  const productAction = await waitForActionResponse(page, () => page.getByRole('button', { name: 'Cập nhật' }).first().click(), 'product-edit')
   if (productAction.status() < 200 || productAction.status() >= 300) fail(`LOCAL_PRODUCT_EDIT_ACTION_FAILED:${suffix}`)
   await page.waitForURL((url) => url.pathname === '/admin/products', { timeout: 20_000 })
   const editedProduct = await prisma.products.findUnique({ where: { id: fixtures.product.id }, select: { name: true } })
@@ -417,7 +434,7 @@ async function editLocalFixtures(
   if (!blogEdit || blogEdit.status() !== 200) fail(`LOCAL_BLOG_EDIT_HTTP_FAILED:${suffix}`)
   const blogTitle = `Local preview draft edited ${suffix}`
   await page.locator('form input').first().fill(blogTitle)
-  const blogAction = await waitForActionResponse(page, () => page.getByRole('button', { name: 'Cập nhật', exact: true }).click())
+  const blogAction = await waitForActionResponse(page, () => page.getByRole('button', { name: 'Cập nhật', exact: true }).click(), 'blog-edit')
   if (blogAction.status() < 200 || blogAction.status() >= 300) fail(`LOCAL_BLOG_EDIT_ACTION_FAILED:${suffix}`)
   await page.waitForURL((url) => url.pathname === '/admin/blog/posts', { timeout: 20_000 })
   const editedBlog = await prisma.blog_posts.findUnique({ where: { id: fixtures.blogPost.id }, select: { title: true, status: true, version: true } })
@@ -482,7 +499,8 @@ async function exerciseViewport(
   const editPage = await managerPage.goto(`${BASE_URL}/admin/products/${fixtures.product.id}`, { waitUntil: 'domcontentloaded' })
   if (!editPage || editPage.status() !== 200) fail(`LOCAL_MANAGER_PRODUCT_EDIT_ROUTE_UNEXPECTEDLY_DENIED:${suffix}`)
   await managerPage.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN').fill(`forbidden ${suffix}`)
-  const deniedAction = await waitForActionResponse(managerPage, () => managerPage.getByRole('button', { name: 'Cập nhật' }).first().click())
+  await managerPage.waitForTimeout(1500)
+  const deniedAction = await waitForActionResponse(managerPage, () => managerPage.getByRole('button', { name: 'Cập nhật' }).first().click(), 'manager-product-edit')
   const afterDeniedWrite = await prisma.products.findUnique({
     where: { id: fixtures.product.id }, select: { name: true, updated_at: true },
   })
