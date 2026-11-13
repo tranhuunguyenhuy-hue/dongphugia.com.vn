@@ -572,7 +572,7 @@ async function exerciseViewport(
   const productResponse = await page.goto(`${BASE_URL}/admin/products?category_id=${sample.product.category_id}&search=${encodeURIComponent(sample.product.sku)}`, { waitUntil: 'domcontentloaded' })
   if (!productResponse || productResponse.status() !== 200) fail(`LOCAL_PRODUCT_LIST_HTTP_FAILED:${suffix}`)
   await page.getByRole('heading', { name: 'Sản phẩm', exact: true }).waitFor({ timeout: 25_000 })
-  await page.getByText(sample.product.sku, { exact: true }).waitFor({ state: 'visible', timeout: 25_000 })
+  await page.getByRole('table').getByText(sample.product.sku, { exact: true }).first().waitFor({ state: 'visible', timeout: 25_000 })
   await page.screenshot({ path: join(evidenceDir, `admin-products-${suffix}.png`), fullPage: true })
 
   const blogResponse = await page.goto(`${BASE_URL}/admin/blog/posts`, { waitUntil: 'domcontentloaded' })
