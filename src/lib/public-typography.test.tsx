@@ -57,8 +57,9 @@ describe('shared public typography and viewport', () => {
     expect(previewViewport).toBe(publicViewport)
   })
 
-  it('keeps the legacy layout on the same font classes and viewport object', () => {
-    const html = renderToStaticMarkup(createElement(LegacyRootLayout, null, createElement('main', null, 'legacy child')))
+  it('keeps the legacy layout on the same font classes and viewport object', async () => {
+    const element = await LegacyRootLayout({ children: createElement('main', null, 'legacy child') })
+    const html = renderToStaticMarkup(element)
 
     expect(html).toContain('class="--font-sans-generated --font-display-generated antialiased font-sans"')
     expect(legacyViewport).toBe(publicViewport)

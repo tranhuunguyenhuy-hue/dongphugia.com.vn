@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "include": [
     "next-env.d.ts",
-    "worker.admin-spike.ts",
+    "../admin-worker-spike/worker.admin-spike.ts",
     "vite.admin-worker-spike.config.ts"
   ],
   "exclude": ["node_modules"]

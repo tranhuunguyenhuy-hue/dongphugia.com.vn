@@ -139,7 +139,7 @@ export default {
       return new Response('Not found', { status: 404 })
     }
 
-    process.env.NODE_ENV = 'production'
+    Reflect.set(process.env, 'NODE_ENV', 'production')
     process.env.RUNTIME_ROLE = environment.RUNTIME_ROLE
     process.env.WRITE_FREEZE_MODE = environment.WRITE_FREEZE_MODE
     process.env.PRISMA_REQUEST_SCOPE_REQUIRED = 'true'

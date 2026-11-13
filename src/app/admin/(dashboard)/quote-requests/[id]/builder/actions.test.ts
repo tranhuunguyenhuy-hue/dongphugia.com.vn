@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { WRITE_FREEZE_ERROR_CODE, WriteFreezeError } from '@/lib/write-freeze'
 
 const mocks = vi.hoisted(() => ({
     requirePermission: vi.fn(),
@@ -46,32 +45,30 @@ const quoteData = {
     quote_number: 'STG-DEMO-QUOTE',
 }
 
-describe('quote builder write-freeze behavior', () => {
+describe('deferred quote module launch-scope boundary', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         mocks.requirePermission.mockResolvedValue({ id: 1, role: 'admin' })
     })
 
-    it('returns the structured contract and performs no follow-on work', async () => {
-        mocks.quoteUpdate.mockRejectedValueOnce(new WriteFreezeError('quote-update'))
+    it('denies quote writes before checking permission or mutating data', async () => {
+        await expect(updateQuoteData(1, quoteData)).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
 
-        const result = await updateQuoteData(1, quoteData)
-
-        expect(result).toMatchObject({ code: WRITE_FREEZE_ERROR_CODE, statusCode: 503 })
+        expect(mocks.requirePermission).not.toHaveBeenCalled()
+        expect(mocks.quoteUpdate).not.toHaveBeenCalled()
         expect(mocks.itemUpdate).not.toHaveBeenCalled()
         expect(mocks.revalidatePath).not.toHaveBeenCalled()
     })
 
-    it('stops completeQuote when its save step is frozen', async () => {
-        mocks.quoteUpdate.mockRejectedValueOnce(new WriteFreezeError('quote-update'))
+    it('denies quote completion before saving or creating customer state', async () => {
+        await expect(completeQuote(1, quoteData)).rejects.toThrow('ADMIN_LAUNCH_SCOPE_DENIED')
 
-        const result = await completeQuote(1, quoteData)
-
-        expect(result).toMatchObject({ code: WRITE_FREEZE_ERROR_CODE, statusCode: 503 })
+        expect(mocks.requirePermission).not.toHaveBeenCalled()
+        expect(mocks.quoteUpdate).not.toHaveBeenCalled()
+        expect(mocks.itemUpdate).not.toHaveBeenCalled()
         expect(mocks.customerFind).not.toHaveBeenCalled()
         expect(mocks.customerCreate).not.toHaveBeenCalled()
         expect(mocks.customerUpdate).not.toHaveBeenCalled()
-        expect(mocks.quoteUpdate).toHaveBeenCalledOnce()
         expect(mocks.revalidatePath).not.toHaveBeenCalled()
     })
 })
