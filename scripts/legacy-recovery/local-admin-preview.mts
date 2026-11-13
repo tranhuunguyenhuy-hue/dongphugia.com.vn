@@ -458,7 +458,7 @@ async function editLocalFixtures(
   const previousBlog = await prisma.blog_posts.findUnique({ where: { id: fixtures.blogPost.id }, select: { version: true } })
   if (!previousBlog) fail(`LOCAL_BLOG_EDIT_FIXTURE_MISSING:${suffix}`)
   const blogTitle = `Local preview draft edited ${suffix}`
-  await page.locator('form input').first().fill(blogTitle)
+  await page.locator('form input:not([type="hidden"])').first().fill(blogTitle)
   const blogAction = await waitForActionResponse(page, () => page.getByRole('button', { name: 'Cập nhật', exact: true }).click(), 'blog-edit', diagnostics)
   if (blogAction.status() < 200 || blogAction.status() >= 300) fail(`LOCAL_BLOG_EDIT_ACTION_FAILED:${suffix}`)
   await page.waitForURL((url) => url.pathname === '/admin/blog/posts', { timeout: 20_000 })
