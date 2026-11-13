@@ -106,6 +106,10 @@ jobs:
           npm run typecheck:worker --prefix apps/admin
           npm run typecheck:public
 
+      - name: Install Chromium for the candidate browser smoke
+        working-directory: candidate
+        run: npx playwright install --with-deps chromium
+
       - name: Build and browser-check without provider credentials
         working-directory: candidate
         env:
