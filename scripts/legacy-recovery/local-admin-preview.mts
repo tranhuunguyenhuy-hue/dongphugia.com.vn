@@ -699,7 +699,7 @@ async function exerciseViewport(
     launchNavigation,
     deferredModules,
     managerProductRead: 'allowed',
-    managerBlogRead: 'redirected-to-admin',
+    managerBlogRead: 'redirected-to-products',
     managerProductWrite: `denied-no-write-http-${deniedAction.status()}`,
     localFixtureEdits: edits,
   }
