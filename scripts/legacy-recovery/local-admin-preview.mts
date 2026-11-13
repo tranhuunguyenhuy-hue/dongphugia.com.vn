@@ -448,7 +448,7 @@ async function assertDeferredModulesDenied(page: Page, suffix: string) {
 async function assertDeferredAdminActionsDenied(
   page: Page,
   prisma: PrismaClient,
-  routes: { productId: number; productPath: string; blogPath: string },
+  routes: { productId: number; productPath: string; blogPath: string; expectedProductSku: string },
   routerTrees: { products?: string; blog?: string },
   suffix: string,
 ) {
@@ -515,9 +515,11 @@ async function assertDeferredAdminActionsDenied(
     }
     const beforeRoute = await page.goto(`${BASE_URL}${routes.productPath}`, { waitUntil: 'domcontentloaded' })
     if (!beforeRoute || beforeRoute.status() !== 200) fail(`LOCAL_ACTION_POST_ALLOWED_PRODUCT_ROUTE_FAILED:${suffix}`)
-    const allowedResponse = await postAction('lib/product-actions.ts', 'searchProducts', 'products', [`NO_MATCH_${token}`])
-    if (allowedResponse.status !== 200) {
-      fail(`LOCAL_ALLOWED_ACTION_POST_FAILED:${suffix}:${JSON.stringify({ status: allowedResponse.status, body: allowedResponse.body.slice(0, 500) })}`)
+    const allowedResponse = await postAction('lib/product-actions.ts', 'searchProducts', 'products', [routes.expectedProductSku])
+    if (allowedResponse.status !== 200 || !allowedResponse.body.includes(routes.expectedProductSku)) {
+      fail(`LOCAL_ALLOWED_ACTION_POST_FAILED:${suffix}:${JSON.stringify({
+        status: allowedResponse.status, containsExpectedProduct: allowedResponse.body.includes(routes.expectedProductSku), responseBytes: allowedResponse.body.length,
+      })}`)
     }
     tested.push('searchProducts:allowed')
     for (const spec of actionSpecs) {
@@ -526,7 +528,11 @@ async function assertDeferredAdminActionsDenied(
       if (!routeResponse || routeResponse.status() !== 200) fail(`LOCAL_ACTION_POST_ALLOWED_ROUTE_FAILED:${spec.route}:${suffix}`)
       const response = await postAction(spec.filename, spec.name, spec.route, spec.args(orderNumber, phone))
       if (response.status !== 500 || response.body.includes(privateMarker) || response.body.includes(orderNumber)) {
-        fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:${spec.name}:${suffix}:${JSON.stringify({ status: response.status, body: response.body.slice(0, 500) })}`)
+        fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:${spec.name}:${suffix}:${JSON.stringify({
+          status: response.status, containsPrivateMarker: response.body.includes(privateMarker),
+          containsProbeOrderNumber: response.body.includes(orderNumber), containsScopeError: response.body.includes('ADMIN_LAUNCH_SCOPE_DENIED'),
+          responseBytes: response.body.length,
+        })}`)
       }
       tested.push(spec.name)
     }
@@ -743,6 +749,7 @@ async function exerciseViewport(
     productId: fixtures.product.id,
     productPath: `/admin/products/${fixtures.product.id}`,
     blogPath: `/admin/blog/posts/${fixtures.blogPost.id}`,
+    expectedProductSku: sample.product.sku,
   }, actionRouterTrees, suffix)
   await context.close()
 
