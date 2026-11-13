@@ -51,6 +51,32 @@ async function copyClientTree(source: string, destination: string) {
   await cp(source, destination, { recursive: true })
 }
 
+async function addAdminWorkerModuleAliases(serverRoot: string) {
+  // The root Next/Vinext build emits .mjs server entrypoints but its internal
+  // fetch-handler still refers to three .js module paths. Keep the built server
+  // tree intact and provide narrow ESM aliases for Wrangler's module graph.
+  const aliases = [
+    { source: 'index.mjs', target: 'index.js', specifier: './index.mjs' },
+    { source: 'ssr/index.mjs', target: 'ssr/index.js', specifier: './index.mjs' },
+    {
+      source: 'vinext-client-assets.js',
+      target: 'admin/_next/static/vinext-client-assets.js',
+      specifier: '../../../vinext-client-assets.js',
+    },
+  ]
+
+  for (const alias of aliases) {
+    const sourcePath = path.join(serverRoot, alias.source)
+    const targetPath = path.join(serverRoot, alias.target)
+    if (!await stat(sourcePath).then((entry) => entry.isFile()).catch(() => false)) {
+      throw new Error('COMBINED_ADMIN_RUNTIME_ALIAS_SOURCE_MISSING')
+    }
+    if (await stat(targetPath).then((entry) => entry.isFile()).catch(() => false)) continue
+    await mkdir(path.dirname(targetPath), { recursive: true })
+    await writeFile(targetPath, `export { default } from '${alias.specifier}'\nexport * from '${alias.specifier}'\n`, 'utf8')
+  }
+}
+
 function sha256(bytes: Buffer | string) {
   return createHash('sha256').update(bytes).digest('hex')
 }
@@ -142,6 +168,7 @@ async function main() {
   await copyServerTree(publicServerSource, publicServer)
   await copyServerTree(adminServerSource, adminServer)
   await copyClientTree(publicAssetsSource, assetsRoot)
+  await addAdminWorkerModuleAliases(adminServer)
 
   const adminPrefixedAssets = path.join(adminAssetsSource, 'admin')
   const adminAssetsToCopy = await stat(adminPrefixedAssets).then((entry) => entry.isDirectory()).catch(() => false)
