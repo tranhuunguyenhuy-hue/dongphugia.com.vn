@@ -65,6 +65,11 @@ async function assertNoRuntimeConfig(root: string, relative = ''): Promise<void>
     }
     if (!entry.isFile()) throw new Error('COMBINED_ADMIN_ARTIFACT_ENTRY_INVALID')
     if (/^wrangler\.(?:jsonc?|toml)$/i.test(entry.name)) throw new Error('COMBINED_ADMIN_ARTIFACT_WRANGLER_CONFIG_FORBIDDEN')
+    // Binary assets can contain arbitrary byte sequences that happen to look
+    // like text sentinels (notably the 32-zero local Hyperdrive placeholder).
+    // Runtime bindings and local connection strings only enter through text
+    // config or code, which remain covered by this scan.
+    if (/\.(?:wasm|avif|gif|ico|jpe?g|png|webp|woff2?|ttf|otf)$/i.test(entry.name)) continue
     const content = await readFile(path.join(root, child))
     const text = content.toString('utf8')
     if (text.includes('local-only-spike-pass') || text.includes('127.0.0.1:55439')
