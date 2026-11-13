@@ -13,6 +13,7 @@
     "build:public-worker": "npm --prefix apps/public run build:worker",
     "build:admin": "npm --prefix apps/admin run build",
     "build:environment-worker": "tsx scripts/app-foundation/build-environment-worker.mts",
+    "build:combined-admin": "tsx scripts/app-foundation/build-combined-admin.mts",
     "preview:local": "node scripts/app-foundation/run-local-preview.mjs",
     "build:apps": "npm run build:public && npm run build:admin",
     "start": "next start",

@@ -19,6 +19,10 @@ if (configuredPublishingCdn && !/^[a-z0-9.-]+$/.test(configuredPublishingCdn)) {
 const nextConfig: NextConfig = {
   /* config options here */
   output: 'standalone',
+  // The legacy Admin shares the Public Worker origin. Keep its immutable
+  // framework assets under /admin so the two independent Vinext builds cannot
+  // serve each other's chunks from the same /_next path.
+  assetPrefix: process.env.ADMIN_ASSET_PREFIX || undefined,
   poweredByHeader: false,
   reactCompiler: true,
   images: {

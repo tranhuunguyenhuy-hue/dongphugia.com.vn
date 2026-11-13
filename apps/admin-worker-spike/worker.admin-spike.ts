@@ -5,6 +5,8 @@ import { requireWritesAllowed } from '../../src/lib/write-freeze'
 import { withRequestPrismaContext, type ProtectedPrismaClient } from '../../src/lib/prisma'
 
 interface AdminWorkerEnvironment {
+  APP_ENV: 'preview' | 'production'
+  PREVIEW_NOINDEX?: 'true' | 'false'
   HYPERDRIVE_ADMIN_NO_CACHE: { connectionString: string }
   RUNTIME_ROLE: 'production'
   WRITE_FREEZE_MODE: 'false'
@@ -118,15 +120,15 @@ function isAdminRequestPath(pathname: string): boolean {
   return pathname === '/admin' || pathname.startsWith('/admin/')
 }
 
-function isFrameworkAssetPath(pathname: string): boolean {
-  return pathname.startsWith('/_next/')
-    || pathname.startsWith('/_vinext/')
-    || pathname.startsWith('/@vite/')
+function isFrameworkAssetPath(pathname: string, allowViteDevelopmentPaths: boolean): boolean {
+  if (pathname.startsWith('/_next/') || pathname.startsWith('/_vinext/') || pathname === '/favicon.ico') return true
+  return allowViteDevelopmentPaths && (
+    pathname.startsWith('/@vite/')
     || pathname.startsWith('/@id/')
     || pathname.startsWith('/@fs/')
     || pathname.startsWith('/src/')
     || pathname.startsWith('/node_modules/')
-    || pathname === '/favicon.ico'
+  )
 }
 
 export default {
@@ -135,11 +137,13 @@ export default {
     if (pathname === '/') {
       return Response.redirect(new URL('/admin/login', request.url), 302)
     }
-    if (!isAdminRequestPath(pathname) && !isFrameworkAssetPath(pathname)) {
+    const allowViteDevelopmentPaths = environment.APP_ENV === 'preview' && environment.PREVIEW_NOINDEX === 'true'
+    if (!isAdminRequestPath(pathname) && !isFrameworkAssetPath(pathname, allowViteDevelopmentPaths)) {
       return new Response('Not found', { status: 404 })
     }
 
     Reflect.set(process.env, 'NODE_ENV', 'production')
+    process.env.APP_ENV = environment.APP_ENV
     process.env.RUNTIME_ROLE = environment.RUNTIME_ROLE
     process.env.WRITE_FREEZE_MODE = environment.WRITE_FREEZE_MODE
     process.env.PRISMA_REQUEST_SCOPE_REQUIRED = 'true'
