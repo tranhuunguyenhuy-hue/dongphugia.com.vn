@@ -39,7 +39,7 @@ permissions:
   actions: read
   contents: read
 concurrency:
-  group: dpg-production-publication
+  group: public-production-worker
   cancel-in-progress: false
 jobs:
   review:

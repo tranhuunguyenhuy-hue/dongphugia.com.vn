@@ -5,6 +5,7 @@ const workflow = readFileSync('.github/workflows/admin-release-artifact-review.y
 describe('combined Admin artifact review workflow', () => {
   it('uses trusted main to review data from one exact successful producer without provider credentials', () => {
     expect(workflow).toContain('github.ref == \'refs/heads/main\'')
+    expect(workflow).toContain('group: public-production-worker')
     expect(workflow).toContain('"$SOURCE_SHA" == "$GITHUB_SHA"')
     expect(workflow).toContain('.path == ".github/workflows/combined-admin-build.yml"')
     expect(workflow).toContain('.head_sha == $sha')
