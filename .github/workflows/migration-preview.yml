@@ -91,6 +91,10 @@ jobs:
         if: needs.repo-code-gate.outputs.preview_required == 'true'
         run: npm ci --prefix apps/public
 
+      - name: Install the pinned environment Worker toolchain for integration tests
+        if: needs.repo-code-gate.outputs.integration_required == 'true'
+        run: npm ci --prefix apps/environment-worker
+
       # General lint/typecheck/unit tests belong exclusively to quality.yml.
       # A second test pass is justified only for data/auth/order/CI control changes:
       # this job supplies a disposable Postgres URL absent from the fast quality job.

@@ -25,6 +25,12 @@ on:
         description: Nonsecret Cloudflare token ID to inspect before approving the protected Staging environment
         required: true
         type: string
+      api_origin_ack:
+        description: Explicitly acknowledge only Wrangler's API-managed-origin warning for dpg-staging when needed
+        required: true
+        default: none
+        type: choice
+        options: [none, dpg-staging-script-api-origin-v1]
 
 permissions:
   actions: read
@@ -189,6 +195,7 @@ jobs:
           RELEASE_SOURCE_SHA: ${{ inputs.source_sha }}
           RELEASE_ARTIFACT_SHA256: ${{ steps.artifact.outputs.sha256 }}
           RELEASE_DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}
+          RELEASE_API_ORIGIN_ACK: ${{ inputs.api_origin_ack }}
         run: node scripts/app-foundation/render-environment-worker-review-summary.mjs
 
   publish-candidate:
@@ -207,6 +214,7 @@ jobs:
       SOURCE_SHA: ${{ inputs.source_sha }}
       ARTIFACT_SHA256: ${{ needs.review-candidate.outputs.artifact_sha256 }}
       EXPECTED_DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}
+      API_ORIGIN_ACK: ${{ inputs.api_origin_ack }}
       CLOUDFLARE_ACCOUNT_ID: d54f3402b9d112ab64d6135e0e3f1fb1
       ARTIFACT_ROOT: ${{ github.workspace }}/.artifacts/environment-worker/staging
       WRANGLER_SEND_METRICS: 'false'
@@ -266,9 +274,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -euo pipefail
-          node apps/environment-worker/node_modules/wrangler/bin/wrangler.js deploy \
-            --strict --config "$ARTIFACT_ROOT/wrangler.json" \
-            --message "DPG $APP_ENV source $SOURCE_SHA"
+          node scripts/app-foundation/run-environment-worker-wrangler-deploy.mjs \
+            "$APP_ENV" "$SOURCE_SHA" "$ARTIFACT_ROOT" "$API_ORIGIN_ACK" "$CLOUDFLARE_ACCOUNT_ID"
 
       - name: Verify active deployment identity, noindex and Production-published catalogue reads
         env:
@@ -303,6 +310,7 @@ jobs:
             echo "- Requested source SHA: $SOURCE_SHA"
             echo "- Candidate artifact content SHA-256: $ARTIFACT_SHA256"
             echo "- Expected and API-verified token ID: $EXPECTED_DEPLOYMENT_TOKEN_ID (identity/status only)"
+            echo "- API-origin warning acknowledgement: $API_ORIGIN_ACK (trusted workflow input; one exact Wrangler prompt only)"
             echo "- Deployment config SHA-256: $deployment_config_sha256"
             echo "- Production public baseline comparison: ${PRODUCTION_BASELINE_OUTCOME:-not-run}"
             echo "- Token policy evidence: external human inspection in the required cloudflare-staging environment approval; not machine verified by CI."
