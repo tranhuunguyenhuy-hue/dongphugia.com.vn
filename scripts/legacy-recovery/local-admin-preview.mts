@@ -442,7 +442,7 @@ async function editLocalFixtures(
 ) {
   const productEdit = await page.goto(`${BASE_URL}/admin/products/${fixtures.product.id}`, { waitUntil: 'domcontentloaded' })
   if (!productEdit || productEdit.status() !== 200) fail(`LOCAL_PRODUCT_EDIT_HTTP_FAILED:${suffix}`)
-  const productNameInput = page.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN')
+  const productNameInput = page.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN').first()
   await productNameInput.waitFor({ state: 'visible', timeout: 15_000 })
   await page.waitForLoadState('networkidle', { timeout: 15_000 })
   await page.waitForTimeout(500) // Let the ProductForm client handlers hydrate before changing controlled fields.
@@ -606,8 +606,13 @@ async function exerciseViewport(
   const auditCountBefore = await prisma.audit_logs.count({ where: { entity_type: 'product', entity_id: fixtures.product.id } })
   const editPage = await managerPage.goto(`${BASE_URL}/admin/products/${fixtures.product.id}`, { waitUntil: 'domcontentloaded' })
   if (!editPage || editPage.status() !== 200) fail(`LOCAL_MANAGER_PRODUCT_EDIT_ROUTE_UNEXPECTEDLY_DENIED:${suffix}`)
-  await managerPage.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN').fill(`forbidden ${suffix}`)
-  await managerPage.waitForTimeout(4000)
+  const deniedProductNameInput = managerPage.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN').first()
+  await deniedProductNameInput.waitFor({ state: 'visible', timeout: 15_000 })
+  await managerPage.waitForLoadState('networkidle', { timeout: 15_000 })
+  await managerPage.waitForTimeout(500)
+  const forbiddenName = `forbidden ${suffix}`
+  await deniedProductNameInput.fill(forbiddenName)
+  if (await deniedProductNameInput.inputValue() !== forbiddenName) fail(`LOCAL_MANAGER_PRODUCT_EDIT_FIELD_NOT_SET:${suffix}`)
   const deniedDiagnostics: string[] = []
   managerPage.on('pageerror', (error) => deniedDiagnostics.push(`pageerror:${error.message.slice(0, 240)}`))
   managerPage.on('console', (message) => { if (message.type() === 'error') deniedDiagnostics.push(`console:${message.text().slice(0, 240)}`) })
