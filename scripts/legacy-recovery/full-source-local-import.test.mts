@@ -113,8 +113,11 @@ describe('full source local importer integrity', () => {
   })
 
   it('returns identical-noop only when source-owned target row content matches', async () => {
-    const row = { id: 1, name: 'Source category', slug: 'source-category', updated_at: '2026-01-01T00:00:00.000Z' }
-    const replay = replayData(row)
+    const row = {
+      id: 1, name: 'Source category', slug: 'source-category',
+      created_at: '2026-01-01T00:00:00.123456+00:00', updated_at: '2026-01-01T00:00:00.000Z',
+    }
+    const replay = replayData(row, { ...row, created_at: new Date('2026-01-01T00:00:00.123Z') })
     const { prisma } = fakePrisma({
       ledger: replay.existingLedger,
       counts: { categories: 1 },
