@@ -29,3 +29,8 @@
 Agent assigned to M1 must: verify actual target/source; capture backup and restore proof; reconcile hosted product/blog inventory; implement live read-only Product+Blog Public path with cached DB reads; keep snapshot rollback; verify actual Production URL and counts. **No Phase 2 or remote Preview work.**
 
 After M1 succeeds, update this file with deployed SHA, measured DB counts, source/freshness evidence, acceptance URL, rollback and remaining issues. Keep UNKNOWNs visible rather than inventing success.
+
+
+## Archived identity — never confuse with V1 Production
+
+Historical LEO-539 isolated, synthetic-only Supabase test project: `tlmgudfhsyzayiazuugf`, name `dongphugia-runtime`, Singapore `ap-southeast-1`. This is **historical evidence, not the selected Production target**; it is kept here solely to preserve security-boundary provenance and avoid accidental use in M1. The active candidate V1 project requires fresh verification as described above.

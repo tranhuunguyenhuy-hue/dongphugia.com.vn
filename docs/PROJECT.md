@@ -62,3 +62,8 @@ Only post-recovery audit for broken images/routes, product data, Blog media, SEO
 - Preserve rollback SQL/sha256, backups, imports, provenance and required CI even when deleting old **policy** documentation; these remain technical assets, not active work tickets.
 
 See `docs/deploy/cloudflare-staging-production.md` and `docs/deploy/postgresql-production-adoption-contract.md`. Snapshot evidence is kept in `docs/ops/project-current-state.md`, but **live provider verification overrides date-stamped observations**.
+
+
+## Legacy data-security evidence retained for audit only
+
+The historical LEO-539 synthetic Supabase security proof is located at `docs/deploy/supabase-runtime-security-boundary.md` and project `tlmgudfhsyzayiazuugf`. It is **not** the current V1 Production database, **not** authorized for data import or Admin testing, and does not supersede #307. Keep its source SQL/security tests intact as provenance, but do not initiate its discontinued delivery track.
