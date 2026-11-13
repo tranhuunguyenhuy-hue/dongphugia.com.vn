@@ -36,6 +36,27 @@ export const getBrands = unstable_cache(
     { revalidate: 3600, tags: ['brands'] }
 )
 
+// Admin catalogue lookups must include inactive references so existing Products
+// remain visible and editable without changing the public catalogue's filters.
+export async function getAdminCategories() {
+    return prisma.categories.findMany({ orderBy: [{ sort_order: 'asc' }, { id: 'asc' }] })
+}
+
+export async function getAdminSubcategories(categoryId?: number) {
+    return prisma.subcategories.findMany({
+        where: categoryId ? { category_id: categoryId } : {},
+        orderBy: [{ sort_order: 'asc' }, { id: 'asc' }],
+        select: { id: true, name: true, slug: true, thumbnail_url: true, hero_image_url: true, category_id: true },
+    })
+}
+
+export async function getAdminBrands() {
+    return prisma.brands.findMany({
+        orderBy: [{ sort_order: 'asc' }, { id: 'asc' }],
+        select: { id: true, name: true, slug: true, logo_url: true },
+    })
+}
+
 // Colors — lookup table
 export const getColors = unstable_cache(
     async () => prisma.colors.findMany({

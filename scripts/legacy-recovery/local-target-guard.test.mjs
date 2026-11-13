@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   assertDisposableLocalDatabase,
+  assertLocalAdminFullPreviewDatabase,
   assertLocalAdminPreviewDatabase,
   assertLocalAdminPreviewServerIdentity,
   assertDryRunOnly,
   assertSameLocalDatabase,
   DISPOSABLE_DATABASE_NAME,
   LOCAL_ADMIN_PREVIEW_DATABASE_NAME,
+  LOCAL_ADMIN_FULL_PREVIEW_DATABASE_NAME,
 } from './local-target-guard.mjs'
 
 describe('local recovery target guard', () => {
@@ -34,6 +36,12 @@ describe('local recovery target guard', () => {
     for (const target of rejected) {
       expect(() => assertLocalAdminPreviewDatabase(target)).toThrow('LOCAL_ADMIN_PREVIEW_DATABASE_REQUIRED')
     }
+  })
+
+  it('accepts the separate full-catalogue local database and rejects it from the reduced preview guard', () => {
+    const url = `postgresql://postgres@127.0.0.1:55439/${LOCAL_ADMIN_FULL_PREVIEW_DATABASE_NAME}?schema=public`
+    expect(assertLocalAdminFullPreviewDatabase(url).database).toBe(LOCAL_ADMIN_FULL_PREVIEW_DATABASE_NAME)
+    expect(() => assertLocalAdminPreviewDatabase(url)).toThrow('LOCAL_ADMIN_PREVIEW_DATABASE_REQUIRED')
   })
 
   it('requires the connected database server itself to be the expected local PostgreSQL 17 cluster', () => {

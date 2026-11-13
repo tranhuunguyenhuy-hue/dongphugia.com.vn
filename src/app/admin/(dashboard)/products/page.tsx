@@ -1,5 +1,5 @@
 import { getAdminProducts, getProductStats } from '@/lib/public-api-products'
-import { getCategories, getSubcategories, getBrands } from '@/lib/cache'
+import { getAdminCategories, getAdminSubcategories, getAdminBrands } from '@/lib/cache'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
@@ -16,6 +16,7 @@ interface PageProps {
         subcategory_id?: string; 
         brand_id?: string;
         highlight_type?: 'featured' | 'promotion';
+        publication_status?: 'public' | 'private';
         is_active?: string; 
         sort?: 'price_asc' | 'price_desc' | 'default';
         page?: string 
@@ -24,20 +25,27 @@ interface PageProps {
 
 export default async function AdminProductsPage({ searchParams }: PageProps) {
     const params = await searchParams
+    const pageHref = (nextPage: number) => {
+        const query = new URLSearchParams()
+        for (const [key, value] of Object.entries(params)) {
+            if (value && key !== 'page') query.set(key, value)
+        }
+        query.set('page', String(nextPage))
+        return `/admin/products?${query.toString()}`
+    }
     const page = Number(params.page || 1)
     const [stats, categories, brands] = await Promise.all([
         getProductStats(),
-        getCategories(),
-        getBrands(),
+        getAdminCategories(),
+        getAdminBrands(),
     ])
 
     const is_active = params.is_active === 'true' ? true : params.is_active === 'false' ? false : undefined
 
-    const effectiveCategoryId = params.category_id 
-        ? Number(params.category_id) 
-        : categories.length > 0 ? categories[0].id : undefined
+    // Admin starts with the complete catalogue; category tabs apply an explicit filter.
+    const effectiveCategoryId = params.category_id ? Number(params.category_id) : undefined
 
-    const subcategories = effectiveCategoryId ? await getSubcategories(effectiveCategoryId) : []
+    const subcategories = effectiveCategoryId ? await getAdminSubcategories(effectiveCategoryId) : []
     const subcategory_id = params.subcategory_id ? Number(params.subcategory_id) : undefined
     const brand_id = params.brand_id ? Number(params.brand_id) : undefined
 
@@ -47,6 +55,8 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
         subcategory_id,
         brand_id,
         highlight_type: params.highlight_type,
+        publication_status: params.publication_status === 'public' || params.publication_status === 'private'
+            ? params.publication_status : undefined,
         sort: params.sort,
         is_active, 
         page, 
@@ -117,22 +127,24 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
             <ProductsTableClient products={products} />
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {total > 0 && (
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <span>Hiển thị {products.length} / {total} sản phẩm</span>
-                    <div className="flex gap-2">
-                        {page > 1 && (
-                            <Link href={`/admin/products?page=${page - 1}`}>
-                                <Button variant="outline" size="sm">← Trước</Button>
-                            </Link>
-                        )}
-                        <span className="flex items-center px-3 text-sm">Trang {page}/{totalPages}</span>
-                        {page < totalPages && (
-                            <Link href={`/admin/products?page=${page + 1}`}>
-                                <Button variant="outline" size="sm">Tiếp →</Button>
-                            </Link>
-                        )}
-                    </div>
+                    {totalPages > 1 && (
+                        <div className="flex gap-2">
+                            {page > 1 && (
+                                <Link href={pageHref(page - 1)}>
+                                    <Button variant="outline" size="sm">← Trước</Button>
+                                </Link>
+                            )}
+                            <span className="flex items-center px-3 text-sm">Trang {page}/{totalPages}</span>
+                            {page < totalPages && (
+                                <Link href={pageHref(page + 1)}>
+                                    <Button variant="outline" size="sm">Tiếp →</Button>
+                                </Link>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

@@ -10,11 +10,13 @@ import bcrypt from 'bcryptjs'
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright'
 import { buildRecoveryImportPlan, reconcileIdempotencyLedger } from './recovery-import-plan.mjs'
 import {
+  assertLocalAdminFullPreviewDatabase,
   assertLocalAdminPreviewDatabase,
   assertLocalAdminPreviewServerIdentity,
   assertSameLocalDatabase,
 } from './local-target-guard.mjs'
 import { readVerifiedBundle, verifyBlogArchiveDigest } from './public-source-contract.mjs'
+import { importFullSource, readFullSourceCapture } from './full-source-local-import.mjs'
 
 const DATABASE_URL = process.env.DATABASE_URL
 const DIRECT_URL = process.env.DIRECT_URL
@@ -27,6 +29,8 @@ const SAFE_NEXT_ENV_KEYS = ['PATH', 'HOME', 'TMPDIR'] as const
 const args = process.argv.slice(2)
 const sourceArg = args.find((arg) => arg.startsWith('--source='))
 const sourceDir = sourceArg?.slice('--source='.length)
+const fullSourceArg = args.find((arg) => arg.startsWith('--full-source='))
+const fullSourceDir = fullSourceArg?.slice('--full-source='.length)
 
 function fail(reason: string): never {
   throw new Error(reason)
@@ -444,13 +448,15 @@ async function editLocalFixtures(
 
   const blogEdit = await page.goto(`${BASE_URL}/admin/blog/posts/${fixtures.blogPost.id}`, { waitUntil: 'domcontentloaded' })
   if (!blogEdit || blogEdit.status() !== 200) fail(`LOCAL_BLOG_EDIT_HTTP_FAILED:${suffix}`)
+  const previousBlog = await prisma.blog_posts.findUnique({ where: { id: fixtures.blogPost.id }, select: { version: true } })
+  if (!previousBlog) fail(`LOCAL_BLOG_EDIT_FIXTURE_MISSING:${suffix}`)
   const blogTitle = `Local preview draft edited ${suffix}`
   await page.locator('form input').first().fill(blogTitle)
   const blogAction = await waitForActionResponse(page, () => page.getByRole('button', { name: 'Cập nhật', exact: true }).click(), 'blog-edit', diagnostics)
   if (blogAction.status() < 200 || blogAction.status() >= 300) fail(`LOCAL_BLOG_EDIT_ACTION_FAILED:${suffix}`)
   await page.waitForURL((url) => url.pathname === '/admin/blog/posts', { timeout: 20_000 })
   const editedBlog = await prisma.blog_posts.findUnique({ where: { id: fixtures.blogPost.id }, select: { title: true, status: true, version: true } })
-  if (editedBlog?.title !== blogTitle || editedBlog.status !== 'draft' || editedBlog.version !== 2) {
+  if (editedBlog?.title !== blogTitle || editedBlog.status !== 'draft' || editedBlog.version !== previousBlog.version + 1) {
     fail(`LOCAL_BLOG_EDIT_NOT_PERSISTED:${suffix}`)
   }
   await page.screenshot({ path: join(evidenceDir, `local-blog-edit-${suffix}.png`), fullPage: true })
@@ -466,6 +472,7 @@ async function exerciseViewport(
   viewport: { width: number; height: number },
   suffix: string,
   evidenceDir: string,
+  fullCatalogue?: { total: number; public: number; private: number },
 ) {
   const context = await isolateBrowserContext(browser, viewport)
   const page = await context.newPage()
@@ -475,6 +482,29 @@ async function exerciseViewport(
   page.on('requestfailed', (request) => diagnostics.push(`requestfailed:${new URL(request.url()).pathname}:${request.failure()?.errorText ?? 'unknown'}`))
   const noSession = await captureNoSession(page, suffix, evidenceDir)
   await login(page, staff.users[0])
+
+  if (fullCatalogue) {
+    const allResponse = await page.goto(`${BASE_URL}/admin/products`, { waitUntil: 'domcontentloaded' })
+    if (!allResponse || allResponse.status() !== 200) fail(`LOCAL_FULL_PRODUCT_LIST_HTTP_FAILED:${suffix}`)
+    await page.getByRole('heading', { name: 'Sản phẩm', exact: true }).waitFor({ timeout: 25_000 })
+    const readTotal = async (status: 'all' | 'public' | 'private', expected: number) => {
+      const url = status === 'all' ? '/admin/products' : `/admin/products?publication_status=${status}`
+      const response = await page.goto(`${BASE_URL}${url}`, { waitUntil: 'domcontentloaded' })
+      if (!response || response.status() !== 200) fail(`LOCAL_FULL_PRODUCT_FILTER_HTTP_FAILED:${suffix}:${status}`)
+      const text = await page.locator('body').innerText()
+      const match = text.match(/Hiển thị\s+([\d,.]+)\s*\/\s*([\d,.]+)\s+sản phẩm/)
+      if (!match || Number(match[2].replace(/[,.]/g, '')) !== expected) {
+        fail(`LOCAL_FULL_PRODUCT_FILTER_COUNT_FAILED:${suffix}:${status}:${match?.[2] ?? 'missing'}`)
+      }
+      return Number(match[2].replace(/[,.]/g, ''))
+    }
+    const all = await readTotal('all', fullCatalogue.total)
+    const publicProducts = await readTotal('public', fullCatalogue.public)
+    const privateProducts = await readTotal('private', fullCatalogue.private)
+    if (all !== fullCatalogue.total || publicProducts !== fullCatalogue.public || privateProducts !== fullCatalogue.private) {
+      fail(`LOCAL_FULL_PRODUCT_STATUS_FILTER_COUNTS_FAILED:${suffix}`)
+    }
+  }
 
   const productResponse = await page.goto(`${BASE_URL}/admin/products?category_id=${sample.product.category_id}&search=${encodeURIComponent(sample.product.sku)}`, { waitUntil: 'domcontentloaded' })
   if (!productResponse || productResponse.status() !== 200) fail(`LOCAL_PRODUCT_LIST_HTTP_FAILED:${suffix}`)
@@ -490,8 +520,7 @@ async function exerciseViewport(
   await page.getByText(sample.blogPost.title.slice(0, 12), { exact: false }).first().waitFor({ state: 'visible', timeout: 25_000 })
   await page.screenshot({ path: join(evidenceDir, `admin-blog-${suffix}.png`), fullPage: true })
 
-  let edits: Record<string, string> | null = null
-  if (suffix === 'desktop') edits = await editLocalFixtures(page, prisma, fixtures, suffix, evidenceDir, diagnostics)
+  const edits = await editLocalFixtures(page, prisma, fixtures, suffix, evidenceDir, diagnostics)
   await context.close()
 
   const manager = await isolateBrowserContext(browser, viewport)
@@ -545,13 +574,14 @@ async function exerciseViewport(
 }
 
 async function main() {
-  if (!args.includes('--local-only') || args.includes('--apply') || args.some((arg) => arg !== '--local-only' && arg !== sourceArg)) {
-    fail('LOCAL_ADMIN_PREVIEW_REQUIRES_ONLY_LOCAL_ONLY_AND_SOURCE_FLAGS')
+  if (!args.includes('--local-only') || args.includes('--apply') || args.some((arg) => arg !== '--local-only' && arg !== sourceArg && arg !== fullSourceArg)) {
+    fail('LOCAL_ADMIN_PREVIEW_REQUIRES_ONLY_LOCAL_ONLY_SOURCE_AND_OPTIONAL_FULL_SOURCE_FLAGS')
   }
   if (!sourceDir) fail('LOCAL_ADMIN_PREVIEW_SOURCE_REQUIRED')
   if (!DATABASE_URL || !DIRECT_URL) fail('LOCAL_ADMIN_PREVIEW_DATABASE_URLS_REQUIRED')
-  const target = assertLocalAdminPreviewDatabase(DATABASE_URL)
-  assertSameLocalDatabase(target, assertLocalAdminPreviewDatabase(DIRECT_URL))
+  const assertTarget = fullSourceDir ? assertLocalAdminFullPreviewDatabase : assertLocalAdminPreviewDatabase
+  const target = assertTarget(DATABASE_URL)
+  assertSameLocalDatabase(target, assertTarget(DIRECT_URL))
 
   const expectedDataDirectory = process.env.DPG_LOCAL_POSTGRES_DATA_DIRECTORY
   if (!expectedDataDirectory) fail('DPG_LOCAL_POSTGRES_DATA_DIRECTORY_REQUIRED')
@@ -603,7 +633,23 @@ async function main() {
     const archive = JSON.parse(blogBytes.toString('utf8'))
     const plan = buildRecoveryImportPlan(bundle, archive, blogBytes)
     if (plan.quarantinedProducts.length || plan.quarantinedBlogPosts.length) fail('LOCAL_ADMIN_PREVIEW_SOURCE_HAS_QUARANTINE')
-    const importResult = await importRecoveredData(prisma, plan)
+    let importResult: Record<string, unknown>
+    let expectedProductCount = plan.products.length
+    let fullCatalogue: { total: number; public: number; private: number } | undefined
+    if (fullSourceDir) {
+      const full = await readFullSourceCapture(resolve(fullSourceDir), plan.blogCategories, plan.blogPosts.map((row) => row.data))
+      const fullIds = new Set(full.capture.ids)
+      if (bundle.products.some((row) => !fullIds.has(row.id))) fail('FULL_SOURCE_CAPTURE_MISSING_PUBLIC_SNAPSHOT_ID')
+      const statusCounts = full.capture.manifest.capture.publicationStatus as Record<string, number>
+      fullCatalogue = { total: 17_752, public: Number(statusCounts.public), private: Number(statusCounts.private) }
+      if (fullCatalogue.total !== full.capture.ids.length || fullCatalogue.public !== 17_739 || fullCatalogue.private !== 13) {
+        fail('FULL_SOURCE_PUBLICATION_STATUS_COUNTS_INVALID')
+      }
+      importResult = await importFullSource(prisma, full, plan.blogCategories, plan.blogPosts.map((row) => row.data))
+      expectedProductCount = fullCatalogue.total
+    } else {
+      importResult = await importRecoveredData(prisma, plan)
+    }
 
     // Remove only stale test fixtures left by an interrupted prior local run.
     await prisma.$transaction(async (tx) => {
@@ -621,7 +667,7 @@ async function main() {
     })
 
     const counts = await readCounts(prisma as unknown as Prisma.TransactionClient)
-    if (counts.products !== plan.products.length || counts.blogPosts !== plan.blogPosts.length
+    if (counts.products !== expectedProductCount || counts.blogPosts !== plan.blogPosts.length
       || counts.blogCategories !== plan.blogCategories.length || counts.orders !== 0 || counts.customers !== 0) {
       fail('LOCAL_ADMIN_PREVIEW_IMPORTED_COUNTS_INVALID')
     }
@@ -686,12 +732,12 @@ async function main() {
       product: sampleProduct, blogPost: sampleBlogPost,
     }, {
       product: fixtureProduct, blogPost: fixtureBlogPost,
-    }, { width: 1440, height: 1000 }, 'desktop', screenshotDir)
+    }, { width: 1440, height: 1000 }, 'desktop', screenshotDir, fullCatalogue)
     const mobile = await exerciseViewport(browser, prisma, staff, {
       product: sampleProduct, blogPost: sampleBlogPost,
     }, {
       product: fixtureProduct, blogPost: fixtureBlogPost,
-    }, { width: 390, height: 844 }, 'mobile', screenshotDir)
+    }, { width: 390, height: 844 }, 'mobile', screenshotDir, fullCatalogue)
 
     const sessionCount = await prisma.admin_sessions.count({ where: { user_id: { in: syntheticStaffIds } } })
     if (sessionCount < TEST_USERS.length) fail('LOCAL_ADMIN_PREVIEW_BCRYPT_SESSIONS_NOT_CREATED')
@@ -699,7 +745,11 @@ async function main() {
       status: 'PASS', localOnly: true, localUrl: BASE_URL, server: 'Node 24 / Next.js production build',
       database: { ...target, serverVersion: identity.version_num, dataDirectory: basename(expectedDataPath) },
       sourceLockState: lock.proposalState, sourceCheckpoint: plan.source.checkpoint,
-      imported: plan.counts, persistentImport: importResult, tableCounts: { ...counts, staff: staff.records.length, syntheticSessionsCreated: sessionCount },
+      imported: fullCatalogue
+        ? { fullProducts: fullCatalogue.total, publicProducts: fullCatalogue.public, privateProducts: fullCatalogue.private, recoveredBlogPosts: plan.blogPosts.length }
+        : plan.counts,
+      fullSourceCapture: fullCatalogue ? { state: 'PROPOSED_REVIEW_REQUIRED', sourceProject: 'bonxyxluzlxfkdetryoo', sourceSchema: 'dpg_app' } : undefined,
+      persistentImport: importResult, tableCounts: { ...counts, staff: staff.records.length, syntheticSessionsCreated: sessionCount },
       credentials: 'random per run; bcrypt hashes only in the local database; never emitted',
       tests: [desktop, mobile], externalBrowserRequests: 'blocked', orders: 0, customers: 0,
       mediaBytesVerified: false, evidence: screenshotDir,

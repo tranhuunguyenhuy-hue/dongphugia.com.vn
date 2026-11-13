@@ -55,6 +55,49 @@ sessions afterward. It creates, edits, and removes one unpublished synthetic
 Product and one unpublished synthetic Blog post. The recovered rows remain
 unchanged. Orders and customers must stay empty.
 
+## Full-catalogue local recovery preview
+
+The full Admin catalogue rehearsal uses a separate database so it cannot
+replace the earlier 5,223-row Public snapshot trial. The local full source
+capture is kept outside Git at
+`/tmp/dpg-legacy-admin-full-capture-20261113`; its manifest records 888
+nonoverlapping pages, all 17,752 Product IDs, per-table row counts, identical
+whole-table source digests before and after capture, and the still-proposed
+source state. The source queries were separate read-only requests, not one
+MVCC snapshot, and image/document bytes were not downloaded.
+
+Create `dpg_legacy_admin_full_preview` on the already verified loopback-only
+PostgreSQL 17 cluster, then run the production-built browser rehearsal with
+both the existing Public capture (used to verify the preserved 5,223-ID
+subset and recover Blog) and the full source capture:
+
+```sh
+createdb -h 127.0.0.1 -p 55439 -U postgres dpg_legacy_admin_full_preview
+
+DATABASE_URL='postgresql://postgres@127.0.0.1:55439/dpg_legacy_admin_full_preview?schema=public' \
+DIRECT_URL='postgresql://postgres@127.0.0.1:55439/dpg_legacy_admin_full_preview?schema=public' \
+DPG_LOCAL_POSTGRES_DATA_DIRECTORY='/tmp/dpg-legacy-admin-pg-20261113' \
+npm run recovery:local-admin-preview -- \
+  --local-only \
+  --source=/tmp/dpg-legacy-admin-capture-validated-20261113 \
+  --full-source=/tmp/dpg-legacy-admin-full-capture-20261113
+```
+
+The full importer preserves explicit IDs and every captured source table that
+has a matching legacy Prisma model, including the 2,016 variant groups,
+descriptions, images, documents, specs, features, taxon and source mappings,
+package rows, and product relationships. The generated `search_vector` is
+omitted because it is a derived unsupported `tsvector`. It stores a local
+row-digest and idempotency ledger keyed by source table and ID. `public` and
+`private` remain source states; the Public 5,223-ID subset is checked against
+the full set. The 10 recovered Blog posts are loaded from the verified local
+archive. Orders and customers remain empty, and only fresh local synthetic
+staff accounts are created for the browser checks.
+
+This remains a local source and UI rehearsal. Both the Public source lock and
+full-source manifest remain `PROPOSED_REVIEW_REQUIRED`; the checks do not
+authorize hosted imports or expose local Admin edits to the Public Worker.
+
 The local app serves at `http://127.0.0.1:3107` while checks run. The server
 stops after the screenshots and checks complete; imported data persists in the
 local PostgreSQL database. A JSON report lists the actual data counts, import

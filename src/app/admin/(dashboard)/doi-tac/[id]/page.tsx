@@ -2,8 +2,9 @@ import prisma from "@/lib/prisma"
 import { notFound } from "next/navigation"
 import { PartnerForm } from '../partner-form'
 
-export default async function EditPartnerPage({ params }: { params: { id: string } }) {
-    const id = parseInt(params.id)
+export default async function EditPartnerPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id: rawId } = await params
+    const id = parseInt(rawId)
     if (isNaN(id)) notFound()
 
     const partner = await prisma.partners.findUnique({ where: { id } })

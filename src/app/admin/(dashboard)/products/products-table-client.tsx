@@ -51,6 +51,7 @@ interface Product {
     is_featured: boolean
     is_home_featured: boolean
     is_promotion: boolean
+    publication_status: string
     sort_order: number
     created_at: Date
     categories: Category
@@ -315,7 +316,12 @@ export function ProductsTableClient({ products }: { products: Product[] }) {
     )
 }
 
-function SortableProductRow({ product, isSelected, canReorder, handleSelectRow }: any) {
+function SortableProductRow({ product, isSelected, canReorder, handleSelectRow }: {
+    product: Product
+    isSelected: boolean
+    canReorder: boolean
+    handleSelectRow: (id: number, checked: boolean) => void
+}) {
     const {
         attributes,
         listeners,
@@ -399,6 +405,9 @@ function SortableProductRow({ product, isSelected, canReorder, handleSelectRow }
                     <div className="flex gap-1 flex-wrap">
                         <Badge variant={product.is_active ? 'default' : 'secondary'} className="text-[9px] px-1 py-0 h-4 rounded-sm">
                             {product.is_active ? 'Hiện' : 'Ẩn'}
+                        </Badge>
+                        <Badge variant={product.publication_status === 'public' ? 'outline' : 'destructive'} className="text-[9px] px-1 py-0 h-4 rounded-sm">
+                            {product.publication_status === 'public' ? 'Công khai' : `Chưa công bố (${product.publication_status})`}
                         </Badge>
                         {product.is_featured && (
                             <Badge className="text-[9px] px-1 py-0 h-4 rounded-sm bg-amber-100 text-amber-700 hover:bg-amber-100 border border-amber-200">
