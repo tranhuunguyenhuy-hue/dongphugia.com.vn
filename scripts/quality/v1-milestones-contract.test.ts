@@ -7,7 +7,7 @@ const agents = getDoc('AGENTS.md')
 const handbook = getDoc('docs/PROJECT.md')
 const current = getDoc('docs/ops/project-current-state.md')
 const prodDb = getDoc('docs/deploy/postgresql-production-adoption-contract.md')
-const cloudflare = getDoc('docs/deploy/cloudflare-staging-production.md')
+const cloudflare = getDoc('docs/deploy/cloudflare-fixed-preview-production.md')
 
 describe('V1 owner-approved 5-milestone delivery authority', () => {
   it('makes M1 the only active milestone, with real PostgreSQL Public reads and rollback', () => {
@@ -21,12 +21,13 @@ describe('V1 owner-approved 5-milestone delivery authority', () => {
     expect(current).toContain('NOT YET ACCEPTED')
   })
 
-  it('uses localhost and one Staging Worker, with isolated Admin data', () => {
-    expect(cloudflare).toContain('dpg-staging')
+  it('uses one fixed named Preview inside Production Worker with isolated Admin', () => {
+    expect(cloudflare).toContain('Preview `staging`')
     expect(cloudflare).toContain('dongphugia-v1-public-production')
-    expect(cloudflare).toContain('isolated test PostgreSQL')
-    expect(agents).toContain('No mandatory remote Preview')
-    expect(agents).toContain('legacy Admin')
+    expect(cloudflare).toContain('Hyperdrive')
+    expect(cloudflare).toContain('separate TEST PostgreSQL')
+    expect(agents).toContain('ONE fixed Worker Preview')
+    expect(agents).toContain('real login/auth')
     expect(handbook).toContain('Products+Blog only')
   })
 

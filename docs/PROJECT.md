@@ -7,8 +7,8 @@ Effective: **2026-11-13**, supersedes former V1 roadmap/Phase 2 and dated AWS/Pr
 | Gate | Owner outcome | Issue | Validation |
 | --- | --- | --- | --- |
 | **M1 ACTIVE** | Production Public uses V1 PostgreSQL; **all recovered Products/SKUs and Blog** loaded, counted, verified, served on Public | [#307](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/307) | Hosted row counts + source reconciliation + actual Worker DB read-path + production URL smoke + snapshot fallback |
-| M2 QUEUED | Cloudflare `dpg-staging` visually/functionally matches Public Production; **snapshot allowed** | [#308](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/308) | Staging URL, UI/Blog/PLP/PDP responsive parity, real Worker deployment and rollback |
-| M3 QUEUED | **Entire existing legacy Admin**, not new Admin shell, usable on Staging with isolated DB | [#309](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/309) | Module inventory + login/session/RBAC + product/blog CRUD + end-to-end Staging data persistence |
+| M2 QUEUED | **Fixed Preview named `staging`** inside `dongphugia-v1-public-production` matches Public Production; snapshot allowed | [#308](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/308) | Stable Preview URL + exact Preview deployment, Public UI/Blog/PLP/PDP parity and revert path |
+| M3 QUEUED | Full legacy Admin **on the same fixed Preview** with real Hyperdrive/Auth/session/RBAC and separate TEST DB | [#309](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/309) | Module coverage, Preview login/CRUD, isolation and hosted runtime evidence |
 | M4 QUEUED | Deploy accepted Admin to same-origin Production `/admin` | [#310](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/310) | Owner acceptance, backup, Production login/CRUD/fresh Public, rollback |
 | M5 QUEUED | Audit website and propose future backlog | [#311](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn/issues/311) | Issue-level findings with URLs, priority, estimates; no automatic feature work |
 
@@ -18,8 +18,8 @@ Master tracker: [#306](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn
 
 - Cloudflare V1 account: `d54f3402b9d112ab64d6135e0e3f1fb1` (revalidate before modifying).
 - Production Worker: `dongphugia-v1-public-production`, custom domains `www.dongphugia.vn`, `dongphugia.vn`. Last observed deployed version `7d0194d7-b007-4fb0-9fd9-d365ca9de834`, 2026-11-04 15:05 UTC. Current Public catalogue is **snapshot-backed**, NOT confirmed live PostgreSQL.
-- Staging Worker: `dpg-staging`, workers.dev enabled, no custom domain. Last observed version `f0cabc41-f024-46cc-8978-510c3d8c1216`, 2026-11-13 06:13 UTC. Its prior deployed Admin sign-in shell **does not prove** authenticated/Admin CRUD support.
-- At last Cloudflare read-only check, neither Worker had a Hyperdrive DB binding or Worker secrets; both had `nodejs_compat`. Cloudflare versions/deployments can be rolled back; database writes/migrations cannot.
+- Fixed Worker Preview `staging` is the chosen M2/M3 target **inside Production Worker**; no successful named-Preview deployment was confirmed as of this doc change. Former `dpg-staging` Worker had version `f0cabc41-f024-46cc-8978-510c3d8c1216` (2026-11-13 06:13 UTC) but is **obsolete for new work**, not deleted.
+- Last read-only Cloudflare inspection found no Production Hyperdrive binding or Worker secrets; `nodejs_compat` was enabled. Preview **does not inherit Production settings**, and its dedicated Hyperdrive must point to separate TEST PostgreSQL/schema; authentication secrets are Preview-specific. Published Preview is not Production.
 - Supabase V1 candidate `bonxyxluzlxfkdetryoo`, application schema candidate `dpg_app`; **confirm hosted identity, schema, rows, permissions and actual owner**. Never confuse with V2.
 - PR #300: legacy Products/Blog Admin source recovered locally. PR #301: local Workerd/Prisma test only. PR #304: proposed least-privilege DB role tested locally. **None constitutes hosted Admin or Production database import proof.** Reported 17,752 Products and 10 Blogs are local recovery evidence until independently reconciled on hosted DB.
 
@@ -34,15 +34,15 @@ Master tracker: [#306](https://github.com/tranhuunguyenhuy-hue/dongphugia.com.vn
 
 M1 is complete **only when hosted DB is reconciled AND Production Public visibly serves it.**
 
-## M2 — Staging
+## M2 — ONE fixed Worker Preview `staging`
 
-One existing Cloudflare Worker `dpg-staging`; localhost replaces remote Preview. Match current Production visuals and behavior, including HeroBanner, categories, SKU search, PDP and Blog. Staging may read published snapshot/allowlisted Public assets at this milestone, but it must not claim fresher data than Production. Evidence: URL, source Worker version, desktop/mobile parity, rollback. Staging Admin in M3 uses **isolated** test database with no Production write pathway.
+Create/update a single Worker Preview named `staging` under existing `dongphugia-v1-public-production` (using `npx wrangler preview --worker-name dongphugia-v1-public-production --name staging`, after verifying repository configuration). This is **not a new Worker**. Match current Production Public visuals and behavior, including HeroBanner, categories, SKU search, PDP and Blog. Published read-only snapshot is allowed here. Record exact Preview URL/deployment ID, responsive parity and revert path. Do not create additional PR Previews. Preview needs its own explicit settings, secrets and resources for M3; see `docs/deploy/cloudflare-fixed-preview-production.md`.
 
 ## M3 — legacy Admin source and end-to-end functional scope
 
 Target the canonical old `src/app/admin` and associated server modules, not a new `apps/admin` design. First compare original Admin route inventory to restored code: dashboard, auth and account lifecycle, Products/SKUs, Blog and other existing modules. Explicitly list present, missing, disabled and unsupported functions; **Products+Blog only is not “full Admin.”** Restore missing legacy functions within actual historic scope; do not invent new commerce features.
 
-Hosted Workerd compatibility test must establish real login/session, permission denials, streamed SSR, Prisma/connection pooling, Cloudflare CPU budget, Product/Blog writes, audit and reload persistence using an isolated test PostgreSQL DB. Build/test locally first, promote to Staging for real integration. Do not unlock private pages by disabling Auth, do not share privileged DB access with Public and do not rely on a login-shell HTTP 200.
+Hosted fixed Worker Preview compatibility test must establish real login/session, permission denials, streamed SSR, Prisma/connection pooling, Cloudflare CPU budget, Product/Blog writes, audit and reload persistence using an isolated test PostgreSQL DB. Owner expressly authorizes the full old Admin, Hyperdrive, Auth and other essential functionality on this one Preview; protect its URL with Access/equivalent plus real app login, isolate cookies/secrets/DB and test actual hosted CPU/runtime. Build/test locally first, promote to the fixed Preview for real integration. Do not unlock private pages by disabling Auth, do not share privileged DB access with Public and do not rely on a login-shell HTTP 200.
 
 ## M4 — Production promotion
 
@@ -50,7 +50,7 @@ After M1–M3/Owner acceptance: use reviewed artifact/code, same-origin `/admin`
 
 ## M5 and exclusions
 
-Only post-recovery audit for broken images/routes, product data, Blog media, SEO, design parity, CPU and performance, auth and backup correctness. Defer all elective features until new approval. Explicitly canceled: Phase 2 cart/order/checkout, new Admin platform and independent Admin domain, variant research/crawler, multi-agent parallel orchestration, PR previews, old AWS/EC2/Coolify staging, speculative infrastructure and separate approvals to prepare each local test.
+Only post-recovery audit for broken images/routes, product data, Blog media, SEO, design parity, CPU and performance, auth and backup correctness. Defer all elective features until new approval. Explicitly canceled: Phase 2 cart/order/checkout, new Admin platform and independent Admin domain, variant research/crawler, multi-agent parallel orchestration, per-branch PR previews, using obsolete separate `dpg-staging` Worker, old AWS/EC2/Coolify staging, speculative infrastructure and separate approvals to prepare each local test.
 
 ## Source structure and data rules
 
@@ -61,7 +61,7 @@ Only post-recovery audit for broken images/routes, product data, Blog media, SEO
 - External media remains Bunny-compatible; verify image bytes, not merely stored URL.
 - Preserve rollback SQL/sha256, backups, imports, provenance and required CI even when deleting old **policy** documentation; these remain technical assets, not active work tickets.
 
-See `docs/deploy/cloudflare-staging-production.md` and `docs/deploy/postgresql-production-adoption-contract.md`. Snapshot evidence is kept in `docs/ops/project-current-state.md`, but **live provider verification overrides date-stamped observations**.
+See `docs/deploy/cloudflare-fixed-preview-production.md` and `docs/deploy/postgresql-production-adoption-contract.md`. Snapshot evidence is kept in `docs/ops/project-current-state.md`, but **live provider verification overrides date-stamped observations**.
 
 
 ## Legacy data-security evidence retained for audit only
