@@ -1,8 +1,6 @@
 name: PR Preview publish
 on:
-  workflow_run:
-    workflows: [PR Preview build]
-    types: [completed]
+  workflow_dispatch:
 permissions:
   contents: read
   actions: read

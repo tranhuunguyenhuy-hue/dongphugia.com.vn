@@ -22,3 +22,7 @@
 ## Agent execution
 
 Open only the **active milestone** and required code/runbook; localhost + focused tests + one named Preview for M2/M3 + runtime evidence. Do not revive Phase 2, checkout, per-branch Previews, the old `dpg-staging` Worker, parallel agents or V2. No source-committed secrets; backup and rollback before Production writes.
+
+## Fast delivery pipeline (2026-11-13)
+
+**PR → required `quality` → merge main → [V1 Worker release](.github/workflows/v1-worker-release.yml) (`publish=false` verify, `publish=true` release).** The release workflow builds the **actual `apps/public` Cloudflare Worker**, not the legacy root Next.js app. Cloudflare Builds direct auto deployment was found misconfigured and must not be treated as evidence of a Production update. Only one named Worker Preview `staging` for M2/M3, no automatic PR previews. See [Release runbook](docs/ops/v1-fast-release.md).

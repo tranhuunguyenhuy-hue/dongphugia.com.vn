@@ -42,3 +42,9 @@ Docs hierarchy: `AGENTS.md` → active Issue → `docs/PROJECT.md` → `docs/ops
 ## Fixed Preview technical authority (Owner-approved)
 
 M1 Production DB-backed Public stays first. M2/M3 use the *single* `staging` Preview inside the Production Worker with a stable URL and independent Preview version history. Preview may have full legacy Admin functionality **only with real auth and isolated test data**, never a Production writable Hyperdrive binding. `wrangler preview` does not deploy Production. Protect Preview's public URL, check Cloudflare CPU fit and Hyperdrive behavior in hosted Preview, and record URL/ID/auth/CRUD proof. See `docs/deploy/cloudflare-fixed-preview-production.md`. Worker code rollback does not restore SQL writes. Do not decommission `dpg-staging` yet.
+
+## CI/CD fast lane (Owner priority: get code to Production)
+
+GitHub branch rule requires the sole `quality` check. Docs-only PRs should skip PostgreSQL, npm install, lint and tests entirely. Affected application changes get the real existing tests. Historical Preview-per-PR/AWS/`dpg-staging` CI is not run automatically; run deep regression manually only when its scope requires it.
+
+**Cloudflare Workers Builds direct Git integration is NOT the release authority:** it was misconfigured to run root `npm run build` + root `npx wrangler deploy` and failed with a non-existent `WORKER_SELF_REFERENCE`. Release through **ONE approved workflow `.github/workflows/v1-worker-release.yml`** from `main`, with `publish=false` to build/validate and `publish=true` only after source/data acceptance. This uses the actual `apps/public` vinext/Worker toolchain, packages the existing Worker, checks Worker identity and does a hosted smoke. Never deploy a root Next.js artifact as Production Worker. No auto-push directly to Production from unrelated docs commits. Do not skip M1 database and blog reconciliation just to claim release PASS. See `docs/ops/v1-fast-release.md`.

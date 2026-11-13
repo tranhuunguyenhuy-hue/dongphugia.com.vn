@@ -3,19 +3,57 @@ name: quality
 on:
   pull_request:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
 
 concurrency:
-  group: quality-${{ github.workflow }}-${{ github.ref }}
+  group: quality-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: quality
+  scope:
+    name: Classify changed files (fast)
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    outputs:
+      run_app_checks: ${{ steps.scope.outputs.run_app_checks }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Detect documentation-only changes
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_checks=true
+          if [[ "$BASE_SHA" =~ ^[a-f0-9]{40}$ ]] &&
+             [[ "$BASE_SHA" != 0000000000000000000000000000000000000000 ]] &&
+             git fetch --quiet --no-tags --depth=1 origin "$BASE_SHA"; then
+            mapfile -t changed < <(git diff --name-only "$BASE_SHA" HEAD)
+            if (( ${#changed[@]} > 0 )); then
+              run_checks=false
+              for file in "${changed[@]}"; do
+                case "$file" in
+                  docs/*.md|*/README.md|AGENTS.md|CONTEXT.md|README.md|.github/ISSUE_TEMPLATE/*.md|.github/pull_request_template.md) ;;
+                  *) run_checks=true; break ;;
+                esac
+              done
+            fi
+          fi
+          echo "run_app_checks=$run_checks" >> "$GITHUB_OUTPUT"
+          if [[ "$run_checks" == false ]]; then
+            echo "Documentation-only: no application CI needed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  app-tests:
+    name: Run changed application tests
+    needs: scope
+    if: needs.scope.outputs.run_app_checks == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -36,57 +74,50 @@ jobs:
       POSTGRES_SNAPSHOT_INTEGRATION_IMAGE: postgres:17.6-bookworm@sha256:f3bd19c606e442c3d7bdfa8002e03fe260a1023351e0ea4598032022b68dd6e3
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Detect documentation-only changes
-        id: scope
-        shell: bash
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: |
-          set -euo pipefail
-          run_checks=true
-          if [[ "$BASE_SHA" =~ ^[a-f0-9]{40}$ ]] &&
-             [[ "$BASE_SHA" != 0000000000000000000000000000000000000000 ]] &&
-             git fetch --quiet --no-tags --depth=1 origin "$BASE_SHA"; then
-            mapfile -t changed < <(git diff --name-only "$BASE_SHA" HEAD)
-            if (( ${#changed[@]} > 0 )); then
-              run_checks=false
-              for file in "${changed[@]}"; do
-                case "$file" in
-                  docs/*.md|AGENTS.md|CONTEXT.md|README.md|.github/ISSUE_TEMPLATE/*.md) ;;
-                  *) run_checks=true; break ;;
-                esac
-              done
-            fi
-          fi
-          echo "run_app_checks=$run_checks" >> "$GITHUB_OUTPUT"
-          if [[ "$run_checks" == false ]]; then
-            echo 'Documentation-only diff: skip unrelated application lint/typecheck/tests.' >> "$GITHUB_STEP_SUMMARY"
-          fi
-
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - name: Set up Node.js
-        if: steps.scope.outputs.run_app_checks == 'true'
         uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
 
       - name: Install dependencies
-        if: steps.scope.outputs.run_app_checks == 'true'
         run: |
           npm ci
           npm ci --prefix apps/environment-worker
 
       - name: Lint
-        if: steps.scope.outputs.run_app_checks == 'true'
         run: npm run lint
 
       - name: Type-check
-        if: steps.scope.outputs.run_app_checks == 'true'
         run: npm run typecheck
 
       - name: Test
-        if: steps.scope.outputs.run_app_checks == 'true'
         run: npm test
+
+  quality:
+    name: quality
+    if: always()
+    needs: [scope, app-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Assert only required scope tests passed
+        shell: bash
+        env:
+          SCOPE: ${{ needs.scope.result }}
+          REQUIRED: ${{ needs.scope.outputs.run_app_checks }}
+          TESTS: ${{ needs.app-tests.result }}
+        run: |
+          set -euo pipefail
+          test "$SCOPE" = success
+          if [[ "$REQUIRED" == true ]]; then
+            test "$TESTS" = success
+            echo 'quality: PASS (application tests)' >> "$GITHUB_STEP_SUMMARY"
+          else
+            test "$REQUIRED" = false
+            test "$TESTS" = skipped
+            echo 'quality: PASS (documentation-only)' >> "$GITHUB_STEP_SUMMARY"
+          fi
