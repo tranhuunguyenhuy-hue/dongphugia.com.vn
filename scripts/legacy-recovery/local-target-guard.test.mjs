@@ -1,12 +1,62 @@
 import { describe, expect, it } from 'vitest'
 import {
   assertDisposableLocalDatabase,
+  assertLocalAdminPreviewDatabase,
+  assertLocalAdminPreviewServerIdentity,
   assertDryRunOnly,
   assertSameLocalDatabase,
   DISPOSABLE_DATABASE_NAME,
+  LOCAL_ADMIN_PREVIEW_DATABASE_NAME,
 } from './local-target-guard.mjs'
 
 describe('local recovery target guard', () => {
+  it('accepts only the fixed loopback preview database without credentials', () => {
+    expect(assertLocalAdminPreviewDatabase(
+      `postgresql://postgres@127.0.0.1:55439/${LOCAL_ADMIN_PREVIEW_DATABASE_NAME}?schema=public`,
+    )).toEqual({
+      hostname: '127.0.0.1',
+      database: LOCAL_ADMIN_PREVIEW_DATABASE_NAME,
+      port: '55439',
+      username: 'postgres',
+      schema: 'public',
+    })
+  })
+
+  it('rejects tunnels, hosted targets, passwords, other database names and schemas', () => {
+    const rejected = [
+      `postgresql://postgres@database.example:55439/${LOCAL_ADMIN_PREVIEW_DATABASE_NAME}?schema=public`,
+      `postgresql://postgres:secret@127.0.0.1:55439/${LOCAL_ADMIN_PREVIEW_DATABASE_NAME}?schema=public`,
+      `postgresql://postgres@127.0.0.1:55440/${LOCAL_ADMIN_PREVIEW_DATABASE_NAME}?schema=public`,
+      'postgresql://postgres@127.0.0.1:55439/dpg_legacy_recovery_disposable?schema=public',
+      `postgresql://postgres@127.0.0.1:55439/${LOCAL_ADMIN_PREVIEW_DATABASE_NAME}?schema=dpg_app`,
+      `postgresql://postgres@127.0.0.1:55439/${LOCAL_ADMIN_PREVIEW_DATABASE_NAME}?host=database.example`,
+    ]
+    for (const target of rejected) {
+      expect(() => assertLocalAdminPreviewDatabase(target)).toThrow('LOCAL_ADMIN_PREVIEW_DATABASE_REQUIRED')
+    }
+  })
+
+  it('requires the connected database server itself to be the expected local PostgreSQL 17 cluster', () => {
+    const target = assertLocalAdminPreviewDatabase(
+      `postgresql://postgres@127.0.0.1:55439/${LOCAL_ADMIN_PREVIEW_DATABASE_NAME}?schema=public`,
+    )
+    const identity = {
+      serverAddress: '127.0.0.1',
+      serverPort: 55439,
+      databaseName: LOCAL_ADMIN_PREVIEW_DATABASE_NAME,
+      serverVersionNum: 170011,
+      dataDirectory: '/tmp/dpg-legacy-admin-pg-preview',
+      expectedDataDirectory: '/tmp/dpg-legacy-admin-pg-preview',
+    }
+    expect(assertLocalAdminPreviewServerIdentity(target, identity)).toBe(true)
+    expect(() => assertLocalAdminPreviewServerIdentity(target, { ...identity, serverAddress: '203.0.113.4' }))
+      .toThrow('LOCAL_ADMIN_PREVIEW_POSTGRES_SERVER_IDENTITY_MISMATCH')
+    expect(() => assertLocalAdminPreviewServerIdentity(target, { ...identity, serverVersionNum: 160011 }))
+      .toThrow('LOCAL_ADMIN_PREVIEW_POSTGRES_SERVER_IDENTITY_MISMATCH')
+    expect(() => assertLocalAdminPreviewServerIdentity(target, { ...identity, dataDirectory: '/tmp/other' }))
+      .toThrow('LOCAL_ADMIN_PREVIEW_POSTGRES_SERVER_IDENTITY_MISMATCH')
+  })
+
   it('accepts only the named loopback disposable database', () => {
     expect(assertDisposableLocalDatabase(
       `postgresql://postgres@127.0.0.1:55439/${DISPOSABLE_DATABASE_NAME}?schema=public`,

@@ -50,6 +50,7 @@
     "publishing:test-postgres-concurrency": "tsx scripts/publishing/test-postgres-concurrency.mts",
     "recovery:public-capture": "node scripts/legacy-recovery/fetch-public-candidate.mjs",
     "recovery:dry-run-local": "tsx scripts/legacy-recovery/dry-run-local-import.mts",
+    "recovery:local-admin-preview": "tsx scripts/legacy-recovery/local-admin-preview.mts",
     "seo:build-inventory": "node scripts/seo/build-legacy-url-inventory.mjs",
     "seo:check-redirect-targets": "tsx scripts/seo/check-redirect-targets.ts",
     "static:build": "tsx scripts/static-build/public-static-build.mts",

@@ -1,0 +1,131 @@
+# Legacy Admin local preview
+
+This source task exercises the existing `src/app/admin` UI against a dedicated,
+loopback-only PostgreSQL database. It does not connect Admin to a hosted database
+or publish any edit to the public Worker.
+
+## Run the preview
+
+Requirements are Node 24, the repository's locked npm dependencies, PostgreSQL
+17 tools, the recovered public capture directory, and the installed Playwright
+Chromium browser. Use a PostgreSQL cluster bound only to `127.0.0.1:55439`, with
+its data directory under `/tmp` and named `dpg-legacy-admin-pg-*`. Create the
+dedicated database once:
+
+```sh
+createdb -h 127.0.0.1 -p 55439 -U postgres dpg_legacy_admin_preview
+```
+
+From a clean, committed checkout, run:
+
+```sh
+DATABASE_URL='postgresql://postgres@127.0.0.1:55439/dpg_legacy_admin_preview?schema=public' \
+DIRECT_URL='postgresql://postgres@127.0.0.1:55439/dpg_legacy_admin_preview?schema=public' \
+DPG_LOCAL_POSTGRES_DATA_DIRECTORY='/tmp/dpg-legacy-admin-pg-20261113' \
+npm run recovery:local-admin-preview -- \
+  --local-only \
+  --source=/absolute/path/to/validated-public-capture
+```
+
+The command checks the URL, connected server address, port, PostgreSQL major
+version, database name, and actual server data directory before running
+`prisma db push` or writing rows. It rejects a password, host other than
+`127.0.0.1`, a forwarded database address, another port/database/schema, or a
+data directory outside the disposable local path. It archives the clean commit
+to a temporary app directory, so ignored `.env*` files and cloud credentials
+cannot enter the Next.js process. The child environment contains only the local
+database URLs, a newly generated local `AUTH_SECRET`, loopback site URL, and
+development settings. Browser requests to all other origins are blocked.
+
+The first run imports the proposed Public recovery snapshot and keeps its
+explicit Product and Blog IDs. It stores a source identity, source ID, source
+digest, and idempotency key for each Product and Blog post in
+`local_recovery.import_ledger`. An exact replay verifies the imported rows and
+does nothing; a partial ledger, changed source, or changed imported row stops
+with a conflict. Explicit-ID sequences are advanced after the insert. No reset,
+truncate, or delete of imported records is available. The script only removes
+its own clearly marked local test fixtures after a prior interrupted run.
+
+Each run generates a fresh `admin` and `sale_manager` password in memory,
+hashes each with bcrypt, and never writes or prints plaintext credentials. The
+browser uses them for the acceptance checks; the script removes their test
+sessions afterward. It creates, edits, and removes one unpublished synthetic
+Product and one unpublished synthetic Blog post. The recovered rows remain
+unchanged. Orders and customers must stay empty.
+
+The local app serves at `http://127.0.0.1:3107` while checks run. The server
+stops after the screenshots and checks complete; imported data persists in the
+local PostgreSQL database. A JSON report lists the actual data counts, import
+mode, browser results, local URL, and evidence directory. Screenshots are stored
+outside the repository under `/tmp/dpg-legacy-admin-preview-YYYY-MM-DD/`.
+
+## Acceptance covered
+
+- Anonymous visits to Product and Blog routes redirect to the login form.
+- Both synthetic accounts authenticate through the existing bcrypt/session
+  path at 1440×1000 and 390×844.
+- The admin sees the recovered Product list and all 10 restored Blog posts.
+- The admin edits only the two synthetic local fixtures; Product and Blog
+  changes persist through existing Admin server actions, then the fixtures are
+  removed.
+- `sale_manager` can read Products, cannot read Blog, and cannot update the
+  synthetic Product. The route redirects and the denied server action leaves
+  the Product row and audit count unchanged at both viewport sizes.
+- `src/lib/admin-action-auth.test.ts` also exercises unauthenticated Product
+  and Blog mutations and asserts that no database write runs.
+
+The Blog list received a small responsive layout correction because the first
+mobile rendering squeezed the titles out of the available row width and hid
+touch actions behind hover-only styling.
+
+## Recovery limits
+
+The source lock remains `PROPOSED_REVIEW_REQUIRED`. Local import and Admin
+editing do not accept the captured snapshot as canonical production data. The
+recovered source has 5,223 Products, 4 category slugs, 24 listing slugs, 59
+brand slugs, and 10 published Blog bodies across 6 categories. The Public
+projection does not supply numeric root-category, listing, or brand IDs; those
+relationships are reconciled locally by their preserved slugs. Fifty-one
+variant members in 17 groups lack source option axes and are not promoted into
+new family relations. The 5,087 restored price fields are historical
+provenance-controlled snapshots; 136 products have unknown price. Media URLs
+are preserved, but the image/document bytes were not verified by this preview.
+
+The Admin edit is private to this local database. Production Public reads fixed
+catalogue and Blog snapshot assets from the existing Cloudflare Worker. A
+versioned publisher that builds and validates a complete immutable snapshot
+and atomically switches the Worker manifest is still required before Admin
+edits can appear publicly.
+
+## Available hosting and database choices
+
+Read-only inventory on 2026-11-13 found one connected Cloudflare account with
+the `dongphugia-v1-public-production` and `dpg-staging` Workers plus the static
+`dongphugia-preview` Pages project. This is not an existing Node 24 host for
+the root Next.js app; the Pages project does not run Functions. The repository
+builds the legacy app with Next.js 16.3.3 `output: standalone` and declares
+Node `24.x`.
+
+The connected Supabase organization has two active PostgreSQL 17.11 projects
+in `ap-southeast-1`. `dongphugia-runtime` already contains 17,752 Products and
+related catalogue records, but no Blog posts, Admin users, Orders, or Customers;
+it is not a blank import target and was not written by this task.
+`dongphugia-phase2-preview-290` contains preview data (2 Products and one
+synthetic Admin user) and is not a Production target. Neither existing project
+is selected for this preview or authorized for recovery writes. Local Prisma
+5.22.0 and the existing UI run successfully against PostgreSQL 17.11.
+
+The smallest hosted slice is an Owner-selected Node 24/Next host plus a new,
+isolated managed PostgreSQL 17 database, followed by a separate reviewable
+publisher to the existing Worker snapshot interface. If no suitable managed
+Node host is already approved, a Node 24 container/VM with private PostgreSQL
+is technically compatible but adds patching, monitoring, and restore work. The
+next resource decision is the exact Node host/provider and region, whether to
+create a separate Supabase PostgreSQL 17 project in `ap-southeast-1`, and the
+monthly budget cap. The host/database, credentials, backups, hostname/DNS, and
+Production publisher each need their own approval before setup or writes.
+
+Orders remain out of scope. Before live order actions, the schema needs an
+explicit pending shipping/installation-fee state because `shipping_fee` can
+default to zero, plus database-enforced immutability for order-line and
+monetary snapshots.
