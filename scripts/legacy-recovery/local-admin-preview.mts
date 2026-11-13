@@ -325,6 +325,7 @@ function safeEnvironment() {
     NEXT_TELEMETRY_DISABLED: '1',
     PUBLIC_CATALOGUE_SOURCE: 'local-preview',
     DPG_LOCAL_ADMIN_PREVIEW: '1',
+    WRITE_FREEZE_MODE: 'false',
     PORT: '3107',
   }
 }
