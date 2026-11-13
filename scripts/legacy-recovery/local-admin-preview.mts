@@ -339,9 +339,15 @@ async function createCleanRuntimeCopy(repoRoot: string) {
 
 async function startLocalApp(runtimeRoot: string, env: NodeJS.ProcessEnv) {
   const nextBin = join(runtimeRoot, 'node_modules/next/dist/bin/next')
-  execFileSync(process.execPath, [nextBin, 'build', '--webpack'], {
-    cwd: runtimeRoot, env, stdio: 'pipe', maxBuffer: 64 * 1024 * 1024,
-  })
+  try {
+    execFileSync(process.execPath, [nextBin, 'build', '--webpack'], {
+      cwd: runtimeRoot, env, stdio: 'pipe', maxBuffer: 64 * 1024 * 1024,
+    })
+  } catch (error) {
+    const commandError = error as { stdout?: Buffer | string; stderr?: Buffer | string }
+    const output = `${commandError.stdout?.toString() ?? ''}\n${commandError.stderr?.toString() ?? ''}`.trim()
+    fail(`LOCAL_ADMIN_PREVIEW_BUILD_FAILED:${output.slice(-6000) || 'BUILD_OUTPUT_UNAVAILABLE'}`)
+  }
   const app: ChildProcess = spawn(process.execPath, [nextBin,
     'start', '--hostname', '127.0.0.1', '--port', '3107'], {
     cwd: runtimeRoot, env, stdio: ['ignore', 'ignore', 'ignore'],
