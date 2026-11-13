@@ -53,12 +53,14 @@ export async function createSession(
             user_agent: userAgent,
             expires_at: expiresAt,
         },
+        select: { id: true },
     })
 
     // Update last_login_at
     await prisma.admin_users.update({
         where: { id: userId },
         data: { last_login_at: new Date() },
+        select: { id: true },
     })
 
     return token
@@ -75,7 +77,8 @@ export async function verifySession(token: string): Promise<SessionUser | null> 
 
     const session = await prisma.admin_sessions.findUnique({
         where: { token_hash: tokenHash },
-        include: {
+        select: {
+            expires_at: true,
             user: {
                 select: { id: true, email: true, name: true, role: true, avatar_url: true, is_active: true },
             },
@@ -86,7 +89,7 @@ export async function verifySession(token: string): Promise<SessionUser | null> 
     if (session.expires_at < new Date()) {
         // Expired — clean up
         try {
-            await prisma.admin_sessions.delete({ where: { token_hash: tokenHash } })
+            await prisma.admin_sessions.delete({ where: { token_hash: tokenHash }, select: { id: true } })
         } catch (error) {
             if (!isWriteFreezeError(error)) throw error
         }
@@ -107,7 +110,7 @@ export async function verifySession(token: string): Promise<SessionUser | null> 
 export async function deleteSession(token: string): Promise<void> {
     const tokenHash = hashToken(token)
     try {
-        await prisma.admin_sessions.delete({ where: { token_hash: tokenHash } })
+        await prisma.admin_sessions.delete({ where: { token_hash: tokenHash }, select: { id: true } })
     } catch (error) {
         const code = typeof error === 'object' && error && 'code' in error ? error.code : undefined
         if (!isWriteFreezeError(error) && code !== 'P2025') throw error

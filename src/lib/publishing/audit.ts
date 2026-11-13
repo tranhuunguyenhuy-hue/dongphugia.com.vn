@@ -50,5 +50,6 @@ export async function writePublishingAudit(
             metadata: input.metadata,
             created_at: input.now,
         },
+        select: { id: true },
     })
 }

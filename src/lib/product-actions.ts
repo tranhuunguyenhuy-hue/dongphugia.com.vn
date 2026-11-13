@@ -141,7 +141,7 @@ export async function createProduct(data: unknown) {
             ...(d.sitemap_include !== undefined ? { sitemap_include: d.sitemap_include } : {}),
         }
         const product = await prisma.$transaction(async (tx) => {
-            const created = await tx.products.create({ data: createData })
+            const created = await tx.products.create({ data: createData, select: { id: true } })
             await syncProductCanonicalFields(tx, actor.id, created.id, {
                 brand_id: d.brand_id,
                 product_type_id: d.product_type_id,
@@ -241,7 +241,7 @@ export async function updateProduct(id: number, data: unknown) {
             updated_at: new Date(),
         }
         await prisma.$transaction(async (tx) => {
-            await tx.products.update({ where: { id }, data: updateData })
+            await tx.products.update({ where: { id }, data: updateData, select: { id: true } })
             await syncProductCanonicalFields(tx, actor.id, id, {
                 brand_id: d.brand_id,
                 product_type_id: d.product_type_id,
@@ -270,7 +270,7 @@ export async function toggleProductFeatured(id: number, value: boolean) {
     await requirePermission('products:write')
 
     try {
-        await prisma.products.update({ where: { id }, data: { is_featured: value, updated_at: new Date() } })
+        await prisma.products.update({ where: { id }, data: { is_featured: value, updated_at: new Date() }, select: { id: true } })
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true }
@@ -297,7 +297,7 @@ export async function toggleProductActive(id: number, value: boolean) {
             return { success: false, error: 'Sản phẩm cần có ảnh chính trước khi kích hoạt' }
     }
     try {
-        await prisma.products.update({ where: { id }, data: { is_active: value, updated_at: new Date() } })
+        await prisma.products.update({ where: { id }, data: { is_active: value, updated_at: new Date() }, select: { id: true } })
         revalidatePath('/admin/products')
         return { success: true }
     } catch (err: unknown) {
@@ -313,7 +313,7 @@ export async function deleteProduct(id: number) {
     await requirePermission('products:delete')
 
     try {
-        await prisma.products.delete({ where: { id } })
+        await prisma.products.delete({ where: { id }, select: { id: true } })
         revalidatePath('/admin/products')
         revalidatePath('/')
         return { success: true }
@@ -370,7 +370,7 @@ export async function addProductImage(productId: number, imageUrl: string, altTe
             alt_text: altText || null,
             image_type: imageType,
         }
-        const img = await prisma.product_images.create({ data: imgData })
+        const img = await prisma.product_images.create({ data: imgData, select: { id: true } })
         revalidatePath(`/admin/products/${productId}`)
         return { success: true, id: img.id }
     } catch (err: unknown) {
@@ -405,7 +405,7 @@ export async function deleteProductImage(imageId: number, productId: number) {
     await requirePermission('products:write')
 
     try {
-        await prisma.product_images.delete({ where: { id: imageId } })
+        await prisma.product_images.delete({ where: { id: imageId }, select: { id: true } })
         revalidatePath(`/admin/products/${productId}`)
         return { success: true }
     } catch (err: unknown) {
@@ -422,6 +422,7 @@ export async function setProductThumbnail(productId: number, imageUrl: string) {
         await prisma.products.update({
             where: { id: productId },
             data: { image_main_url: imageUrl, updated_at: new Date() },
+            select: { id: true },
         })
         revalidatePath(`/admin/products/${productId}`)
         revalidatePath('/admin/products')
@@ -442,7 +443,8 @@ export async function updateProductImageSortOrder(productId: number, imageIds: n
         const updates = imageIds.map((id, index) => 
             prisma.product_images.update({
                 where: { id },
-                data: { sort_order: index }
+                data: { sort_order: index },
+                select: { id: true },
             })
         )
         await prisma.$transaction(updates)
@@ -510,7 +512,8 @@ export async function addProductRelationship(parentId: number, childId: number, 
                 child_sku: childSku,
                 relationship_type: relationshipType,
                 sort_order: existingCount
-            }
+            },
+            select: { id: true },
         });
         revalidatePath(`/admin/products/${parentId}`);
         return { success: true };
@@ -526,7 +529,8 @@ export async function removeProductRelationship(id: number, parentId: number) {
 
     try {
         await prisma.product_relationships.delete({
-            where: { id }
+            where: { id },
+            select: { id: true },
         });
         revalidatePath(`/admin/products/${parentId}`);
         return { success: true };
@@ -589,14 +593,16 @@ export async function linkVariant(currentProductId: number, targetProductId: num
         if (!currentProduct.variant_group) {
             await prisma.products.update({
                 where: { id: currentProductId },
-                data: { variant_group: variantGroup }
+                data: { variant_group: variantGroup },
+                select: { id: true },
             });
         }
 
         // Cập nhật sản phẩm mục tiêu (target) vào chung variant_group
         await prisma.products.update({
             where: { id: targetProductId },
-            data: { variant_group: variantGroup }
+            data: { variant_group: variantGroup },
+            select: { id: true },
         });
 
         revalidatePath(`/admin/products/${currentProductId}`);
@@ -615,7 +621,8 @@ export async function unlinkVariant(productId: number, currentProductId: number)
     try {
         await prisma.products.update({
             where: { id: productId },
-            data: { variant_group: null }
+            data: { variant_group: null },
+            select: { id: true },
         });
 
         revalidatePath(`/admin/products/${currentProductId}`);
@@ -657,7 +664,8 @@ export async function updateProductSortOrders(updates: { id: number; sort_order:
             updates.map((u) =>
                 prisma.products.update({
                     where: { id: u.id },
-                    data: { sort_order: u.sort_order }
+                    data: { sort_order: u.sort_order },
+                    select: { id: true },
                 })
             )
         )

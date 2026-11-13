@@ -95,6 +95,7 @@ export async function createBlogPost(data: unknown) {
                     is_featured: d.is_featured,
                     is_pinned: d.is_pinned,
                 },
+                select: { id: true },
             })
 
             if (d.tag_ids.length > 0) {

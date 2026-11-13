@@ -15,7 +15,14 @@ export async function writePimAudit(
     changedFields: string[]
   },
 ) {
-  const client = tx as { audit_logs: { create: (args: { data: Prisma.audit_logsUncheckedCreateInput }) => Promise<unknown> } }
+  const client = tx as {
+    audit_logs: {
+      create: (args: {
+        data: Prisma.audit_logsUncheckedCreateInput
+        select: { id: true }
+      }) => Promise<unknown>
+    }
+  }
   await client.audit_logs.create({
     data: {
       user_id: input.userId,
@@ -26,5 +33,6 @@ export async function writePimAudit(
         changed_fields: input.changedFields,
       },
     },
+    select: { id: true },
   })
 }

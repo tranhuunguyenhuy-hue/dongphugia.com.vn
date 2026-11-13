@@ -20,7 +20,7 @@ export async function syncProductCanonicalFields(tx: unknown, actorId: number, p
       if (!brand) throw new Error('BRAND_NOT_FOUND')
       if (!brand.is_active) throw new Error('BRAND_INACTIVE')
     }
-    await client.products.update({ where: { id: productId }, data: { brand_id: parsed.data.brand_id } })
+    await client.products.update({ where: { id: productId }, data: { brand_id: parsed.data.brand_id }, select: { id: true } })
   }
   if (parsed.data.product_type_id !== undefined || parsed.data.product_sub_type_id !== undefined) {
     if (parsed.data.product_sub_type_id && !parsed.data.product_type_id) throw new Error('PRODUCT_SUBTYPE_PARENT_REQUIRED')
@@ -35,7 +35,7 @@ export async function syncProductCanonicalFields(tx: unknown, actorId: number, p
       if (!subtype.is_active) throw new Error('PRODUCT_SUB_TYPE_INACTIVE')
       if (subtype.product_type_id !== parsed.data.product_type_id) throw new Error('PRODUCT_SUBTYPE_PARENT_MISMATCH')
     }
-    await client.products.update({ where: { id: productId }, data: { product_type_id: parsed.data.product_type_id ?? null, product_sub_type_id: parsed.data.product_sub_type_id ?? null } })
+    await client.products.update({ where: { id: productId }, data: { product_type_id: parsed.data.product_type_id ?? null, product_sub_type_id: parsed.data.product_sub_type_id ?? null }, select: { id: true } })
   }
   if (parsed.data.taxon_assignments !== undefined) {
     if (assignments.length > 0) {
