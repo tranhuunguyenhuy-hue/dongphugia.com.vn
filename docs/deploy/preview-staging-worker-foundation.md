@@ -116,6 +116,22 @@ digest, source review or environment approval does not match. The release
 summary records the source SHA, artifact digest, token ID, run ID, config digest
 and the external-review status without exposing credentials.
 
+Wrangler reports API-created Workers with `last_deployed_from: api` and asks for
+confirmation before taking over deployment. The trusted manual dispatch has an
+`api_origin_ack` choice that defaults to `none`; leave it there for normal
+releases. For the specifically authorized one-time Staging API-to-Wrangler
+takeover, the operator may select `dpg-staging-script-api-origin-v1` after
+reviewing the exact candidate summary. The summary binds this selection to the
+same source SHA, artifact digest, target, token ID and run. The trusted publish
+helper verifies the prepared manifest/config digest and exact account, Worker
+and workers.dev origin, keeps Wrangler [`--strict`](https://developers.cloudflare.com/workers/wrangler/commands/workers/),
+and uses a Linux pseudo-terminal only to answer `yes` once for Wrangler's exact
+script-API provenance warning. It declines all other Wrangler confirmations and
+fails the step; with `none`, strict conflicts remain non-interactive and fail
+closed. If the expected util-linux terminal support or exact prompt is absent,
+the helper stops without uploading. Do not edit Wrangler's undocumented
+`last_deployed_from` metadata or suppress generic strict conflicts.
+
 ## Staging setup packet
 
 The one-time Worker bootstrap is complete. Read-only inventory on 2026-11-13

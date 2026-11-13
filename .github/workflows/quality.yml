@@ -75,7 +75,9 @@ jobs:
 
       - name: Install dependencies
         if: steps.scope.outputs.run_app_checks == 'true'
-        run: npm ci
+        run: |
+          npm ci
+          npm ci --prefix apps/environment-worker
 
       - name: Lint
         if: steps.scope.outputs.run_app_checks == 'true'

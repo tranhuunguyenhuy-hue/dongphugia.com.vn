@@ -4,6 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { renderEnvironmentWorkerReviewSummary } from './render-environment-worker-review-summary.mjs'
+import { API_ORIGIN_ACKNOWLEDGEMENT } from './run-environment-worker-wrangler-deploy.mjs'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const workflow = await readFile(path.join(here, '../../.github/workflows/environment-worker-publish.yml'), 'utf8')
@@ -37,15 +38,17 @@ describe('Staging release review summary trust boundary', () => {
       await writeFile(githubEnvFile, '', 'utf8')
       await appendFile(
         githubEnvFile,
-        `DEPLOYMENT_TOKEN_ID=${candidateTokenId}\nRELEASE_DEPLOYMENT_TOKEN_ID=${candidateTokenId}\n`,
+        `DEPLOYMENT_TOKEN_ID=${candidateTokenId}\nRELEASE_DEPLOYMENT_TOKEN_ID=${candidateTokenId}\nRELEASE_API_ORIGIN_ACK=${API_ORIGIN_ACKNOWLEDGEMENT}\n`,
         'utf8',
       )
       const candidateJobEnvironment = await applyGitHubEnvFile(githubEnvFile, {
         DEPLOYMENT_TOKEN_ID: approvedTokenId,
         RELEASE_DEPLOYMENT_TOKEN_ID: approvedTokenId,
+        RELEASE_API_ORIGIN_ACK: 'none',
       })
       expect(candidateJobEnvironment.DEPLOYMENT_TOKEN_ID).toBe(candidateTokenId)
       expect(candidateJobEnvironment.RELEASE_DEPLOYMENT_TOKEN_ID).toBe(candidateTokenId)
+      expect(candidateJobEnvironment.RELEASE_API_ORIGIN_ACK).toBe(API_ORIGIN_ACKNOWLEDGEMENT)
 
       const buildJob = workflowJob('build-candidate')
       const reviewJob = workflowJob('review-candidate')
@@ -54,6 +57,7 @@ describe('Staging release review summary trust boundary', () => {
       expect(reviewJob).toContain('needs: build-candidate')
       expect(reviewJob).toContain('RELEASE_DEPLOYMENT_TOKEN_ID: ${{ inputs.deployment_token_id }}')
       expect(reviewJob).toContain('RELEASE_SOURCE_SHA: ${{ inputs.source_sha }}')
+      expect(reviewJob).toContain('RELEASE_API_ORIGIN_ACK: ${{ inputs.api_origin_ack }}')
       expect(reviewJob).not.toContain('working-directory: candidate')
       expect(reviewJob).not.toContain('npm ci')
       expect(reviewJob).not.toContain('needs.build-candidate.outputs')
@@ -70,11 +74,14 @@ describe('Staging release review summary trust boundary', () => {
         sourceSha: immutableInputs.sourceSha,
         artifactSha256: immutableInputs.artifactSha256,
         deploymentTokenId: immutableInputs.deploymentTokenId,
+        apiOriginAcknowledgement: 'none',
       })
       expect(summary).toContain(`Deployment token ID to inspect: ${approvedTokenId}`)
       expect(summary).not.toContain(candidateTokenId)
       expect(summary).toContain(`Source SHA: ${immutableInputs.sourceSha}`)
       expect(summary).toContain(`Candidate artifact content SHA-256: ${immutableInputs.artifactSha256}`)
+      expect(summary).toContain('API-origin warning acknowledgement requested: none')
+      expect(summary).toContain('retains Wrangler --strict')
     } finally {
       await rm(temporaryDirectory, { recursive: true, force: true })
     }
@@ -88,6 +95,7 @@ describe('Staging release review summary trust boundary', () => {
       sourceSha: 'c'.repeat(40),
       artifactSha256: 'd'.repeat(64),
       deploymentTokenId: 'a'.repeat(32),
+      apiOriginAcknowledgement: 'none',
     }
     expect(() => renderEnvironmentWorkerReviewSummary({
       ...valid,
@@ -97,5 +105,9 @@ describe('Staging release review summary trust boundary', () => {
       ...valid,
       artifactSha256: 'not-a-digest',
     })).toThrow('ENVIRONMENT_WORKER_REVIEW_SUMMARY_ARTIFACT_SHA256_INVALID')
+    expect(() => renderEnvironmentWorkerReviewSummary({
+      ...valid,
+      apiOriginAcknowledgement: 'skip-all-conflicts',
+    })).toThrow('ENVIRONMENT_WORKER_REVIEW_SUMMARY_API_ORIGIN_ACK_INVALID')
   })
 })
