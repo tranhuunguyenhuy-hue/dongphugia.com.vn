@@ -9,7 +9,7 @@ export const metadata = {
 
 export default async function LoginPage() {
     const isAuthenticated = await verifyAdminSession()
-    if (isAuthenticated) redirect('/admin')
+    if (isAuthenticated) redirect('/admin/products')
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-50">

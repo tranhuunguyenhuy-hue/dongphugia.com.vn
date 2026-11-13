@@ -131,16 +131,24 @@ export function ProductsFilters({
                        searchParams.has('brand_id') || 
                        searchParams.has('highlight_type') || 
                        searchParams.has('is_active') ||
+                       searchParams.has('publication_status') ||
                        searchParams.has('sort')
 
-    const currentCategory = searchParams.get('category_id') || String(defaultCategoryId)
+    const currentCategory = searchParams.get('category_id') || (defaultCategoryId ? String(defaultCategoryId) : '')
 
     return (
         <div className="space-y-5">
             {/* Category Tabs */}
             <div className="border-b border-slate-200 overflow-x-auto no-scrollbar">
                 <div className="flex gap-8 whitespace-nowrap px-1">
-
+                    <button
+                        onClick={() => updateFilter('category_id', '')}
+                        className={`pb-3 text-[13px] font-semibold tracking-wide transition-colors border-b-2 -mb-[1px] ${
+                            currentCategory === '' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        Tất cả danh mục
+                    </button>
                     {categories.map(cat => (
                         <button
                             key={cat.id}
@@ -240,6 +248,19 @@ export function ProductsFilters({
                         ]}
                         placeholder="Trạng thái"
                         width="w-[150px]"
+                    />
+
+                    {/* Publication filter is distinct from the operational active flag. */}
+                    <FilterCombobox
+                        value={searchParams.get('publication_status') || 'all'}
+                        onChange={v => updateFilter('publication_status', v)}
+                        options={[
+                            { value: 'all', label: 'Tất cả công bố' },
+                            { value: 'public', label: 'Công khai' },
+                            { value: 'private', label: 'Chưa công bố' },
+                        ]}
+                        placeholder="Trạng thái công bố"
+                        width="w-[170px]"
                     />
 
                     {/* Sort filter */}

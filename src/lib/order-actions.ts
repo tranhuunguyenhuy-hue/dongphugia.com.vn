@@ -1,5 +1,6 @@
 'use server'
 
+import { assertAdminLaunchModuleEnabled } from '@/lib/admin-launch-scope'
 import prisma from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
@@ -53,9 +54,14 @@ async function requireOrderActionAccess(orderId: number, permission: Parameters<
     return currentUser
 }
 
+function errorMessage(error: unknown) {
+    return error instanceof Error ? error.message : String(error)
+}
+
 // ─── CREATE ORDER ─────────────────────────────────────────────────────────────
 
 export async function createOrder(data: unknown) {
+    assertAdminLaunchModuleEnabled('orders')
     await requirePermission('orders:edit')
 
     const validated = orderSchema.safeParse(data)
@@ -96,16 +102,17 @@ export async function createOrder(data: unknown) {
         })
         revalidatePath('/admin/orders')
         return { success: true, id: order.id, orderNumber: order.order_number }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi tạo đơn hàng: ' + err.message }
+        return { message: 'Lỗi tạo đơn hàng: ' + errorMessage(err) }
     }
 }
 
 // ─── UPDATE ORDER STATUS ──────────────────────────────────────────────────────
 
 export async function updateOrderStatus(id: number, status: string) {
+    assertAdminLaunchModuleEnabled('orders')
     await requireOrderActionAccess(id, 'orders:update_status')
 
     const validStatuses = ['pending', 'received', 'confirmed', 'inventory_check', 'completed', 'cancelled']
@@ -120,14 +127,15 @@ export async function updateOrderStatus(id: number, status: string) {
         revalidatePath('/admin/orders')
         revalidatePath(`/admin/orders/${id}`)
         return { success: true }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi cập nhật trạng thái: ' + err.message }
+        return { message: 'Lỗi cập nhật trạng thái: ' + errorMessage(err) }
     }
 }
 
 export async function updatePaymentStatus(id: number, paymentStatus: string) {
+    assertAdminLaunchModuleEnabled('orders')
     await requirePermission('orders:edit')
 
     const validStatuses = ['unpaid', 'paid', 'refunded']
@@ -142,16 +150,17 @@ export async function updatePaymentStatus(id: number, paymentStatus: string) {
         revalidatePath('/admin/orders')
         revalidatePath(`/admin/orders/${id}`)
         return { success: true }
-    } catch (err: any) {
+    } catch (err: unknown) {
         const freezeResult = toWriteFreezeActionResult(err)
         if (freezeResult) return freezeResult
-        return { message: 'Lỗi cập nhật thanh toán: ' + err.message }
+        return { message: 'Lỗi cập nhật thanh toán: ' + errorMessage(err) }
     }
 }
 
 // ─── GET ORDER BY NUMBER (for customer tracking) ──────────────────────────────
 
 export async function getOrderByNumber(orderNumber: string) {
+    assertAdminLaunchModuleEnabled('orders')
     return prisma.orders.findUnique({
         where: { order_number: orderNumber },
         include: {
@@ -181,6 +190,7 @@ export async function getAdminOrders(params: {
     page?: number
     pageSize?: number
 }) {
+    assertAdminLaunchModuleEnabled('orders')
     const { status, payment_status, search, page = 1, pageSize = 25 } = params
 
     const currentUser = await requireAuth()
@@ -241,7 +251,7 @@ export async function getAdminOrders(params: {
         orders: orders.map(o => ({
             ...o,
             total: Number(o.total),
-            order_items: o.order_items?.map((item: any) => ({
+            order_items: o.order_items?.map((item) => ({
                 ...item,
                 unit_price: Number(item.unit_price),
                 total_price: Number(item.total_price),
@@ -257,6 +267,7 @@ export async function getAdminOrders(params: {
 // ─── ADMIN: ORDER DETAIL ──────────────────────────────────────────────────────
 
 export async function getAdminOrderById(id: number) {
+    assertAdminLaunchModuleEnabled('orders')
     const currentUser = await requireAuth()
     const restrictToAssigned = !can(currentUser.role, 'orders:read')
 
@@ -281,7 +292,7 @@ export async function getAdminOrderById(id: number) {
         subtotal: Number(order.subtotal),
         shipping_fee: Number(order.shipping_fee),
         total: Number(order.total),
-        order_items: order.order_items?.map((item: any) => ({
+        order_items: order.order_items?.map((item) => ({
             ...item,
             unit_price: Number(item.unit_price),
             total_price: Number(item.total_price),
@@ -292,6 +303,7 @@ export async function getAdminOrderById(id: number) {
 // ─── ORDER STATS ──────────────────────────────────────────────────────────────
 
 export async function getOrderStats() {
+    assertAdminLaunchModuleEnabled('orders')
     const currentUser = await requireAuth()
     const assignedOnly = !can(currentUser.role, 'dashboard:read')
     const assignedWhere = assignedOnly ? { assigned_to: currentUser.id } : {}
@@ -318,6 +330,7 @@ export async function getOrderStats() {
 // ─── CREATE QUOTE FROM ORDER ──────────────────────────────────────────────────
 
 export async function createQuoteFromOrder(orderId: number) {
+    assertAdminLaunchModuleEnabled('orders')
     await requireOrderActionAccess(orderId, 'quotes:create')
 
     const order = await prisma.orders.findUnique({
@@ -348,6 +361,7 @@ type OrderUpdateData = {
 }
 
 export async function updateOrderData(orderId: number, data: OrderUpdateData) {
+    assertAdminLaunchModuleEnabled('orders')
     await requirePermission('orders:edit')
 
     try {
@@ -402,6 +416,7 @@ export async function updateOrderData(orderId: number, data: OrderUpdateData) {
 // ─── ASSIGN ORDER ─────────────────────────────────────────────────────────────
 
 export async function assignOrder(orderId: number, userId: number | null) {
+    assertAdminLaunchModuleEnabled('orders')
     try {
         await requirePermission('orders:assign')
         

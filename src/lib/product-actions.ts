@@ -166,7 +166,15 @@ export async function createProduct(data: unknown) {
 // ─── UPDATE ──────────────────────────────────────────────────────────────────
 
 export async function updateProduct(id: number, data: unknown) {
-    const actor = await requirePermission('products:write')
+    let actor: Awaited<ReturnType<typeof requirePermission>>
+    try {
+        actor = await requirePermission('products:write')
+    } catch (error: unknown) {
+        if (error instanceof Error && error.message === 'FORBIDDEN: Requires products:write permission') {
+            return { message: 'Bạn không có quyền cập nhật sản phẩm.' }
+        }
+        throw error
+    }
 
     const validated = productSchema.safeParse(data)
     if (!validated.success) {

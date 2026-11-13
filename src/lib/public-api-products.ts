@@ -117,6 +117,7 @@ export type AdminProductListItem = {
     is_featured: boolean
     is_home_featured: boolean
     is_promotion: boolean
+    publication_status: string
     sort_order: number
     created_at: Date
     categories: { name: string; slug: string }
@@ -1445,6 +1446,7 @@ export async function getAdminProducts(params: {
     brand_id?: number
     highlight_type?: 'featured' | 'promotion'
     is_active?: boolean
+    publication_status?: 'public' | 'private'
     sort?: 'price_asc' | 'price_desc' | 'default'
     page?: number
     pageSize?: number
@@ -1455,7 +1457,7 @@ export async function getAdminProducts(params: {
     pageSize: number
     totalPages: number
 }> {
-    const { search, category_id, subcategory_id, brand_id, highlight_type, is_active, sort, page = 1, pageSize = 50 } = params
+    const { search, category_id, subcategory_id, brand_id, highlight_type, is_active, publication_status, sort, page = 1, pageSize = 50 } = params
 
     const where: Prisma.productsWhereInput = {
         ...(search && {
@@ -1470,6 +1472,7 @@ export async function getAdminProducts(params: {
         ...(highlight_type === 'featured' && { is_featured: true }),
         ...(highlight_type === 'promotion' && { is_promotion: true }),
         ...(is_active !== undefined && { is_active }),
+        ...(publication_status && { publication_status }),
     }
 
     const orderBy: Prisma.productsOrderByWithRelationInput[] = []
@@ -1504,6 +1507,7 @@ export async function getAdminProducts(params: {
                 is_featured: true,
                 is_home_featured: true,
                 is_promotion: true,
+                publication_status: true,
                 sort_order: true,
                 created_at: true,
                 categories: { select: { name: true, slug: true } },

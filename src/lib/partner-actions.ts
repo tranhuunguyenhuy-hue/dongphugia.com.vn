@@ -1,5 +1,6 @@
 'use server'
 
+import { assertAdminLaunchModuleEnabled } from '@/lib/admin-launch-scope'
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -19,6 +20,7 @@ const PartnerSchema = z.object({
 })
 
 export async function createPartner(data: z.infer<typeof PartnerSchema>) {
+    assertAdminLaunchModuleEnabled('partners')
     await requirePermission('blog:write')
 
     const parsed = PartnerSchema.safeParse(data)
@@ -52,6 +54,7 @@ export async function createPartner(data: z.infer<typeof PartnerSchema>) {
 }
 
 export async function updatePartner(id: number, data: z.infer<typeof PartnerSchema>) {
+    assertAdminLaunchModuleEnabled('partners')
     await requirePermission('blog:write')
 
     const parsed = PartnerSchema.safeParse(data)
@@ -85,6 +88,7 @@ export async function updatePartner(id: number, data: z.infer<typeof PartnerSche
 }
 
 export async function deletePartner(id: number) {
+    assertAdminLaunchModuleEnabled('partners')
     await requirePermission('blog:write')
 
     try {

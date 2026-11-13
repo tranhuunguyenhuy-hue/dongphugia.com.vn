@@ -1,5 +1,6 @@
 'use server'
 
+import { assertAdminLaunchModuleEnabled } from '@/lib/admin-launch-scope'
 import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
@@ -21,6 +22,7 @@ const bannerSchema = z.object({
 })
 
 export async function createBanner(data: unknown) {
+    assertAdminLaunchModuleEnabled('banners')
     await requirePermission('blog:write')
     
     const validated = bannerSchema.safeParse(data)
@@ -50,6 +52,7 @@ export async function createBanner(data: unknown) {
 }
 
 export async function updateBanner(id: number, data: unknown) {
+    assertAdminLaunchModuleEnabled('banners')
     await requirePermission('blog:write')
 
     const validated = bannerSchema.safeParse(data)
@@ -81,6 +84,7 @@ export async function updateBanner(id: number, data: unknown) {
 }
 
 export async function deleteBanner(id: number) {
+    assertAdminLaunchModuleEnabled('banners')
     await requirePermission('blog:write')
 
     try {
@@ -98,6 +102,7 @@ export async function deleteBanner(id: number) {
 
 // --- Category Banners ---
 export async function updateCategoryBanner(id: number, banner_url: string | null) {
+    assertAdminLaunchModuleEnabled('categories')
     await requirePermission('categories:write')
 
     try {
@@ -225,6 +230,7 @@ export async function submitQuoteRequest(payload: QuoteCartPayload) {
 }
 
 export async function updateQuoteRequestStatus(id: number, status: string) {
+    assertAdminLaunchModuleEnabled('quote-requests')
     await requirePermission('quotes:update')
 
     try {

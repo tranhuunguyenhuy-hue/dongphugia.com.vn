@@ -65,3 +65,42 @@ describe("public redirect boundary", () => {
     }
   })
 })
+
+describe("legacy Admin launch boundary", () => {
+  it("sends the Admin home to the Product list and allows only login, Products, and Blog posts", () => {
+    const home = request("http://127.0.0.1/admin")
+    expect(home.status).toBe(307)
+    expect(new URL(home.headers.get("location") ?? "http://localhost").pathname).toBe("/admin/products")
+
+    for (const path of [
+      "/admin/login",
+      "/admin/products",
+      "/admin/products/123",
+      "/admin/blog/posts",
+      "/admin/blog/posts/123",
+      "/admin/blog/posts/new",
+    ]) {
+      const response = request(`http://127.0.0.1${path}`)
+      expect(response.headers.get("x-middleware-next"), path).toBe("1")
+    }
+  })
+
+  it("returns 404 for deferred Admin modules", () => {
+    for (const path of [
+      "/admin/orders",
+      "/admin/customers",
+      "/admin/quote-requests",
+      "/admin/categories",
+      "/admin/pim",
+      "/admin/content/banners",
+      "/admin/banners",
+      "/admin/doi-tac",
+      "/admin/du-an",
+      "/admin/users",
+      "/admin/blog/tags",
+    ]) {
+      const response = request(`http://127.0.0.1${path}`)
+      expect(response.status, path).toBe(404)
+    }
+  })
+})

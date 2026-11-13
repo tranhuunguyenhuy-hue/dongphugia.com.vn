@@ -1,5 +1,6 @@
 'use server'
 
+import { assertAdminLaunchModuleEnabled } from '@/lib/admin-launch-scope'
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -20,6 +21,7 @@ const ProjectSchema = z.object({
 })
 
 export async function createProject(data: z.infer<typeof ProjectSchema>) {
+    assertAdminLaunchModuleEnabled('projects')
     await requirePermission('blog:write')
 
     const parsed = ProjectSchema.safeParse(data)
@@ -54,6 +56,7 @@ export async function createProject(data: z.infer<typeof ProjectSchema>) {
 }
 
 export async function updateProject(id: number, data: z.infer<typeof ProjectSchema>) {
+    assertAdminLaunchModuleEnabled('projects')
     await requirePermission('blog:write')
 
     const parsed = ProjectSchema.safeParse(data)
@@ -88,6 +91,7 @@ export async function updateProject(id: number, data: z.infer<typeof ProjectSche
 }
 
 export async function deleteProject(id: number) {
+    assertAdminLaunchModuleEnabled('projects')
     await requirePermission('blog:write')
 
     try {

@@ -1,5 +1,6 @@
 'use server'
 
+import { assertAdminLaunchModuleEnabled } from '@/lib/admin-launch-scope'
 import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { requirePermission, getCurrentUser } from '@/lib/auth/get-current-user'
@@ -17,6 +18,7 @@ export async function saveUser(data: {
     role: AdminRole
     is_active: boolean
 }) {
+    assertAdminLaunchModuleEnabled('users')
     try {
         await requirePermission('users:write')
         const currentUser = await getCurrentUser()

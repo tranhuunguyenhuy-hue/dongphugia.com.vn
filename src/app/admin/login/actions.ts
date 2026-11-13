@@ -110,7 +110,7 @@ export async function loginAction(
         path: '/',
     })
 
-    redirect('/admin')
+    redirect('/admin/products')
 }
 
 export async function logoutAction(): Promise<void> {
