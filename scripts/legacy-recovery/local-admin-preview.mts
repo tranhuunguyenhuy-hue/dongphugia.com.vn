@@ -452,7 +452,8 @@ async function exerciseViewport(
   const blogResponse = await page.goto(`${BASE_URL}/admin/blog/posts`, { waitUntil: 'domcontentloaded' })
   if (!blogResponse || blogResponse.status() !== 200) fail(`LOCAL_BLOG_LIST_HTTP_FAILED:${suffix}`)
   await page.getByRole('heading', { name: 'Quản lý bài viết', exact: true }).waitFor({ timeout: 25_000 })
-  await page.getByText(/10 bài/).waitFor({ state: 'visible', timeout: 10_000 })
+  // The local preview adds one draft fixture to the ten recovered published posts.
+  await page.getByText('11 bài · 10 đang live', { exact: true }).waitFor({ state: 'visible', timeout: 10_000 })
   await page.getByText(sample.blogPost.title.slice(0, 12), { exact: false }).first().waitFor({ state: 'visible', timeout: 25_000 })
   await page.screenshot({ path: join(evidenceDir, `admin-blog-${suffix}.png`), fullPage: true })
 
