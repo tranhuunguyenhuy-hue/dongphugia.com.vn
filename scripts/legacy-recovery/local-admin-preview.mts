@@ -664,9 +664,18 @@ async function exerciseViewport(
   managerPage.on('requestfailed', (request) => deniedDiagnostics.push(`requestfailed:${new URL(request.url()).pathname}:${request.failure()?.errorText ?? 'unknown'}`))
   const deniedAction = await waitForActionResponse(managerPage, () => managerPage.getByRole('button', { name: 'Cập nhật' }).first().click(), 'manager-product-edit', deniedDiagnostics)
   const deniedActionText = await deniedAction.text().catch(() => '')
-  if (deniedAction.status() < 200 || deniedAction.status() >= 300 || !/không có quyền cập nhật sản phẩm/i.test(deniedActionText)) {
+  const expectedDenialMessage = 'Bạn không có quyền cập nhật sản phẩm.'
+  const unescapedDeniedActionText = deniedActionText.replace(/\\u([\da-f]{4})/gi, (_, code: string) => String.fromCharCode(Number.parseInt(code, 16)))
+  const denialMessageInResponse = unescapedDeniedActionText.includes(expectedDenialMessage)
+  let denialToastVisible = false
+  try {
+    await managerPage.getByText(expectedDenialMessage, { exact: true }).first().waitFor({ state: 'visible', timeout: 5_000 })
+    denialToastVisible = true
+  } catch { /* The action response below remains a valid denial signal if toast rendering is unavailable. */ }
+  if (deniedAction.status() < 200 || deniedAction.status() >= 300 || (!denialMessageInResponse && !denialToastVisible)) {
     fail(`LOCAL_MANAGER_PRODUCT_WRITE_DENIAL_RESPONSE_INVALID:${suffix}:${JSON.stringify({
-      status: deniedAction.status(), expectedPermissionMessage: /không có quyền cập nhật sản phẩm/i.test(deniedActionText),
+      status: deniedAction.status(), responseBytes: deniedActionText.length, denialMessageInResponse, denialToastVisible,
+      genericForbidden: /FORBIDDEN/i.test(deniedActionText),
       browser: deniedDiagnostics,
     })}`)
   }
