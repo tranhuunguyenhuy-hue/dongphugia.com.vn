@@ -384,12 +384,18 @@ async function isolateBrowserContext(browser: Browser, viewport: { width: number
   return context
 }
 
-async function login(page: Page, user: { username: string; password: string }) {
+async function login(page: Page, user: { username: string; password: string }, suffix: string, evidenceDir: string) {
   await page.goto(`${BASE_URL}/admin/login`, { waitUntil: 'domcontentloaded' })
   await page.locator('#identifier').fill(user.username)
   await page.locator('#password').fill(user.password)
   await page.getByRole('button', { name: 'Đăng nhập' }).click()
-  await page.waitForURL((url) => url.pathname === '/admin', { timeout: 25_000 })
+  try {
+    await page.waitForURL((url) => url.pathname === '/admin', { timeout: 25_000, waitUntil: 'domcontentloaded' })
+  } catch {
+    const body = await page.locator('body').innerText().catch(() => '')
+    await page.screenshot({ path: join(evidenceDir, `admin-login-failure-${suffix}.png`), fullPage: true }).catch(() => undefined)
+    fail(`LOCAL_ADMIN_LOGIN_REDIRECT_FAILED:${suffix}:${JSON.stringify({ url: page.url(), body: body.slice(-800) })}`)
+  }
 }
 
 async function captureNoSession(page: Page, suffix: string, evidenceDir: string) {
@@ -480,7 +486,7 @@ async function exerciseViewport(
   page.on('console', (message) => { if (message.type() === 'error') diagnostics.push(`console:${message.text().slice(0, 240)}`) })
   page.on('requestfailed', (request) => diagnostics.push(`requestfailed:${new URL(request.url()).pathname}:${request.failure()?.errorText ?? 'unknown'}`))
   const noSession = await captureNoSession(page, suffix, evidenceDir)
-  await login(page, staff.users[0])
+  await login(page, staff.users[0], suffix, evidenceDir)
 
   if (fullCatalogue) {
     const allResponse = await page.goto(`${BASE_URL}/admin/products`, { waitUntil: 'domcontentloaded' })
@@ -524,7 +530,7 @@ async function exerciseViewport(
 
   const manager = await isolateBrowserContext(browser, viewport)
   const managerPage = await manager.newPage()
-  await login(managerPage, staff.users[1])
+  await login(managerPage, staff.users[1], `manager-${suffix}`, evidenceDir)
   const allowedProducts = await managerPage.goto(`${BASE_URL}/admin/products`, { waitUntil: 'domcontentloaded' })
   if (!allowedProducts || allowedProducts.status() !== 200) fail(`LOCAL_MANAGER_PRODUCT_READ_DENIED:${suffix}`)
   const deniedBlog = await managerPage.goto(`${BASE_URL}/admin/blog/posts`, { waitUntil: 'domcontentloaded' })
