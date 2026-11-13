@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -427,11 +428,36 @@ try {
     psql(testDatabase, [], schemaDump)
     psql(testDatabase, ['-c', 'ALTER SCHEMA public RENAME TO dpg_app; CREATE SCHEMA public; GRANT USAGE ON SCHEMA public TO PUBLIC'])
     psql(testDatabase, ['-f', setupPath])
+    const migrationSql = await readFile(migrationPath, 'utf8')
+    const atomicityProbeSql = migrationSql.replace(
+        /\nCOMMIT;\s*$/,
+        "\nDO $atomicity_probe$ BEGIN RAISE EXCEPTION 'ADMIN_RUNTIME_ROLE_ATOMICITY_PROBE'; END $atomicity_probe$;\nCOMMIT;\n",
+    )
+    if (atomicityProbeSql === migrationSql) {
+        throw new Error('The runtime-role migration is missing its explicit terminal COMMIT.')
+    }
+    let atomicityFailure: unknown
+    try {
+        psql(testDatabase, [], atomicityProbeSql)
+    } catch (error) {
+        atomicityFailure = error
+    }
+    const atomicityFailureMessage = atomicityFailure instanceof Error ? atomicityFailure.message : ''
+    if (!atomicityFailureMessage.includes('ADMIN_RUNTIME_ROLE_ATOMICITY_PROBE')) {
+        throw new Error('The injected postflight failure did not abort the runtime-role migration transaction.')
+    }
+    const rolledBack = psql(testDatabase, [
+        '-A', '-t', '-c',
+        "SELECT NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='dpg_admin_runtime_login') AND NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='dpg_app' AND policyname LIKE 'dpg_admin_runtime_%')",
+    ]).trim()
+    if (rolledBack !== 't') {
+        throw new Error('The injected postflight failure left a runtime role or policy behind.')
+    }
     psql(testDatabase, ['-f', migrationPath])
     psql(testDatabase, ['-f', acceptancePath])
     await assertPrismaRoleQueries(testDatabase)
     psql(testDatabase, ['-f', revokePath])
-    process.stdout.write('Local-only PostgreSQL role acceptance and rollback passed.\n')
+    process.stdout.write('Local-only PostgreSQL migration atomicity, role acceptance, and rollback passed.\n')
 } catch (error) {
     primaryError = error
 } finally {

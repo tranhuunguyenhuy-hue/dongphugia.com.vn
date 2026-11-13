@@ -37,6 +37,7 @@ export const EXPECTED_RUNTIME_MIGRATIONS = [
   '20260901170000_leo565_media_foundation.sql',
   '20260903165000_owner_v1_pricing_contract.sql',
   '20261016090000_leo560_preview_rls_hardening.sql',
+  '20261113111053_dpg_admin_runtime_login_least_privilege.sql',
 ]
 
 export const BACKUP_BOOTSTRAP_MIGRATIONS = [

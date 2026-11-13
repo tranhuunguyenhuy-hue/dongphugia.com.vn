@@ -6,6 +6,7 @@
 -- Preflight is fail-closed: the selected dpg_app schema, the observed forced-RLS
 -- state, existing dpg_runtime read policies, and nullable component_skus must
 -- match the reviewed target before any role or grants are created.
+BEGIN;
 
 DO $preflight$
 DECLARE
@@ -459,5 +460,6 @@ BEGIN
 END
 $postflight$;
 
--- Rollback SQL is recorded, commented out, in
+-- The rollback is acceptance-tested by the guarded local-only script in
 -- supabase/tests/admin_runtime_role_revoke.sql; it revokes only this patch.
+COMMIT;
