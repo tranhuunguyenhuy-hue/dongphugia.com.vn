@@ -26,6 +26,9 @@ const TEST_ADMIN = { email: 'local-preview-admin@dpg.test', username: 'local-pre
 const TEST_MANAGER = { email: 'local-preview-manager@dpg.test', username: 'local-preview-manager', name: 'Local Preview Manager', role: 'sale_manager' }
 const TEST_USERS = [TEST_ADMIN, TEST_MANAGER] as const
 const SAFE_NEXT_ENV_KEYS = ['PATH', 'HOME', 'TMPDIR'] as const
+const SCOPE_DENIAL_MARKER = 'ADMIN_LAUNCH_SCOPE_DENIED'
+let serverScopeDenialLogCount = 0
+let serverOutputRemainder = ''
 type CapturedBrowserActionPost = {
   url: string
   actionId: string
@@ -359,10 +362,19 @@ async function startLocalApp(runtimeRoot: string, env: NodeJS.ProcessEnv) {
     const output = `${commandError.stdout?.toString() ?? ''}\n${commandError.stderr?.toString() ?? ''}`.trim()
     fail(`LOCAL_ADMIN_PREVIEW_BUILD_FAILED:${output.slice(-6000) || 'BUILD_OUTPUT_UNAVAILABLE'}`)
   }
+  serverScopeDenialLogCount = 0
+  serverOutputRemainder = ''
   const app: ChildProcess = spawn(process.execPath, [nextBin,
     'start', '--hostname', '127.0.0.1', '--port', '3107'], {
-    cwd: runtimeRoot, env, stdio: ['ignore', 'ignore', 'ignore'],
+    cwd: runtimeRoot, env, stdio: ['ignore', 'pipe', 'pipe'],
   })
+  const observeServerOutput = (chunk: Buffer | string) => {
+    const combined = serverOutputRemainder + chunk.toString()
+    serverScopeDenialLogCount += [...combined.matchAll(/ADMIN_LAUNCH_SCOPE_DENIED/g)].length
+    serverOutputRemainder = combined.slice(-(SCOPE_DENIAL_MARKER.length - 1))
+  }
+  app.stdout?.on('data', observeServerOutput)
+  app.stderr?.on('data', observeServerOutput)
   for (let attempt = 0; attempt < 60; attempt++) {
     if (app.exitCode !== null) fail('LOCAL_ADMIN_PREVIEW_SERVER_EXITED')
     try {
@@ -373,6 +385,14 @@ async function startLocalApp(runtimeRoot: string, env: NodeJS.ProcessEnv) {
   }
   app.kill('SIGTERM')
   fail('LOCAL_ADMIN_PREVIEW_SERVER_START_TIMEOUT')
+}
+
+async function waitForScopeDenialLog(previousCount: number, timeoutMs = 2_000) {
+  const deadline = Date.now() + timeoutMs
+  while (serverScopeDenialLogCount <= previousCount && Date.now() < deadline) {
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 25))
+  }
+  return serverScopeDenialLogCount > previousCount
 }
 
 async function stopLocalApp(app?: ChildProcess) {
@@ -452,8 +472,8 @@ async function assertDeferredModulesDenied(page: Page, suffix: string) {
 async function assertDeferredAdminActionsDenied(
   page: Page,
   prisma: PrismaClient,
-  routes: { productId: number; productPath: string },
-  capturedProductEdit: CapturedBrowserActionPost | undefined,
+  routes: { productId: number; blogPostId: number },
+  capturedBlogEdit: CapturedBrowserActionPost | undefined,
   suffix: string,
 ) {
   const manifest = JSON.parse(await readFile(join(process.cwd(), '.next/server/server-reference-manifest.json'), 'utf8')) as {
@@ -463,18 +483,23 @@ async function assertDeferredAdminActionsDenied(
     reference.filename === 'lib/blog-actions.ts' && reference.exportedName === 'createBlogTag',
   )?.[0]
   const deferredActionReference = deferredActionId ? manifest.node[deferredActionId] : undefined
-  const allowedProductActionId = Object.entries(manifest.node).find(([, reference]) =>
-    reference.filename === 'lib/product-actions.ts' && reference.exportedName === 'updateProduct',
+  const allowedBlogActionId = Object.entries(manifest.node).find(([, reference]) =>
+    reference.filename === 'lib/blog-actions.ts' && reference.exportedName === 'updateBlogPost',
   )?.[0]
-  if (!deferredActionId || !allowedProductActionId
-    || !deferredActionReference?.workers['app/admin/(dashboard)/blog/posts/page']) {
+  const allowedBlogActionReference = allowedBlogActionId ? manifest.node[allowedBlogActionId] : undefined
+  const blogPostWorker = 'app/admin/(dashboard)/blog/posts/[id]/page'
+  if (!deferredActionId || !allowedBlogActionId
+    || !deferredActionReference?.workers[blogPostWorker]
+    || !allowedBlogActionReference?.workers[blogPostWorker]) {
     fail(`LOCAL_ACTION_REFERENCE_MISSING:${suffix}`)
   }
-  if (!capturedProductEdit || capturedProductEdit.actionId !== allowedProductActionId
-    || !capturedProductEdit.headers['next-router-state-tree']
-    || !capturedProductEdit.headers['content-type']
-    || !capturedProductEdit.bodyBase64) {
-    fail(`LOCAL_ALLOWED_PRODUCT_ACTION_POST_NOT_CAPTURED:${suffix}`)
+  const capturedBlogPath = capturedBlogEdit ? new URL(capturedBlogEdit.url).pathname : ''
+  if (!capturedBlogEdit || capturedBlogEdit.actionId !== allowedBlogActionId
+    || capturedBlogPath !== `/admin/blog/posts/${routes.blogPostId}`
+    || !capturedBlogEdit.headers['next-router-state-tree']
+    || !capturedBlogEdit.headers['content-type'] || !capturedBlogEdit.headers.cookie
+    || !capturedBlogEdit.bodyBase64) {
+    fail(`LOCAL_ALLOWED_BLOG_ACTION_POST_NOT_CAPTURED:${suffix}`)
   }
   const orderCount = await prisma.orders.count()
   const customerCount = await prisma.customers.count()
@@ -508,29 +533,31 @@ async function assertDeferredAdminActionsDenied(
   } as const
   let seededOrderUnchanged = false
   let beforeProduct: { name: string; updated_at: Date } | null = null
+  let beforeBlogPost: { title: string; status: string; version: number; updated_at: Date } | null = null
   let productAuditCountBefore = -1
   let blogTagCountBefore = -1
   let auditCountBefore = -1
+  let deniedActionStatus: number | null = null
+  let deniedActionResponseCompleted = false
+  let deniedScopeLogged = false
+  let deniedActionNoPrivateData = false
   try {
     const beforeSeededOrder = await prisma.orders.findUnique({ where: { id: seededOrder.id }, select: orderSnapshotFields })
     beforeProduct = await prisma.products.findUnique({ where: { id: routes.productId }, select: { name: true, updated_at: true } })
+    beforeBlogPost = await prisma.blog_posts.findUnique({ where: { id: routes.blogPostId }, select: { title: true, status: true, version: true, updated_at: true } })
     productAuditCountBefore = await prisma.audit_logs.count({ where: { entity_type: 'product', entity_id: routes.productId } })
     blogTagCountBefore = await prisma.blog_tags.count()
     auditCountBefore = await prisma.audit_logs.count()
-    if (!beforeSeededOrder || !beforeProduct) fail(`LOCAL_ACTION_DENIAL_FIXTURE_READ_FAILED:${suffix}`)
-    const allowedRoute = await page.goto(`${BASE_URL}${routes.productPath}`, { waitUntil: 'domcontentloaded' })
-    if (!allowedRoute || allowedRoute.status() !== 200 || page.url() !== `${BASE_URL}${routes.productPath}`) {
-      fail(`LOCAL_ACTION_POST_ALLOWED_PRODUCT_ROUTE_FAILED:${suffix}`)
+    if (!beforeSeededOrder || !beforeProduct || !beforeBlogPost) fail(`LOCAL_ACTION_DENIAL_FIXTURE_READ_FAILED:${suffix}`)
+    const allowedRoute = await page.goto(`${BASE_URL}/admin/blog/posts`, { waitUntil: 'domcontentloaded' })
+    if (!allowedRoute || allowedRoute.status() !== 200 || page.url() !== `${BASE_URL}/admin/blog/posts`) {
+      fail(`LOCAL_ACTION_POST_ALLOWED_BLOG_ROUTE_FAILED:${suffix}`)
     }
-    const productNameInput = page.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN').first()
-    await productNameInput.waitFor({ state: 'visible', timeout: 15_000 })
-    await page.waitForLoadState('networkidle', { timeout: 15_000 })
-    const currentProductName = await productNameInput.inputValue()
-    if (currentProductName !== beforeProduct.name) fail(`LOCAL_ACTION_DENIAL_PRODUCT_FIXTURE_CHANGED:${suffix}`)
-    const replayBody = Buffer.from(capturedProductEdit.bodyBase64, 'base64')
-    const replayHeaders = { ...capturedProductEdit.headers, 'next-action': deferredActionId }
-    const replayBodyMatchesCapture = replayBody.toString('base64') === capturedProductEdit.bodyBase64
-    const actionResponse = await page.context().request.post(capturedProductEdit.url, {
+    const replayBody = Buffer.from(capturedBlogEdit.bodyBase64, 'base64')
+    const replayHeaders = { ...capturedBlogEdit.headers, 'next-action': deferredActionId }
+    const replayBodyMatchesCapture = replayBody.toString('base64') === capturedBlogEdit.bodyBase64
+    const previousScopeDenialCount = serverScopeDenialLogCount
+    const actionResponse = await page.context().request.post(capturedBlogEdit.url, {
       headers: replayHeaders,
       data: replayBody,
       failOnStatusCode: false,
@@ -548,16 +575,18 @@ async function assertDeferredAdminActionsDenied(
     const containsOrderNumber = responseBody.includes(orderNumber)
     const containsPhone = responseBody.includes(phone)
     const responseContentType = actionResponse.headers()['content-type'] ?? null
-    const responseIsActionError = responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED')
-      || /(?:^|\n)\d+:E\{/.test(responseBody) || /"digest"\s*:/.test(responseBody)
-    const responseIsDenied = actionResponse.status() === 500
-      || (actionResponse.status() === 200 && responseContentType?.startsWith('text/x-component') === true && responseIsActionError)
-    if (!replayBodyMatchesCapture || !responseIsDenied
-      || !responseRead.completed || containsPrivateMarker || containsOrderNumber || containsPhone) {
+    deniedActionStatus = actionResponse.status()
+    deniedActionResponseCompleted = responseRead.completed
+    deniedScopeLogged = await waitForScopeDenialLog(previousScopeDenialCount)
+    deniedActionNoPrivateData = !containsPrivateMarker && !containsOrderNumber && !containsPhone
+    if (!replayBodyMatchesCapture || !deniedActionResponseCompleted || !deniedScopeLogged
+      || !responseContentType?.startsWith('text/x-component')
+      || containsPrivateMarker || containsOrderNumber || containsPhone) {
       fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:createBlogTag:${suffix}:${JSON.stringify({
         status: actionResponse.status(), replayBodyMatchesCapture,
         containsPrivateMarker, containsOrderNumber, containsPhone,
-        containsScopeError: responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseIsActionError,
+        scopeDenialLogged: deniedScopeLogged,
+        containsScopeError: responseBody.includes(SCOPE_DENIAL_MARKER),
         responseReadCompleted: responseRead.completed, responseBytes: responseBody.length, responseContentType,
       })}`)
     }
@@ -568,21 +597,24 @@ async function assertDeferredAdminActionsDenied(
   } finally {
     await prisma.orders.deleteMany({ where: { id: seededOrder.id } })
   }
-  const [remainingOrders, remainingCustomers, seededOrderRemaining, afterProduct, productAuditCountAfter, blogTagCountAfter, auditCountAfter] = await Promise.all([
+  const [remainingOrders, remainingCustomers, seededOrderRemaining, afterProduct, afterBlogPost, productAuditCountAfter, blogTagCountAfter, auditCountAfter] = await Promise.all([
     prisma.orders.count(), prisma.customers.count(), prisma.orders.count({ where: { id: seededOrder.id } }),
     prisma.products.findUnique({ where: { id: routes.productId }, select: { name: true, updated_at: true } }),
+    prisma.blog_posts.findUnique({ where: { id: routes.blogPostId }, select: { title: true, status: true, version: true, updated_at: true } }),
     prisma.audit_logs.count({ where: { entity_type: 'product', entity_id: routes.productId } }),
     prisma.blog_tags.count(), prisma.audit_logs.count(),
   ])
   if (remainingOrders !== 0 || remainingCustomers !== 0 || seededOrderRemaining !== 0
     || !afterProduct || afterProduct.name !== beforeProduct.name
     || afterProduct.updated_at.getTime() !== beforeProduct.updated_at.getTime()
+    || !afterBlogPost || JSON.stringify(normalized(afterBlogPost)) !== JSON.stringify(normalized(beforeBlogPost))
     || productAuditCountAfter !== productAuditCountBefore || blogTagCountAfter !== blogTagCountBefore
     || auditCountAfter !== auditCountBefore) {
     fail(`LOCAL_DEFERRED_ACTION_POST_CHANGED_DATABASE:${suffix}:${JSON.stringify({
       remainingOrders, remainingCustomers, seededOrderRemaining,
       productUnchanged: Boolean(afterProduct && afterProduct.name === beforeProduct.name
         && afterProduct.updated_at.getTime() === beforeProduct.updated_at.getTime()),
+      blogPostUnchanged: Boolean(afterBlogPost && JSON.stringify(normalized(afterBlogPost)) === JSON.stringify(normalized(beforeBlogPost))),
       productAuditUnchanged: productAuditCountAfter === productAuditCountBefore,
       blogTagsUnchanged: blogTagCountAfter === blogTagCountBefore,
       auditLogUnchanged: auditCountAfter === auditCountBefore,
@@ -590,9 +622,12 @@ async function assertDeferredAdminActionsDenied(
     })}`)
   }
   return {
-    positiveControl: 'updateProduct browser POST persisted the edited fixture before capture replay',
-    deniedPost: 'createBlogTag action scope was denied on the allowed Blog Posts worker from the captured Product update request; response contained no private order fields',
-    databaseAfter: { orders: remainingOrders, customers: remainingCustomers, productUnchanged: true, productAuditUnchanged: true, blogTagsUnchanged: true, auditLogUnchanged: true, seededOrderUnchanged, seededOrderRemoved: seededOrderRemaining === 0 },
+    positiveControl: 'updateBlogPost browser POST persisted the edited fixture before capture replay',
+    deniedPost: {
+      action: 'createBlogTag', status: deniedActionStatus, responseCompleted: deniedActionResponseCompleted,
+      scopeDenialLogged: deniedScopeLogged, noPrivateOrderFields: deniedActionNoPrivateData,
+    },
+    databaseAfter: { orders: remainingOrders, customers: remainingCustomers, productUnchanged: true, blogPostUnchanged: true, productAuditUnchanged: true, blogTagsUnchanged: true, auditLogUnchanged: true, seededOrderUnchanged, seededOrderRemoved: seededOrderRemaining === 0 },
   }
 }
 
@@ -632,7 +667,7 @@ async function editLocalFixtures(
   page: Page,
   prisma: PrismaClient,
   fixtures: { product: { id: number; name: string }; blogPost: { id: number; title: string } },
-  browserActionPosts: { productEdit?: CapturedBrowserActionPost },
+  browserActionPosts: { productEdit?: CapturedBrowserActionPost; blogPostEdit?: CapturedBrowserActionPost },
   suffix: string,
   evidenceDir: string,
   diagnostics: string[],
@@ -712,6 +747,23 @@ async function editLocalFixtures(
       updatedAt: editedBlog?.updated_at?.toISOString() ?? null, action: blogActionSignals, browser: diagnostics,
     })}`)
   }
+  const completedBlogRequest = blogAction.request()
+  const completedBlogBody = completedBlogRequest.postDataBuffer()
+  const completedBlogHeaders = await completedBlogRequest.allHeaders()
+  const completedBlogActionId = completedBlogHeaders['next-action']
+  const completedBlogPath = new URL(completedBlogRequest.url()).pathname
+  if (completedBlogRequest.method() !== 'POST' || !completedBlogBody || !completedBlogActionId
+    || !completedBlogPath.startsWith('/admin/blog/posts/')
+    || !completedBlogHeaders['next-router-state-tree'] || !completedBlogHeaders['content-type']
+    || !completedBlogHeaders.cookie) {
+    fail(`LOCAL_BLOG_ACTION_CAPTURE_NOT_MATCHED_TO_SUCCESSFUL_EDIT:${suffix}`)
+  }
+  browserActionPosts.blogPostEdit = {
+    url: completedBlogRequest.url(),
+    actionId: completedBlogActionId,
+    headers: completedBlogHeaders,
+    bodyBase64: completedBlogBody.toString('base64'),
+  }
   await page.screenshot({ path: join(evidenceDir, `local-blog-edit-${suffix}.png`), fullPage: true })
   return { product: 'edited-through-legacy-admin', blogPost: 'draft-edited-through-legacy-admin' }
 }
@@ -730,7 +782,7 @@ async function exerciseViewport(
   const context = await isolateBrowserContext(browser, viewport)
   const page = await context.newPage()
   const diagnostics: string[] = []
-  const browserActionPosts: { productEdit?: CapturedBrowserActionPost } = {}
+  const browserActionPosts: { productEdit?: CapturedBrowserActionPost; blogPostEdit?: CapturedBrowserActionPost } = {}
   page.on('pageerror', (error) => diagnostics.push(`pageerror:${error.message.slice(0, 240)}`))
   page.on('console', (message) => { if (message.type() === 'error') diagnostics.push(`console:${message.text().slice(0, 240)}`) })
   page.on('requestfailed', (request) => diagnostics.push(`requestfailed:${new URL(request.url()).pathname}:${request.failure()?.errorText ?? 'unknown'}`))
@@ -801,8 +853,8 @@ async function exerciseViewport(
   const edits = await editLocalFixtures(page, prisma, fixtures, browserActionPosts, suffix, evidenceDir, diagnostics)
   const deferredActionPosts = await assertDeferredAdminActionsDenied(page, prisma, {
     productId: fixtures.product.id,
-    productPath: `/admin/products/${fixtures.product.id}`,
-  }, browserActionPosts.productEdit, suffix)
+    blogPostId: fixtures.blogPost.id,
+  }, browserActionPosts.blogPostEdit, suffix)
   await context.close()
 
   const manager = await isolateBrowserContext(browser, viewport)

@@ -316,11 +316,16 @@ describe('Staging Wrangler API-managed adoption gate', () => {
     await writeFile(fakeWrangler, [
       `const warning = 'You are about to upload a Worker that was last updated via the script API.'`,
       `const explanation = 'Edits that have been made via the script API will be overridden by your local code and config.'`,
-      `process.stdout.write(\`\\u001b[33m[WARNING] \${warning}\\u001b[0m\\r\\n\${explanation}\\r\\n? Would you like to continue? (y/N) \`)`,
+      `process.stdin.setRawMode(true)`,
+      `process.stdout.write(\`\\u001b[33m[WARNING] \${warning}\\u001b[0m\\r\\n\${explanation}\\r\\n? Would you like to continue? › (Y/n)\`)`,
       `process.stdin.once('data', (chunk) => {`,
       `  if (chunk.toString().trim() !== 'y') process.exit(41)`,
-      `  process.stdout.write(String.fromCharCode(27, 80) + 'private-control-payload' + String.fromCharCode(27, 92) + '\\n')`,
-      `  process.exit(23)`,
+      `  process.stdout.write('✔ Would you like to ')`,
+      `  setTimeout(() => {`,
+      `    process.stdout.write('continue? … yes\\r\\n')`,
+      `    process.stdout.write(String.fromCharCode(27, 80) + 'private-control-payload' + String.fromCharCode(27, 92) + '\\n')`,
+      `    process.exit(23)`,
+      `  }, 30)`,
       `})`,
     ].join('\n'), 'utf8')
     const ptyShim = process.platform === 'linux' && hasUtilLinuxScript

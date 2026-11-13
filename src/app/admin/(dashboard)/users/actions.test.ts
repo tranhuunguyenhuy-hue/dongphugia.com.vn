@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
+    assertAdminLaunchModuleEnabled: vi.fn(),
     getCurrentUser: vi.fn(),
     hashPassword: vi.fn(),
     requirePermission: vi.fn(),
@@ -12,6 +13,10 @@ const mocks = vi.hoisted(() => ({
     countUsers: vi.fn(),
     findUserByEmail: vi.fn(),
     createUser: vi.fn(),
+}))
+
+vi.mock('@/lib/admin-launch-scope', () => ({
+    assertAdminLaunchModuleEnabled: mocks.assertAdminLaunchModuleEnabled,
 }))
 
 vi.mock('@/lib/prisma', () => ({
