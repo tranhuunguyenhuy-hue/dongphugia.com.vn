@@ -7,7 +7,7 @@ const { CLOUDFLARE_API_TOKEN: deploymentToken, CLOUDFLARE_HYPERDRIVE_READ_TOKEN:
 if (!deploymentToken || !readToken || !/^[a-f0-9]{32}$/.test(tokenId || '') || !/^[a-f0-9]{32}$/.test(id || '') || !/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/.test(rollbackVersion || '') || !root) throw new Error('ADMIN_RELEASE_CONFIGURATION_INPUT_INVALID')
 async function get(endpoint, token) {
   let response
-  try { response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/${endpoint}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } }) } catch { throw new Error('ADMIN_RELEASE_CLOUDFLARE_REQUEST_FAILED') }
+  try { response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/${endpoint}`, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }, signal: AbortSignal.timeout(15000) }) } catch { throw new Error('ADMIN_RELEASE_CLOUDFLARE_REQUEST_FAILED') }
   if (!response.ok) throw new Error('ADMIN_RELEASE_CLOUDFLARE_REQUEST_FAILED')
   const body = await response.json()
   if (body?.success !== true) throw new Error('ADMIN_RELEASE_CLOUDFLARE_RESPONSE_INVALID')

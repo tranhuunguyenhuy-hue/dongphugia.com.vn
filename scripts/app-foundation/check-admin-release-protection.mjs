@@ -3,7 +3,7 @@ import { verifyAdminProductionProtection } from './admin-production-protection.m
 if (process.env.GITHUB_REPOSITORY !== 'tranhuunguyenhuy-hue/dongphugia.com.vn' || !process.env.GITHUB_TOKEN || !/^[a-f0-9]{40}$/.test(process.env.SOURCE_SHA || '')) throw new Error('ADMIN_RELEASE_PROTECTION_INPUT_INVALID')
 const base = `https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}`
 async function get(suffix) {
-  const response = await fetch(`${base}${suffix}`, { headers: { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2026-03-10' } })
+  const response = await fetch(`${base}${suffix}`, { headers: { Authorization: `Bearer ${process.env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2026-03-10' }, signal: AbortSignal.timeout(15000) })
   if (!response.ok) throw new Error('ADMIN_RELEASE_PROTECTION_REQUEST_FAILED')
   return response.json()
 }
