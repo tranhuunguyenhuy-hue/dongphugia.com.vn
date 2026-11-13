@@ -15,13 +15,13 @@ export async function GET() {
   let snapshot: { checkpoint: string; products: number; listingProducts: number; m3RunId: string } | null = null
   if (publicPostgresEnabled()) {
     try {
-      const [row] = await readPublicRows<{products:string;active_products:string;blog_posts:string}>(
-        "SELECT (SELECT count(*) FROM dpg_app.products) AS products,"
-        + "(SELECT count(*) FROM dpg_app.products WHERE is_active=true AND publication_status='public') AS active_products,"
-        + "(SELECT count(*) FROM dpg_app.blog_posts WHERE status='published') AS blog_posts",
+      const [row] = await readPublicRows<{public_products:string;listing_products:string;blog_posts:string}>(
+        "SELECT (SELECT count(p.id) FROM dpg_app.products p) AS public_products,"
+        + "(SELECT count(p.id) FROM dpg_app.products p WHERE p.listing_visibility IN ('default','low_priority')) AS listing_products,"
+        + "(SELECT count(b.id) FROM dpg_app.blog_posts b) AS blog_posts",
       )
       return Response.json({application:APPLICATIONS.public.name,status:'ok',catalogueMode:'postgresql',
-        products:Number(row?.products??0),activeProducts:Number(row?.active_products??0),
+        publicProducts:Number(row?.public_products??0),listingProducts:Number(row?.listing_products??0),
         publishedBlogs:Number(row?.blog_posts??0)}, {headers:{'Cache-Control':'private, no-store'}})
     } catch {
       return Response.json({application:APPLICATIONS.public.name,status:'unavailable',catalogueMode:'postgresql'},

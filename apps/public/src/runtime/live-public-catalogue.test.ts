@@ -33,6 +33,11 @@ describe('Live public catalogue projection', () => {
     const [statement, values] = mocks.readPublicRows.mock.calls[0]
     expect(statement).toContain("p.publication_status='public'")
     expect(statement).toContain("p.pdp_visibility='public'")
+    expect(statement).toContain("p.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'")
+    expect(statement).toContain('char_length(p.name)<=240')
+    expect(statement).toContain('char_length(p.sku)<=120')
+    expect(statement).toContain("c.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'")
+    expect(statement).toContain("s.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'")
     expect(statement).toContain("p.listing_visibility IN ('default','low_priority')")
     expect(values).toEqual(['thiet-bi-bep', 'voi-rua-chen', 0, 48])
     expect(listing.totalCount).toBe(1)

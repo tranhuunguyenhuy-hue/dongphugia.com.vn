@@ -16,8 +16,11 @@ type Row = {
   product_feature_values?:{product_features:{name:string}}[]|null
 }
 const COLS='p.id,p.sku,p.name,p.display_name,p.slug,p.description,p.image_main_url,p.is_featured,p.variant_group,p.variant_type,p.variant_label,c.name AS category_name,c.slug AS category_slug,s.name AS listing_name,s.slug AS listing_slug,b.name AS brand_name,b.slug AS brand_slug'
-const FROM=' FROM dpg_app.products p JOIN dpg_app.categories c ON c.id=p.category_id AND c.is_active=true JOIN dpg_app.subcategories s ON s.id=p.subcategory_id AND s.category_id=c.id AND s.is_active=true LEFT JOIN dpg_app.brands b ON b.id=p.brand_id AND b.is_active=true'
-const PUBLIC=" p.is_active=true AND p.publication_status='public' AND p.pdp_visibility='public'"
+const FROM=" FROM dpg_app.products p JOIN dpg_app.categories c ON c.id=p.category_id AND c.is_active=true AND c.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' JOIN dpg_app.subcategories s ON s.id=p.subcategory_id AND s.category_id=c.id AND s.is_active=true AND s.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' LEFT JOIN dpg_app.brands b ON b.id=p.brand_id AND b.is_active=true"
+// Keep malformed canonical paths out of every Public query. The mapper and
+// route layer fail closed on these fields, so letting one row into a page would
+// turn a valid listing/search/PDP request into a 503 instead of omitting it.
+const PUBLIC=" p.is_active=true AND p.publication_status='public' AND p.pdp_visibility='public' AND p.id>0 AND p.name<>'' AND char_length(p.name)<=240 AND p.sku<>'' AND char_length(p.sku)<=120 AND p.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'"
 const LIST=" p.listing_visibility IN ('default','low_priority')"
 const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const HOSTS=new Set(['cdn.dongphugia.com.vn','dpg-products.b-cdn.net','cdn.hita.com.vn','hita.com.vn','vietceramics.com','tygjmrhandbffjllxveu.supabase.co'])
