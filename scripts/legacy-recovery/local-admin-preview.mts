@@ -445,24 +445,30 @@ async function assertDeferredModulesDenied(page: Page, suffix: string) {
   return { notFound: deniedPaths, home: 'redirected-to-products' }
 }
 
-async function assertDeferredAdminActionsDenied(page: Page, prisma: PrismaClient, productId: number, suffix: string) {
+async function assertDeferredAdminActionsDenied(
+  page: Page,
+  prisma: PrismaClient,
+  routes: { productId: number; productPath: string; blogPath: string },
+  routerTrees: { products?: string; blog?: string },
+  suffix: string,
+) {
   const manifest = JSON.parse(await readFile(join(process.cwd(), '.next/server/server-reference-manifest.json'), 'utf8')) as {
     node: Record<string, { filename: string; exportedName: string }>
   }
-  const actionSpecs: Array<{ filename: string; name: string; args: (orderNumber: string, phone: string) => unknown[] }> = [
-    { filename: 'lib/order-actions.ts', name: 'getAdminOrders', args: (orderNumber) => [{ search: orderNumber }] },
-    { filename: 'lib/order-actions.ts', name: 'createOrder', args: (orderNumber, phone) => [{
+  const actionSpecs: Array<{ filename: string; name: string; route: 'products' | 'blog'; args: (orderNumber: string, phone: string) => unknown[] }> = [
+    { filename: 'lib/order-actions.ts', name: 'getAdminOrders', route: 'products', args: (orderNumber) => [{ search: orderNumber }] },
+    { filename: 'lib/order-actions.ts', name: 'createOrder', route: 'products', args: (orderNumber, phone) => [{
       customer_name: 'Scope denial order probe', customer_phone: phone,
       customer_email: `${orderNumber.toLowerCase()}@example.test`,
-      items: [{ product_id: productId, product_name: 'Scope denial sentinel', product_sku: 'SCOPE-DENIAL', quantity: 1, unit_price: 0 }],
+      items: [{ product_id: routes.productId, product_name: 'Scope denial sentinel', product_sku: 'SCOPE-DENIAL', quantity: 1, unit_price: 0 }],
     }] },
-    { filename: 'app/admin/(dashboard)/customers/actions.ts', name: 'saveCustomer', args: (_orderNumber, phone) => [{
+    { filename: 'app/admin/(dashboard)/customers/actions.ts', name: 'saveCustomer', route: 'products', args: (_orderNumber, phone) => [{
       full_name: 'Scope denial customer probe', phone, source: 'MANUAL',
     }] },
-    { filename: 'lib/blog-actions.ts', name: 'createBlogTag', args: (orderNumber) => [{
+    { filename: 'lib/blog-actions.ts', name: 'createBlogTag', route: 'blog', args: (orderNumber) => [{
       name: 'Scope denial tag probe', slug: `scope-denial-${orderNumber.toLowerCase()}`,
     }] },
-    { filename: 'lib/pim-actions.ts', name: 'getPimPilotParityReport', args: () => [{}] },
+    { filename: 'lib/pim-actions.ts', name: 'getPimPilotParityReport', route: 'blog', args: () => [{}] },
   ]
   const orderCount = await prisma.orders.count()
   const customerCount = await prisma.customers.count()
@@ -484,17 +490,20 @@ async function assertDeferredAdminActionsDenied(page: Page, prisma: PrismaClient
   } })
   const tested: string[] = []
   try {
-    const postAction = async (filename: string, name: string, args: unknown[]) => {
+    const postAction = async (filename: string, name: string, route: 'products' | 'blog', args: unknown[]) => {
       const actionId = Object.entries(manifest.node).find(([, reference]) =>
         reference.filename === filename && reference.exportedName === name,
       )?.[0]
       if (!actionId) fail(`LOCAL_ACTION_REFERENCE_MISSING:${name}`)
+      const routerStateTree = routerTrees[route]
+      if (!routerStateTree) fail(`LOCAL_ACTION_ROUTER_STATE_TREE_MISSING:${route}`)
       const body = await encodeServerActionReply(args)
-      return page.evaluate(async ({ id, actionBody }) => {
-        const result = await fetch('/admin/products', {
+      return page.evaluate(async ({ id, actionBody, routerStateTree }) => {
+        const result = await fetch(location.pathname, {
           method: 'POST',
           headers: {
             'Next-Action': id,
+            'Next-Router-State-Tree': routerStateTree,
             Accept: 'text/x-component',
             'Content-Type': 'text/plain;charset=UTF-8',
             RSC: '1',
@@ -502,15 +511,20 @@ async function assertDeferredAdminActionsDenied(page: Page, prisma: PrismaClient
           body: actionBody,
         })
         return { status: result.status, body: await result.text() }
-      }, { id: actionId, actionBody: body })
+      }, { id: actionId, actionBody: body, routerStateTree })
     }
-    const allowedResponse = await postAction('lib/product-actions.ts', 'searchProducts', [`NO_MATCH_${token}`])
+    const beforeRoute = await page.goto(`${BASE_URL}${routes.productPath}`, { waitUntil: 'domcontentloaded' })
+    if (!beforeRoute || beforeRoute.status() !== 200) fail(`LOCAL_ACTION_POST_ALLOWED_PRODUCT_ROUTE_FAILED:${suffix}`)
+    const allowedResponse = await postAction('lib/product-actions.ts', 'searchProducts', 'products', [`NO_MATCH_${token}`])
     if (allowedResponse.status !== 200) {
       fail(`LOCAL_ALLOWED_ACTION_POST_FAILED:${suffix}:${JSON.stringify({ status: allowedResponse.status, body: allowedResponse.body.slice(0, 500) })}`)
     }
     tested.push('searchProducts:allowed')
     for (const spec of actionSpecs) {
-      const response = await postAction(spec.filename, spec.name, spec.args(orderNumber, phone))
+      const path = spec.route === 'products' ? routes.productPath : routes.blogPath
+      const routeResponse = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' })
+      if (!routeResponse || routeResponse.status() !== 200) fail(`LOCAL_ACTION_POST_ALLOWED_ROUTE_FAILED:${spec.route}:${suffix}`)
+      const response = await postAction(spec.filename, spec.name, spec.route, spec.args(orderNumber, phone))
       if (response.status !== 500 || response.body.includes(privateMarker) || response.body.includes(orderNumber)) {
         fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:${spec.name}:${suffix}:${JSON.stringify({ status: response.status, body: response.body.slice(0, 500) })}`)
       }
@@ -649,13 +663,20 @@ async function exerciseViewport(
   const context = await isolateBrowserContext(browser, viewport)
   const page = await context.newPage()
   const diagnostics: string[] = []
+  const actionRouterTrees: { products?: string; blog?: string } = {}
+  page.on('request', (request) => {
+    const headers = request.headers()
+    const pathname = new URL(request.url()).pathname
+    if (!headers['next-action'] || !headers['next-router-state-tree']) return
+    if (pathname.startsWith('/admin/products/')) actionRouterTrees.products = headers['next-router-state-tree']
+    if (pathname.startsWith('/admin/blog/posts/')) actionRouterTrees.blog = headers['next-router-state-tree']
+  })
   page.on('pageerror', (error) => diagnostics.push(`pageerror:${error.message.slice(0, 240)}`))
   page.on('console', (message) => { if (message.type() === 'error') diagnostics.push(`console:${message.text().slice(0, 240)}`) })
   page.on('requestfailed', (request) => diagnostics.push(`requestfailed:${new URL(request.url()).pathname}:${request.failure()?.errorText ?? 'unknown'}`))
   const noSession = await captureNoSession(page, suffix, evidenceDir)
   await login(page, staff.users[0], suffix, evidenceDir)
   const launchNavigation = await assertLaunchNavigation(page, suffix, evidenceDir)
-  const deferredActionPosts = await assertDeferredAdminActionsDenied(page, prisma, fixtures.product.id, suffix)
   const deferredModules = await assertDeferredModulesDenied(page, suffix)
 
   let fullListingCounts: { unfilteredTotal: number; sourceRows: number; public: number; private: number } | undefined
@@ -718,6 +739,11 @@ async function exerciseViewport(
   await page.screenshot({ path: join(evidenceDir, `admin-blog-${suffix}.png`), fullPage: true })
 
   const edits = await editLocalFixtures(page, prisma, fixtures, suffix, evidenceDir, diagnostics)
+  const deferredActionPosts = await assertDeferredAdminActionsDenied(page, prisma, {
+    productId: fixtures.product.id,
+    productPath: `/admin/products/${fixtures.product.id}`,
+    blogPath: `/admin/blog/posts/${fixtures.blogPost.id}`,
+  }, actionRouterTrees, suffix)
   await context.close()
 
   const manager = await isolateBrowserContext(browser, viewport)
