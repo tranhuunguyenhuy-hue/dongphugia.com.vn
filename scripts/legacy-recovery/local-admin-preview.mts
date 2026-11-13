@@ -490,6 +490,7 @@ async function exerciseViewport(
   const noSession = await captureNoSession(page, suffix, evidenceDir)
   await login(page, staff.users[0], suffix, evidenceDir)
 
+  let fullListingCounts: { unfilteredTotal: number; sourceRows: number; public: number; private: number } | undefined
   if (fullCatalogue) {
     const allResponse = await page.goto(`${BASE_URL}/admin/products`, { waitUntil: 'domcontentloaded' })
     if (!allResponse || allResponse.status() !== 200) fail(`LOCAL_FULL_PRODUCT_LIST_HTTP_FAILED:${suffix}`)
@@ -503,13 +504,22 @@ async function exerciseViewport(
       if (!match || Number(match[2].replace(/[,.]/g, '')) !== expected) {
         fail(`LOCAL_FULL_PRODUCT_FILTER_COUNT_FAILED:${suffix}:${status}:${match?.[2] ?? 'missing'}`)
       }
+      await page.screenshot({ path: join(evidenceDir, `admin-products-${status}-filter-${suffix}.png`), fullPage: true })
       return Number(match[2].replace(/[,.]/g, ''))
     }
-    const all = await readTotal('all', fullCatalogue.total)
+    // The one explicitly synthetic local edit fixture is included in the
+    // unfiltered Admin listing. Source population remains fullCatalogue.total.
+    const all = await readTotal('all', fullCatalogue.total + 1)
     const publicProducts = await readTotal('public', fullCatalogue.public)
     const privateProducts = await readTotal('private', fullCatalogue.private)
-    if (all !== fullCatalogue.total || publicProducts !== fullCatalogue.public || privateProducts !== fullCatalogue.private) {
+    if (all !== fullCatalogue.total + 1 || publicProducts !== fullCatalogue.public || privateProducts !== fullCatalogue.private) {
       fail(`LOCAL_FULL_PRODUCT_STATUS_FILTER_COUNTS_FAILED:${suffix}`)
+    }
+    fullListingCounts = {
+      unfilteredTotal: all,
+      sourceRows: fullCatalogue.total,
+      public: publicProducts,
+      private: privateProducts,
     }
   }
 
@@ -572,6 +582,7 @@ async function exerciseViewport(
     noSession: noSession.products,
     adminLogin: 'bcrypt-session-created',
     productList: 'read-ok',
+    productStatusFilters: fullListingCounts,
     blogList: 'read-ok',
     managerProductRead: 'allowed',
     managerBlogRead: 'redirected-to-admin',
