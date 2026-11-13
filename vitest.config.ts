@@ -10,7 +10,7 @@ export default defineConfig({
     test: {
         environment: 'jsdom',
         globals: true,
-        setupFiles: ['./vitest.setup.ts'],
+        setupFiles: [path.resolve(__dirname, './vitest.setup.ts')],
         alias: {
             'vinext/server/fetch-handler': path.resolve(__dirname, './tests/helpers/vinext-handler-stub.ts'),
             'cloudflare:workers': path.resolve(__dirname, './tests/helpers/cloudflare-workers-stub.ts'),
