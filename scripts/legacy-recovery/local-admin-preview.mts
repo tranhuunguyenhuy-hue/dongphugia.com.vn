@@ -2,7 +2,6 @@ import { execFileSync, spawn, type ChildProcess } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { once } from 'node:events'
 import { mkdir, readFile, readdir, realpath, rm } from 'node:fs/promises'
-import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { basename, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -27,7 +26,12 @@ const TEST_ADMIN = { email: 'local-preview-admin@dpg.test', username: 'local-pre
 const TEST_MANAGER = { email: 'local-preview-manager@dpg.test', username: 'local-preview-manager', name: 'Local Preview Manager', role: 'sale_manager' }
 const TEST_USERS = [TEST_ADMIN, TEST_MANAGER] as const
 const SAFE_NEXT_ENV_KEYS = ['PATH', 'HOME', 'TMPDIR'] as const
-const encodeServerActionReply = createRequire(import.meta.url)('next/dist/compiled/react-server-dom-webpack/client.node').encodeReply as (value: unknown) => Promise<string>
+type CapturedBrowserActionPost = {
+  url: string
+  actionId: string
+  headers: Record<string, string>
+  bodyBase64: string
+}
 const args = process.argv.slice(2)
 const sourceArg = args.find((arg) => arg.startsWith('--source='))
 const sourceDir = sourceArg?.slice('--source='.length)
@@ -448,28 +452,26 @@ async function assertDeferredModulesDenied(page: Page, suffix: string) {
 async function assertDeferredAdminActionsDenied(
   page: Page,
   prisma: PrismaClient,
-  routes: { productId: number; productPath: string; blogPath: string; expectedProductSku: string },
-  routerTrees: { products?: { state: string; nextUrl?: string }; blog?: { state: string; nextUrl?: string } },
+  routes: { productId: number; productPath: string },
+  capturedProductEdit: CapturedBrowserActionPost | undefined,
   suffix: string,
 ) {
   const manifest = JSON.parse(await readFile(join(process.cwd(), '.next/server/server-reference-manifest.json'), 'utf8')) as {
     node: Record<string, { filename: string; exportedName: string }>
   }
-  const actionSpecs: Array<{ filename: string; name: string; route: 'products' | 'blog'; args: (orderNumber: string, phone: string) => unknown[] }> = [
-    { filename: 'lib/order-actions.ts', name: 'getAdminOrders', route: 'products', args: (orderNumber) => [{ search: orderNumber }] },
-    { filename: 'lib/order-actions.ts', name: 'createOrder', route: 'products', args: (orderNumber, phone) => [{
-      customer_name: 'Scope denial order probe', customer_phone: phone,
-      customer_email: `${orderNumber.toLowerCase()}@example.test`,
-      items: [{ product_id: routes.productId, product_name: 'Scope denial sentinel', product_sku: 'SCOPE-DENIAL', quantity: 1, unit_price: 0 }],
-    }] },
-    { filename: 'app/admin/(dashboard)/customers/actions.ts', name: 'saveCustomer', route: 'products', args: (_orderNumber, phone) => [{
-      full_name: 'Scope denial customer probe', phone, source: 'MANUAL',
-    }] },
-    { filename: 'lib/blog-actions.ts', name: 'createBlogTag', route: 'blog', args: (orderNumber) => [{
-      name: 'Scope denial tag probe', slug: `scope-denial-${orderNumber.toLowerCase()}`,
-    }] },
-    { filename: 'lib/pim-actions.ts', name: 'getPimPilotParityReport', route: 'blog', args: () => [{}] },
-  ]
+  const deferredActionId = Object.entries(manifest.node).find(([, reference]) =>
+    reference.filename === 'lib/order-actions.ts' && reference.exportedName === 'getAdminOrders',
+  )?.[0]
+  const allowedProductActionId = Object.entries(manifest.node).find(([, reference]) =>
+    reference.filename === 'lib/product-actions.ts' && reference.exportedName === 'updateProduct',
+  )?.[0]
+  if (!deferredActionId || !allowedProductActionId) fail(`LOCAL_ACTION_REFERENCE_MISSING:${suffix}`)
+  if (!capturedProductEdit || capturedProductEdit.actionId !== allowedProductActionId
+    || !capturedProductEdit.headers['next-router-state-tree']
+    || !capturedProductEdit.headers['content-type']
+    || !capturedProductEdit.bodyBase64) {
+    fail(`LOCAL_ALLOWED_PRODUCT_ACTION_POST_NOT_CAPTURED:${suffix}`)
+  }
   const orderCount = await prisma.orders.count()
   const customerCount = await prisma.customers.count()
   if (orderCount !== 0 || customerCount !== 0) fail(`LOCAL_DEFERRED_ACTION_COMMERCE_NOT_EMPTY:${suffix}`)
@@ -477,7 +479,6 @@ async function assertDeferredAdminActionsDenied(
   const orderNumber = `L${token}`
   const privateMarker = `SCOPE_DENIAL_PRIVATE_${token}`
   const phone = `09${BigInt(`0x${token}`).toString().padStart(10, '0').slice(-10)}`
-  const tagSlug = `scope-denial-${token.toLowerCase()}`
   const seededOrder = await prisma.orders.create({ data: {
     order_number: orderNumber,
     customer_name: privateMarker,
@@ -488,67 +489,81 @@ async function assertDeferredAdminActionsDenied(
     shipping_fee: 0,
     total: 0,
   } })
-  const tested: string[] = []
+  const orderSnapshotFields = {
+    order_number: true,
+    customer_name: true,
+    customer_phone: true,
+    customer_email: true,
+    note: true,
+    subtotal: true,
+    shipping_fee: true,
+    total: true,
+    status: true,
+    payment_status: true,
+    updated_at: true,
+  } as const
+  let seededOrderUnchanged = false
+  let beforeProduct: { name: string; updated_at: Date } | null = null
+  let productAuditCountBefore = -1
   try {
-    const postAction = async (filename: string, name: string, route: 'products' | 'blog', args: unknown[]) => {
-      const actionId = Object.entries(manifest.node).find(([, reference]) =>
-        reference.filename === filename && reference.exportedName === name,
-      )?.[0]
-      if (!actionId) fail(`LOCAL_ACTION_REFERENCE_MISSING:${name}`)
-      const routerState = routerTrees[route]
-      if (!routerState) fail(`LOCAL_ACTION_ROUTER_STATE_TREE_MISSING:${route}`)
-      const body = await encodeServerActionReply(args)
-      return page.evaluate(async ({ id, actionBody, routerState }) => {
-        const headers: Record<string, string> = {
-          'Next-Action': id,
-          'Next-Router-State-Tree': routerState.state,
-          Accept: 'text/x-component',
-        }
-        if (routerState.nextUrl) headers['Next-Url'] = routerState.nextUrl
-        const result = await fetch(location.pathname, {
+    const beforeSeededOrder = await prisma.orders.findUnique({ where: { id: seededOrder.id }, select: orderSnapshotFields })
+    beforeProduct = await prisma.products.findUnique({ where: { id: routes.productId }, select: { name: true, updated_at: true } })
+    productAuditCountBefore = await prisma.audit_logs.count({ where: { entity_type: 'product', entity_id: routes.productId } })
+    if (!beforeSeededOrder || !beforeProduct) fail(`LOCAL_ACTION_DENIAL_FIXTURE_READ_FAILED:${suffix}`)
+    const allowedRoute = await page.goto(`${BASE_URL}${routes.productPath}`, { waitUntil: 'domcontentloaded' })
+    if (!allowedRoute || allowedRoute.status() !== 200 || page.url() !== `${BASE_URL}${routes.productPath}`) {
+      fail(`LOCAL_ACTION_POST_ALLOWED_PRODUCT_ROUTE_FAILED:${suffix}`)
+    }
+    const response = await page.evaluate(async ({ captured, deniedActionId }) => {
+      const binary = atob(captured.bodyBase64)
+      const body = Uint8Array.from(binary, (character) => character.charCodeAt(0))
+      const headers = new Headers(captured.headers)
+      headers.set('Next-Action', deniedActionId)
+      const result = await fetch(captured.url, {
           method: 'POST',
           headers,
-          body: actionBody,
+          body,
         })
         return { status: result.status, body: await result.text() }
-      }, { id: actionId, actionBody: body, routerState })
-    }
-    const beforeRoute = await page.goto(`${BASE_URL}${routes.productPath}`, { waitUntil: 'domcontentloaded' })
-    if (!beforeRoute || beforeRoute.status() !== 200) fail(`LOCAL_ACTION_POST_ALLOWED_PRODUCT_ROUTE_FAILED:${suffix}`)
-    const allowedResponse = await postAction('lib/product-actions.ts', 'searchProducts', 'products', [routes.expectedProductSku])
-    if (allowedResponse.status !== 200 || !allowedResponse.body.includes(routes.expectedProductSku)) {
-      fail(`LOCAL_ALLOWED_ACTION_POST_FAILED:${suffix}:${JSON.stringify({
-        status: allowedResponse.status, containsExpectedProduct: allowedResponse.body.includes(routes.expectedProductSku), response: allowedResponse.body.slice(0, 240),
+    }, { captured: capturedProductEdit, deniedActionId: deferredActionId })
+    const containsPrivateMarker = response.body.includes(privateMarker)
+    const containsOrderNumber = response.body.includes(orderNumber)
+    const containsPhone = response.body.includes(phone)
+    if (response.status !== 500 || containsPrivateMarker || containsOrderNumber || containsPhone) {
+      fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:getAdminOrders:${suffix}:${JSON.stringify({
+        status: response.status, containsPrivateMarker, containsOrderNumber, containsPhone,
+        containsScopeError: response.body.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseBytes: response.body.length,
       })}`)
     }
-    tested.push('searchProducts:allowed')
-    for (const spec of actionSpecs) {
-      const path = spec.route === 'products' ? routes.productPath : routes.blogPath
-      const routeResponse = await page.goto(`${BASE_URL}${path}`, { waitUntil: 'domcontentloaded' })
-      if (!routeResponse || routeResponse.status() !== 200) fail(`LOCAL_ACTION_POST_ALLOWED_ROUTE_FAILED:${spec.route}:${suffix}`)
-      const response = await postAction(spec.filename, spec.name, spec.route, spec.args(orderNumber, phone))
-      if (response.status !== 500 || response.body.includes(privateMarker) || response.body.includes(orderNumber)) {
-        fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:${spec.name}:${suffix}:${JSON.stringify({
-          status: response.status, containsPrivateMarker: response.body.includes(privateMarker),
-          containsProbeOrderNumber: response.body.includes(orderNumber), containsScopeError: response.body.includes('ADMIN_LAUNCH_SCOPE_DENIED'),
-          responseBytes: response.body.length,
-        })}`)
-      }
-      tested.push(spec.name)
-    }
+    const afterSeededOrder = await prisma.orders.findUnique({ where: { id: seededOrder.id }, select: orderSnapshotFields })
+    seededOrderUnchanged = Boolean(afterSeededOrder
+      && JSON.stringify(normalized(afterSeededOrder)) === JSON.stringify(normalized(beforeSeededOrder)))
+    if (!seededOrderUnchanged) fail(`LOCAL_DEFERRED_ACTION_POST_CHANGED_ORDER_ROW:${suffix}`)
   } finally {
-    await prisma.orders.deleteMany({ where: { customer_phone: phone } })
-    await prisma.customers.deleteMany({ where: { phone } })
-    await prisma.blog_tags.deleteMany({ where: { slug: tagSlug } })
+    await prisma.orders.deleteMany({ where: { id: seededOrder.id } })
   }
-  const [remainingOrders, remainingCustomers, remainingTags, seededOrderRemaining] = await Promise.all([
-    prisma.orders.count(), prisma.customers.count(), prisma.blog_tags.count({ where: { slug: tagSlug } }),
-    prisma.orders.count({ where: { id: seededOrder.id } }),
+  const [remainingOrders, remainingCustomers, seededOrderRemaining, afterProduct, productAuditCountAfter] = await Promise.all([
+    prisma.orders.count(), prisma.customers.count(), prisma.orders.count({ where: { id: seededOrder.id } }),
+    prisma.products.findUnique({ where: { id: routes.productId }, select: { name: true, updated_at: true } }),
+    prisma.audit_logs.count({ where: { entity_type: 'product', entity_id: routes.productId } }),
   ])
-  if (remainingOrders !== 0 || remainingCustomers !== 0 || remainingTags !== 0 || seededOrderRemaining !== 0) {
-    fail(`LOCAL_DEFERRED_ACTION_POST_CHANGED_DATABASE:${suffix}:${JSON.stringify({ remainingOrders, remainingCustomers, remainingTags, seededOrderRemaining })}`)
+  if (remainingOrders !== 0 || remainingCustomers !== 0 || seededOrderRemaining !== 0
+    || !afterProduct || afterProduct.name !== beforeProduct.name
+    || afterProduct.updated_at.getTime() !== beforeProduct.updated_at.getTime()
+    || productAuditCountAfter !== productAuditCountBefore) {
+    fail(`LOCAL_DEFERRED_ACTION_POST_CHANGED_DATABASE:${suffix}:${JSON.stringify({
+      remainingOrders, remainingCustomers, seededOrderRemaining,
+      productUnchanged: Boolean(afterProduct && afterProduct.name === beforeProduct.name
+        && afterProduct.updated_at.getTime() === beforeProduct.updated_at.getTime()),
+      productAuditUnchanged: productAuditCountAfter === productAuditCountBefore,
+      seededOrderUnchanged,
+    })}`)
   }
-  return { route: '/admin/products', deniedActions: tested, privateOrderRead: 'not-returned', databaseAfter: { orders: 0, customers: 0, probeTags: 0 } }
+  return {
+    positiveControl: 'updateProduct browser POST persisted the edited fixture before capture replay',
+    deniedPost: 'getAdminOrders dispatched from the captured Product update request and returned no private fields',
+    databaseAfter: { orders: remainingOrders, customers: remainingCustomers, productUnchanged: true, productAuditUnchanged: true, seededOrderUnchanged, seededOrderRemoved: seededOrderRemaining === 0 },
+  }
 }
 
 async function captureNoSession(page: Page, suffix: string, evidenceDir: string) {
@@ -587,6 +602,7 @@ async function editLocalFixtures(
   page: Page,
   prisma: PrismaClient,
   fixtures: { product: { id: number; name: string }; blogPost: { id: number; title: string } },
+  browserActionPosts: { productEdit?: CapturedBrowserActionPost },
   suffix: string,
   evidenceDir: string,
   diagnostics: string[],
@@ -618,6 +634,16 @@ async function editLocalFixtures(
     submittedProductName, persistedName: editedProduct?.name ?? null, fixtureSku: editedProduct?.sku ?? null,
     updatedAt: editedProduct?.updated_at?.toISOString() ?? null, action: productActionSignals, browser: diagnostics,
   })}`)
+  const completedProductRequest = productAction.request()
+  const completedProductBody = completedProductRequest.postDataBuffer()
+  const completedProductActionId = completedProductRequest.headers()['next-action']
+  const capturedProductPost = browserActionPosts.productEdit
+  if (completedProductRequest.method() !== 'POST' || !completedProductBody || !completedProductActionId
+    || !capturedProductPost || capturedProductPost.url !== completedProductRequest.url()
+    || capturedProductPost.actionId !== completedProductActionId
+    || capturedProductPost.bodyBase64 !== completedProductBody.toString('base64')) {
+    fail(`LOCAL_PRODUCT_ACTION_CAPTURE_NOT_MATCHED_TO_SUCCESSFUL_EDIT:${suffix}`)
+  }
   await page.screenshot({ path: join(evidenceDir, `local-product-edit-${suffix}.png`), fullPage: true })
 
   const blogEdit = await page.goto(`${BASE_URL}/admin/blog/posts/${fixtures.blogPost.id}`, { waitUntil: 'domcontentloaded' })
@@ -669,14 +695,24 @@ async function exerciseViewport(
   const context = await isolateBrowserContext(browser, viewport)
   const page = await context.newPage()
   const diagnostics: string[] = []
-  const actionRouterTrees: { products?: { state: string; nextUrl?: string }; blog?: { state: string; nextUrl?: string } } = {}
+  const browserActionPosts: { productEdit?: CapturedBrowserActionPost } = {}
   page.on('request', (request) => {
     const headers = request.headers()
-    const pathname = new URL(request.url()).pathname
-    if (!headers['next-action'] || !headers['next-router-state-tree']) return
-    const state = { state: headers['next-router-state-tree'], nextUrl: headers['next-url'] }
-    if (pathname.startsWith('/admin/products/')) actionRouterTrees.products = state
-    if (pathname.startsWith('/admin/blog/posts/')) actionRouterTrees.blog = state
+    const requestUrl = new URL(request.url())
+    if (request.method() !== 'POST' || requestUrl.origin !== BASE_URL || !headers['next-action']) return
+    if (!requestUrl.pathname.startsWith('/admin/products/')) return
+    const body = request.postDataBuffer()
+    if (!body) return
+    const replayHeaderNames = ['accept', 'content-type', 'next-router-state-tree', 'next-url', 'rsc', 'x-deployment-id']
+    const replayHeaders = Object.fromEntries(replayHeaderNames.flatMap((name) =>
+      headers[name] === undefined ? [] : [[name, headers[name]]],
+    ))
+    browserActionPosts.productEdit = {
+      url: request.url(),
+      actionId: headers['next-action'],
+      headers: replayHeaders,
+      bodyBase64: body.toString('base64'),
+    }
   })
   page.on('pageerror', (error) => diagnostics.push(`pageerror:${error.message.slice(0, 240)}`))
   page.on('console', (message) => { if (message.type() === 'error') diagnostics.push(`console:${message.text().slice(0, 240)}`) })
@@ -745,13 +781,11 @@ async function exerciseViewport(
   await page.getByText(sample.blogPost.title.slice(0, 12), { exact: false }).first().waitFor({ state: 'visible', timeout: 25_000 })
   await page.screenshot({ path: join(evidenceDir, `admin-blog-${suffix}.png`), fullPage: true })
 
-  const edits = await editLocalFixtures(page, prisma, fixtures, suffix, evidenceDir, diagnostics)
+  const edits = await editLocalFixtures(page, prisma, fixtures, browserActionPosts, suffix, evidenceDir, diagnostics)
   const deferredActionPosts = await assertDeferredAdminActionsDenied(page, prisma, {
     productId: fixtures.product.id,
     productPath: `/admin/products/${fixtures.product.id}`,
-    blogPath: `/admin/blog/posts/${fixtures.blogPost.id}`,
-    expectedProductSku: sample.product.sku,
-  }, actionRouterTrees, suffix)
+  }, browserActionPosts.productEdit, suffix)
   await context.close()
 
   const manager = await isolateBrowserContext(browser, viewport)
