@@ -16,6 +16,7 @@ const snapshot = {
 }
 const health = {
   ...snapshot,
+  sourceSha: '1'.repeat(40),
   unrelatedPublicHealthValue: 'ignored',
 }
 const manifest = {
@@ -61,6 +62,33 @@ describe('read-only Production baseline protection', () => {
     await expect(readProductionPublicBaseline({
       fetchImpl: productionResponses(health, { ...manifest, checkpoint: 'c'.repeat(40) }),
     })).rejects.toThrow('ENVIRONMENT_WORKER_PRODUCTION_BASELINE_MANIFEST_MISMATCH')
+  })
+
+  it('allows the deployed Worker source SHA to change while preserving catalogue invariants', async () => {
+    const deployedHealth = { ...health, sourceSha: '2'.repeat(40) }
+    await expect(compareProductionPublicBaseline({
+      expectedSnapshot: snapshot,
+      fetchImpl: productionResponses(deployedHealth),
+    })).resolves.toMatchObject({
+      status: 'ENVIRONMENT_WORKER_PRODUCTION_BASELINE_UNCHANGED',
+      snapshot,
+    })
+
+    for (const change of [
+      { publicProducts: snapshot.publicProducts + 1 },
+      { listingProducts: snapshot.listingProducts + 1 },
+      { m3RunId: '40739074903' },
+    ]) {
+      const currentHealth = { ...health, ...change }
+      await expect(compareProductionPublicBaseline({
+        expectedSnapshot: snapshot,
+        fetchImpl: productionResponses(currentHealth, {
+          ...manifest,
+          checkpoint: currentHealth.catalogueCheckpoint,
+          m3RunId: Number(currentHealth.m3RunId),
+        }),
+      })).rejects.toThrow('ENVIRONMENT_WORKER_PRODUCTION_BASELINE_CHANGED')
+    }
   })
 
   it('fails closed on unavailable or invalid public health data', async () => {

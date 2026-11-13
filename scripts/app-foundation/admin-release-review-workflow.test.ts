@@ -19,5 +19,7 @@ describe('combined Admin artifact review workflow', () => {
     expect(publish).toContain('environment: Production')
     expect(publish.indexOf('check-admin-release-protection.mjs')).toBeLessThan(publish.indexOf('secrets.CLOUDFLARE_API_TOKEN'))
     expect(publish).toContain('needs.review.outputs.artifact_sha256')
+    expect(publish).toContain('Production baseline capture did not produce a readable file')
+    expect(publish).toContain('verify-production-public-baseline.mjs compare')
   })
 })

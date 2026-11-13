@@ -158,4 +158,9 @@ jobs:
         run: node scripts/app-foundation/verify-admin-production-deployment.mjs
       - name: Compare Production baseline
         if: always()
-        run: node scripts/app-foundation/verify-production-public-baseline.mjs compare "$RUNNER_TEMP/dpg-production-baseline.json"
+        run: |
+          if [ ! -s "$RUNNER_TEMP/dpg-production-baseline.json" ] || [ ! -r "$RUNNER_TEMP/dpg-production-baseline.json" ]; then
+            echo '::error::Production baseline capture did not produce a readable file; comparison cannot establish preservation.'
+            exit 1
+          fi
+          node scripts/app-foundation/verify-production-public-baseline.mjs compare "$RUNNER_TEMP/dpg-production-baseline.json"
