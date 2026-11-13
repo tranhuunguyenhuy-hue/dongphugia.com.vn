@@ -5,7 +5,7 @@ export default async function BlogLayout({ children }: { children: React.ReactNo
     try {
         await requirePermission('blog:read')
     } catch (e) {
-        redirect('/admin')
+        redirect('/admin/products')
     }
     return children
 }
