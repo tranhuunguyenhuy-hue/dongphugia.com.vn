@@ -417,6 +417,7 @@ async function editLocalFixtures(
   fixtures: { product: { id: number; name: string }; blogPost: { id: number; title: string } },
   suffix: string,
   evidenceDir: string,
+  diagnostics: string[],
 ) {
   const productEdit = await page.goto(`${BASE_URL}/admin/products/${fixtures.product.id}`, { waitUntil: 'domcontentloaded' })
   if (!productEdit || productEdit.status() !== 200) fail(`LOCAL_PRODUCT_EDIT_HTTP_FAILED:${suffix}`)
@@ -480,7 +481,7 @@ async function exerciseViewport(
   await page.screenshot({ path: join(evidenceDir, `admin-blog-${suffix}.png`), fullPage: true })
 
   let edits: Record<string, string> | null = null
-  if (suffix === 'desktop') edits = await editLocalFixtures(page, prisma, fixtures, suffix, evidenceDir)
+  if (suffix === 'desktop') edits = await editLocalFixtures(page, prisma, fixtures, suffix, evidenceDir, diagnostics)
   await context.close()
 
   const manager = await isolateBrowserContext(browser, viewport)
