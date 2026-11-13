@@ -5,13 +5,15 @@ const publisher = readFileSync('.github/workflows/preview-public-admin.yml', 'ut
 const caller = readFileSync('.github/workflows/migration-preview.yml', 'utf8')
 
 describe('integrated Preview credential boundary', () => {
-  it('uses the dedicated environment in each publisher job and fails closed if its secret is missing', () => {
-    expect(publisher.match(/environment: phase2-preview/g)).toHaveLength(3)
-    expect(publisher.match(/Missing CLOUDFLARE_PHASE2_PREVIEW_TOKEN in GitHub environment phase2-preview/g)).toHaveLength(3)
-    expect(publisher).not.toContain('CLOUDFLARE_LEO563_PREVIEW_TOKEN')
-    expect(caller).not.toContain('CLOUDFLARE_LEO563_PREVIEW_TOKEN')
+  it('reuses the existing shared Preview token and fails closed when it is missing', () => {
+    expect(publisher).not.toContain('CLOUDFLARE_PHASE2_PREVIEW_TOKEN')
+    expect(publisher).not.toContain('environment: phase2-preview')
+    expect(publisher.match(/Missing CLOUDFLARE_LEO563_PREVIEW_TOKEN repository secret/g)).toHaveLength(3)
+    expect(caller).toContain('CLOUDFLARE_LEO563_PREVIEW_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}')
+    expect(caller).not.toContain('secrets: inherit')
     expect(caller).toContain('secrets.CLOUDFLARE_READONLY_DISCOVERY_TOKEN')
     expect(publisher).toContain('attest-scope')
     expect(caller).toContain("EVENT_ACTION\" == 'labeled'")
+    expect(caller).toContain('test "$(jq -r \'.head.sha\' <<< "$pr_json")" = "$SOURCE_SHA"')
   })
 })

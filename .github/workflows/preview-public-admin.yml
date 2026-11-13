@@ -21,7 +21,7 @@ on:
         default: false
         type: boolean
     secrets:
-      CLOUDFLARE_PHASE2_PREVIEW_TOKEN:
+      CLOUDFLARE_LEO563_PREVIEW_TOKEN:
         required: false
       CLOUDFLARE_ACCOUNT_ID:
         required: true
@@ -48,11 +48,13 @@ permissions:
   contents: read
   actions: read
 
+# The caller passes the existing shared Preview token only after the exact-SHA Owner gate.
+# Keep the read-only discovery token separate and do not use `secrets: inherit` here.
+
 jobs:
   public-preview-upload:
     name: Publish the isolated Public Worker Preview
     if: inputs.workers_plan_status == 'FREE'
-    environment: phase2-preview
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -68,12 +70,12 @@ jobs:
       EVIDENCE_DIR: ${{ github.workspace }}/.artifacts/leo563-public-preview-evidence
       WRANGLER_BIN: ${{ github.workspace }}/apps/public/node_modules/wrangler/bin/wrangler.js
     steps:
-      - name: Require dedicated Phase 2 Preview credential
+      - name: Require the existing shared Preview credential
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         run: |
           if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then
-            echo 'Missing CLOUDFLARE_PHASE2_PREVIEW_TOKEN in GitHub environment phase2-preview; configure it after Owner approval.' >&2
+            echo 'Missing CLOUDFLARE_LEO563_PREVIEW_TOKEN repository secret; the existing shared Preview credential is required.' >&2
             exit 1
           fi
 
@@ -123,7 +125,7 @@ jobs:
       - name: Attest the existing account-scoped Cloudflare credential before any Worker mutation
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -157,7 +159,7 @@ jobs:
       - name: Inspect the current Worker state before publication
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -168,7 +170,7 @@ jobs:
         id: bootstrap_write
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
           WRANGLER_SEND_METRICS: 'false'
         shell: bash
         run: |
@@ -211,7 +213,7 @@ jobs:
         id: version_upload
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
           PREVIEW_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PREVIEW_SUPABASE_PUBLISHABLE_KEY }}
           PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET: ${{ secrets.PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET }}
           PUBLIC_ORDER_INTAKE_URL: https://uybumsnyqpwcidjxmfsv.supabase.co/functions/v1/order-intake
@@ -258,7 +260,7 @@ jobs:
       - name: Inspect the created Worker and publication-attempt state with sanitized GET-only calls
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         run: >-
           npm run app:preview-publication -- inspect-resource
           --upload "$EVIDENCE_DIR/upload-evidence.json"
@@ -309,7 +311,7 @@ jobs:
         if: ${{ failure() && (steps.bootstrap_write.outputs.write_attempted == 'true' || steps.version_upload.outputs.write_attempted == 'true') }}
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         run: |
           set -euo pipefail
           mkdir -p "$EVIDENCE_DIR"
@@ -342,7 +344,6 @@ jobs:
     name: Deploy and verify the isolated Admin Worker Preview
     needs: public-preview-upload
     if: needs.public-preview-upload.result == 'success' && needs.public-preview-upload.outputs.result == 'REAL_PUBLIC_PREVIEW_PASS' && inputs.workers_plan_status == 'FREE'
-    environment: phase2-preview
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -356,12 +357,12 @@ jobs:
       BUILD_OUTPUT: ${{ github.workspace }}/apps/admin/.cloudflare/output/v0
       EVIDENCE_DIR: ${{ github.workspace }}/.artifacts/phase2-admin-preview-evidence
     steps:
-      - name: Require dedicated Phase 2 Preview credential
+      - name: Require the existing shared Preview credential
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         run: |
           if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then
-            echo 'Missing CLOUDFLARE_PHASE2_PREVIEW_TOKEN in GitHub environment phase2-preview; configure it after Owner approval.' >&2
+            echo 'Missing CLOUDFLARE_LEO563_PREVIEW_TOKEN repository secret; the existing shared Preview credential is required.' >&2
             exit 1
           fi
 
@@ -410,7 +411,7 @@ jobs:
           BUILD_SOURCE_SHA: ${{ inputs.source_sha }}
           PREVIEW_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PREVIEW_SUPABASE_PUBLISHABLE_KEY }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         run: npm run deploy:vinext -- --skip-build
 
       - name: Verify real HTTPS Admin health, noindex, and unauthenticated denial
@@ -468,7 +469,6 @@ jobs:
     name: Run and remove the temporary exact-SHA receipt diagnostic Worker
     needs: [public-preview-upload, admin-preview-upload]
     if: inputs.run_order_intake_diagnostic == true && inputs.workers_plan_status == 'FREE' && needs.public-preview-upload.result == 'success' && needs.public-preview-upload.outputs.result == 'REAL_PUBLIC_PREVIEW_PASS' && needs.admin-preview-upload.result == 'success' && needs.admin-preview-upload.outputs.result == 'REAL_ADMIN_PREVIEW_PASS'
-    environment: phase2-preview
     runs-on: ubuntu-latest
     timeout-minutes: 12
     outputs:
@@ -485,12 +485,12 @@ jobs:
       PUBLIC_ORDER_INTAKE_URL: https://uybumsnyqpwcidjxmfsv.supabase.co/functions/v1/order-intake
       WRANGLER_BIN: ${{ github.workspace }}/apps/public/node_modules/wrangler/bin/wrangler.js
     steps:
-      - name: Require dedicated Phase 2 Preview credential
+      - name: Require the existing shared Preview credential
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         run: |
           if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then
-            echo 'Missing CLOUDFLARE_PHASE2_PREVIEW_TOKEN in GitHub environment phase2-preview; configure it after Owner approval.' >&2
+            echo 'Missing CLOUDFLARE_LEO563_PREVIEW_TOKEN repository secret; the existing shared Preview credential is required.' >&2
             exit 1
           fi
 
@@ -528,7 +528,7 @@ jobs:
         continue-on-error: true
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -542,7 +542,7 @@ jobs:
         if: steps.scope.outputs.result == 'ORDER_DIAGNOSTIC_CREDENTIAL_SCOPE_PASS'
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -590,7 +590,7 @@ jobs:
         continue-on-error: true
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
           PREVIEW_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PREVIEW_SUPABASE_PUBLISHABLE_KEY }}
           PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET: ${{ secrets.PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET }}
         shell: bash
@@ -680,7 +680,7 @@ jobs:
         continue-on-error: true
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PHASE2_PREVIEW_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_LEO563_PREVIEW_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail

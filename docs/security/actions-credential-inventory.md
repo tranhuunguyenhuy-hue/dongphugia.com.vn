@@ -1,6 +1,6 @@
 # GitHub Actions credential and variable inventory
 
-Snapshot: 2026-11-12; repository owner is a user account, not an organization. Main: f8ad30f148a80f1e976a6516efe0371e9184a7c2; PR #291: 0e6c5a471f6e1fe6182f56b44314fb2d8d8c15ac. Names and workflow references only; no secret or variable values were read into this report.
+Snapshot: 2026-11-12; repository owner is a user account, not an organization. Main: f8ad30f148a80f1e976a6516efe0371e9184a7c2; PR #291 pushed head: fbdc48e9fa780a780f750d2ba7014a4a844bf784. The credential-consolidation source edits in this working tree are not pushed. Names and workflow references only; no secret or variable values were read into this report.
 
 Environment secrets/variables override identically named repository entries for jobs using that environment; reusable workflow jobs use their declared environment and passed secrets, and environment secrets cannot be passed through workflow_call. References below are literal file matches, not proof of effective scope or use. Runtime indirection, old workflow versions and external integrations are not covered.
 
@@ -82,6 +82,32 @@ These include optional or historical references, reusable-workflow inputs and bu
 Actions repository plus environments: 26 secret entries and 21 variable entries across 10 environments. Empty environments: Preview, Production – dongphugia, Production – dongphugia-com-vn, Production – dongphugia.com.vn, restore-rehearsal.
 The repository is user-owned; no organization scope applies. Separate read-only GitHub API queries found zero repository Dependabot secrets and zero repository Codespaces secrets; these are separate stores and excluded from Actions totals.
 
+## Same-purpose duplicates and boundaries
+
+The live inventory has two same-name Cloudflare secrets at repository and `Production` environment scope: `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. Environment secrets override repository secrets for a job attached to that environment. `public-production-worker.yml` uses `Production`; `production-promotion.yml` uses `production`, which GitHub treats as the same environment name. Their values were not read and are not assumed equal. Keep Production separate from Preview; do not delete the repository entries solely because the Production environment has same-name entries.
+
+`PRODUCTION_PUBLISHING_BUNNY_CDN_HOSTNAME` is also configured at repository and `Production` scope. The `production-candidate.yml` build job has no environment declaration, so its literal reference resolves from repository scope; the environment-level copy is not its effective input. It may still have consumers outside the inspected workflow snapshot, so it is only an audit candidate, not a deletion recommendation.
+
+The current PR source introduces an absent `CLOUDFLARE_PHASE2_PREVIEW_TOKEN` beside the already-configured `CLOUDFLARE_LEO563_PREVIEW_TOKEN` for the integrated Preview publisher. The historical exact-SHA attestation used `CLOUDFLARE_LEO563_PREVIEW_TOKEN` against the integrated account, verified an active token ID, then failed closed because both token-detail reads were denied. That evidence supports consolidating the *workflow reference* to the existing shared Preview secret; it does not establish that this token has suitable permissions or selected resources. The local source candidate below passes the existing secret explicitly to the gated reusable publisher and removes the absent per-task token reference. It does not change any GitHub secret value or provider credential.
+
+Do not consolidate these other entries: `PREVIEW_CLOUDFLARE_API_TOKEN` belongs to the separate generic `pr-preview` account/target; `CLOUDFLARE_READONLY_DISCOVERY_TOKEN` is a read-only discovery role; Production `CLOUDFLARE_API_TOKEN` is a Production role; and `PHASE2_PREVIEW_ORDER_INTAKE_SIGNING_SECRET` is an application HMAC, not a Cloudflare API token. Same purpose must include target, trust boundary and permission scope, not merely a similar name.
+
+Environment review confirms `catalogue-direct-migration`, `pr-preview`, `Production` and `runtime-backup` have custom branch policies allowing `main`; `staging` has an Owner required-reviewer rule. `phase2-preview` is absent. Reusing `catalogue-direct-migration` as the publisher environment would expose its unrelated database/migration secrets to that job. The source candidate instead passes the shared Preview credential only to the reusable publisher after the Owner's exact-PR-head label event, and removes the absent environment reference to avoid implicit GitHub environment creation. No `secrets: inherit` is used. The `pr-preview` account boundary remains independent.
+
+## Local source consolidation candidate
+
+The pushed PR head remains `fbdc48e9fa780a780f750d2ba7014a4a844bf784`; the working tree changes are unpushed and have no Owner approval or deployment authority. The candidate changes only workflow references/tests and this report:
+
+| Before (pushed PR) | Candidate source behavior |
+| --- | --- |
+| Reusable publisher expects `CLOUDFLARE_PHASE2_PREVIEW_TOKEN`; the secret and its `phase2-preview` environment are absent. | Caller explicitly passes existing repository secret `CLOUDFLARE_LEO563_PREVIEW_TOKEN` to the reusable workflow; the caller still requires the Owner's exact-head label event and green checks. |
+| Three publisher jobs use the absent `phase2-preview` environment. | No new environment is needed or auto-created; the caller keeps the secret scoped to the approved reusable publication path rather than using `secrets: inherit`. |
+| Token attestation rejects account-wide Worker write and rejects selected-Worker scope until resource-map encoding is verified. | The same fail-closed attestation remains unchanged; missing shared secret has an actionable error. Read-only discovery stays on its distinct credential. |
+
+The exact-SHA gate is unchanged: the caller compares current PR head to candidate SHA, and only the repository Owner's `preview-approved` label event sets `owner_approved_upload=true`. Existing label presence alone does not authorize a new candidate. The account-wide Worker-write and unverified selected-resource denials remain; switching the workflow secret reference does not make an unknown credential pass.
+
+The source-only rollback is to revert the bounded workflow/test/document commit after review; that restores the prior per-task secret reference. No provider, token, secret value or GitHub environment has been modified, so no credential cleanup or environment rollback is involved. Do not delete the old `CLOUDFLARE_LEO563_PREVIEW_TOKEN` or any duplicate repository/Production entry from names alone.
+
 ## Credential contract by need and environment
 
 This is the observed contract as of 2026-11-12. A configured name or a green source check does not establish that the credential has the required scope.
@@ -100,7 +126,7 @@ This audit also queried Cloudflare's connected read-only identity. `GET /account
 
 The missing nonsecret fields for `CLOUDFLARE_LEO563_PREVIEW_TOKEN` are its owner type, effective account, permission group IDs/names, exact selected resources, expiry and credential custodian. No evidence establishes that its current permissions allow deployments to the Phase 2 Preview Workers or creation/removal of the temporary diagnostic Worker. Cloudflare's [Workers roles and permissions documentation](https://developers.cloudflare.com/workers/authorization/workers/) says Individual Workers Editor applies to selected existing Workers; it does not authorize creating a Worker that does not exist. The [API token permission reference](https://developers.cloudflare.com/fundamentals/api/reference/permissions/) distinguishes user and account token-read permissions.
 
-The source still contains the `phase2-preview` secret reference, but no hosted environment or value is configured. The source-only contract work does not populate it or map another secret into that reference. The exact next credential evidence can be supplied without disclosing any value: the custodian can report the existing secret's Cloudflare owner type, account, permission groups, selected Worker names, expiry and consumer list from its token details page. Until those facts are established, both reuse of `CLOUDFLARE_LEO563_PREVIEW_TOKEN` for integrated deployment and any change to its permissions remain UNKNOWN. There is no supported basis in this audit to remove any entry or claim a completed consolidation.
+The pushed PR still contains the `phase2-preview` secret reference, but no hosted environment or value is configured. The unpushed source candidate replaces that reference with the existing `CLOUDFLARE_LEO563_PREVIEW_TOKEN`; it does not populate a new value or alter that token's permissions. The custodian can provide the missing metadata without disclosing a value: Cloudflare owner type, account, permission groups, selected Worker names/resources, expiry and credential consumer list from its token details page. Until those facts are established, integrated deployment remains blocked by the fail-closed scope attestor. The workflow-reference consolidation is justified; there is no basis to remove any configured Actions entry or claim the token's scope is suitable.
 
 No provider, credential, secret or environment changes were made by this audit.
 
