@@ -442,15 +442,31 @@ async function editLocalFixtures(
 ) {
   const productEdit = await page.goto(`${BASE_URL}/admin/products/${fixtures.product.id}`, { waitUntil: 'domcontentloaded' })
   if (!productEdit || productEdit.status() !== 200) fail(`LOCAL_PRODUCT_EDIT_HTTP_FAILED:${suffix}`)
+  const productNameInput = page.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN')
+  await productNameInput.waitFor({ state: 'visible', timeout: 15_000 })
+  await page.waitForLoadState('networkidle', { timeout: 15_000 })
+  await page.waitForTimeout(500) // Let the ProductForm client handlers hydrate before changing controlled fields.
   const productName = `Local preview edited ${suffix}`
-  await page.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN').fill(productName)
+  await productNameInput.fill(productName)
+  const submittedProductName = await productNameInput.inputValue()
+  if (submittedProductName !== productName) fail(`LOCAL_PRODUCT_EDIT_FIELD_NOT_SET:${suffix}`)
   await page.screenshot({ path: join(evidenceDir, `admin-product-edit-before-${suffix}.png`), fullPage: true })
-  await page.waitForTimeout(4000) // Allow the large ProductForm client bundle to hydrate after navigation.
   const productAction = await waitForActionResponse(page, () => page.getByRole('button', { name: 'Cập nhật' }).first().click(), 'product-edit', diagnostics)
   if (productAction.status() < 200 || productAction.status() >= 300) fail(`LOCAL_PRODUCT_EDIT_ACTION_FAILED:${suffix}`)
+  const productActionText = await productAction.text().catch(() => '')
+  const productActionSignals = {
+    success: /success.{0,12}true/i.test(productActionText),
+    validation: /fieldErrors|invalid_type|too_small|too_big/i.test(productActionText),
+    forbidden: /FORBIDDEN/i.test(productActionText),
+    writeFreeze: /WRITE_FREEZE_ACTIVE/i.test(productActionText),
+  }
+  diagnostics.push(`product-action:${JSON.stringify({ status: productAction.status(), ...productActionSignals })}`)
   await page.waitForURL((url) => url.pathname === '/admin/products', { timeout: 20_000 })
-  const editedProduct = await prisma.products.findUnique({ where: { id: fixtures.product.id }, select: { name: true } })
-  if (editedProduct?.name !== productName) fail(`LOCAL_PRODUCT_EDIT_NOT_PERSISTED:${suffix}`)
+  const editedProduct = await prisma.products.findUnique({ where: { id: fixtures.product.id }, select: { name: true, sku: true, updated_at: true } })
+  if (editedProduct?.name !== productName) fail(`LOCAL_PRODUCT_EDIT_NOT_PERSISTED:${suffix}:${JSON.stringify({
+    submittedProductName, persistedName: editedProduct?.name ?? null, fixtureSku: editedProduct?.sku ?? null,
+    updatedAt: editedProduct?.updated_at?.toISOString() ?? null, action: productActionSignals, browser: diagnostics,
+  })}`)
   await page.screenshot({ path: join(evidenceDir, `local-product-edit-${suffix}.png`), fullPage: true })
 
   const blogEdit = await page.goto(`${BASE_URL}/admin/blog/posts/${fixtures.blogPost.id}`, { waitUntil: 'domcontentloaded' })
