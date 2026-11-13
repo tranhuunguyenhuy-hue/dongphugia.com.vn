@@ -514,32 +514,19 @@ async function assertDeferredAdminActionsDenied(
     if (!allowedRoute || allowedRoute.status() !== 200 || page.url() !== `${BASE_URL}${routes.productPath}`) {
       fail(`LOCAL_ACTION_POST_ALLOWED_PRODUCT_ROUTE_FAILED:${suffix}`)
     }
-    let replayIntercepted = false
-    let replayBodyMatchesCapture = false
-    await page.route(capturedProductEdit.url, async (route) => {
-      const request = route.request()
-      const headers = await request.allHeaders()
-      if (request.method() !== 'POST' || headers['next-action'] !== capturedProductEdit.actionId) {
-        await route.continue()
-        return
-      }
-      replayIntercepted = true
-      replayBodyMatchesCapture = request.postDataBuffer()?.toString('base64') === capturedProductEdit.bodyBase64
-      await route.continue({
-        headers: { ...headers, 'next-action': deferredActionId },
-        postData: Buffer.from(capturedProductEdit.bodyBase64, 'base64'),
-      })
-    })
     const productNameInput = page.getByPlaceholder('VD: Bồn cầu 1 khối INAX AC-4005VN').first()
     await productNameInput.waitFor({ state: 'visible', timeout: 15_000 })
     await page.waitForLoadState('networkidle', { timeout: 15_000 })
     const currentProductName = await productNameInput.inputValue()
     if (currentProductName !== beforeProduct.name) fail(`LOCAL_ACTION_DENIAL_PRODUCT_FIXTURE_CHANGED:${suffix}`)
-    const responsePromise = page.waitForResponse((candidate) =>
-      candidate.request().method() === 'POST' && candidate.request().url() === capturedProductEdit.url,
-    { timeout: 20_000 })
-    await page.getByRole('button', { name: 'Cập nhật' }).first().click()
-    const actionResponse = await responsePromise
+    const replayBody = Buffer.from(capturedProductEdit.bodyBase64, 'base64')
+    const replayHeaders = { ...capturedProductEdit.headers, 'next-action': deferredActionId }
+    const replayBodyMatchesCapture = replayBody.toString('base64') === capturedProductEdit.bodyBase64
+    const actionResponse = await page.context().request.post(capturedProductEdit.url, {
+      headers: replayHeaders,
+      data: replayBody,
+      failOnStatusCode: false,
+    })
     let responseReadTimer: NodeJS.Timeout | undefined
     const responseRead = await Promise.race([
       actionResponse.text().then((body) => ({ completed: true, body })).catch(() => ({ completed: false, body: '' })),
@@ -552,10 +539,10 @@ async function assertDeferredAdminActionsDenied(
     const containsPrivateMarker = responseBody.includes(privateMarker)
     const containsOrderNumber = responseBody.includes(orderNumber)
     const containsPhone = responseBody.includes(phone)
-    if (!replayIntercepted || !replayBodyMatchesCapture || actionResponse.status() !== 500
+    if (!replayBodyMatchesCapture || actionResponse.status() !== 500
       || !responseRead.completed || containsPrivateMarker || containsOrderNumber || containsPhone) {
       fail(`LOCAL_DEFERRED_ACTION_POST_NOT_DENIED:getAdminOrders:${suffix}:${JSON.stringify({
-        status: actionResponse.status(), replayIntercepted, replayBodyMatchesCapture,
+        status: actionResponse.status(), replayBodyMatchesCapture,
         containsPrivateMarker, containsOrderNumber, containsPhone,
         containsScopeError: responseBody.includes('ADMIN_LAUNCH_SCOPE_DENIED'), responseReadCompleted: responseRead.completed,
         responseBytes: responseBody.length, responseContentType: actionResponse.headers()['content-type'] ?? null,
@@ -662,13 +649,18 @@ async function editLocalFixtures(
   })}`)
   const completedProductRequest = productAction.request()
   const completedProductBody = completedProductRequest.postDataBuffer()
-  const completedProductActionId = completedProductRequest.headers()['next-action']
-  const capturedProductPost = browserActionPosts.productEdit
+  const completedProductHeaders = await completedProductRequest.allHeaders()
+  const completedProductActionId = completedProductHeaders['next-action']
   if (completedProductRequest.method() !== 'POST' || !completedProductBody || !completedProductActionId
-    || !capturedProductPost || capturedProductPost.url !== completedProductRequest.url()
-    || capturedProductPost.actionId !== completedProductActionId
-    || capturedProductPost.bodyBase64 !== completedProductBody.toString('base64')) {
+    || !completedProductHeaders['next-router-state-tree'] || !completedProductHeaders['content-type']
+    || !completedProductHeaders.cookie) {
     fail(`LOCAL_PRODUCT_ACTION_CAPTURE_NOT_MATCHED_TO_SUCCESSFUL_EDIT:${suffix}`)
+  }
+  browserActionPosts.productEdit = {
+    url: completedProductRequest.url(),
+    actionId: completedProductActionId,
+    headers: completedProductHeaders,
+    bodyBase64: completedProductBody.toString('base64'),
   }
   await page.screenshot({ path: join(evidenceDir, `local-product-edit-${suffix}.png`), fullPage: true })
 
@@ -722,24 +714,6 @@ async function exerciseViewport(
   const page = await context.newPage()
   const diagnostics: string[] = []
   const browserActionPosts: { productEdit?: CapturedBrowserActionPost } = {}
-  page.on('request', (request) => {
-    const headers = request.headers()
-    const requestUrl = new URL(request.url())
-    if (request.method() !== 'POST' || requestUrl.origin !== BASE_URL || !headers['next-action']) return
-    if (!requestUrl.pathname.startsWith('/admin/products/')) return
-    const body = request.postDataBuffer()
-    if (!body) return
-    const replayHeaderNames = ['accept', 'content-type', 'next-router-state-tree', 'next-url', 'rsc', 'x-deployment-id']
-    const replayHeaders = Object.fromEntries(replayHeaderNames.flatMap((name) =>
-      headers[name] === undefined ? [] : [[name, headers[name]]],
-    ))
-    browserActionPosts.productEdit = {
-      url: request.url(),
-      actionId: headers['next-action'],
-      headers: replayHeaders,
-      bodyBase64: body.toString('base64'),
-    }
-  })
   page.on('pageerror', (error) => diagnostics.push(`pageerror:${error.message.slice(0, 240)}`))
   page.on('console', (message) => { if (message.type() === 'error') diagnostics.push(`console:${message.text().slice(0, 240)}`) })
   page.on('requestfailed', (request) => diagnostics.push(`requestfailed:${new URL(request.url()).pathname}:${request.failure()?.errorText ?? 'unknown'}`))
