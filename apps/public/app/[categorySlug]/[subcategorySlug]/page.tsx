@@ -4,6 +4,8 @@ import Water from '@/app/(public)/vat-lieu-nuoc/[sub]/page'
 import Tile from '@/app/(public)/gach-op-lat/[sub]/page'
 import {notFound} from 'next/navigation'
 import {getPublicAppEnvironment} from '../../../src/config/env'
+import {publicPostgresEnabled} from '../../../src/runtime/public-db'
+import {getLiveListingRouteMetadata} from '../../../src/runtime/live-public-catalogue'
 import {publicRouteFailureSummary} from '../../../src/runtime/public-route-diagnostics'
 export const runtime='edge'
 export const dynamic='force-dynamic'
@@ -20,6 +22,11 @@ function reportListingFailure(categorySlug:string,subcategorySlug:string,stage:'
 export async function generateMetadata({params}:{params:Promise<{categorySlug:string;subcategorySlug:string;productSlug?:string}>}) {
  const p=await params
  try {
+  if(publicPostgresEnabled()&&!p.productSlug){
+   const listing=await getLiveListingRouteMetadata(p.categorySlug,p.subcategorySlug)
+   const indexable=getPublicAppEnvironment().environment==='production'&&listing!==null
+   return {title:listing?.listingName??'Không tìm thấy',alternates:indexable?{canonical:`/${p.categorySlug}/${p.subcategorySlug}`}:undefined,robots:{index:indexable,follow:indexable}}
+  }
   const {resolveSnapshotRoute}=await import('../../../src/runtime/public-snapshot-catalogue')
   const route=await resolveSnapshotRoute([p.categorySlug,p.subcategorySlug,...(p.productSlug?[p.productSlug]:[])])
   const indexable=getPublicAppEnvironment().environment==='production'&&route.kind!=='not-found'

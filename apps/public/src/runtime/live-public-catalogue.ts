@@ -20,9 +20,11 @@ const FROM=" FROM dpg_app.products p JOIN dpg_app.categories c ON c.id=p.categor
 // Keep malformed canonical paths out of every Public query. The mapper and
 // route layer fail closed on these fields, so letting one row into a page would
 // turn a valid listing/search/PDP request into a 503 instead of omitting it.
-const PUBLIC=" p.is_active=true AND p.publication_status='public' AND p.pdp_visibility='public' AND p.id>0 AND p.name<>'' AND char_length(p.name)<=240 AND p.sku<>'' AND char_length(p.sku)<=120 AND p.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'"
+const PUBLIC_PRODUCT="p.is_active=true AND p.publication_status='public' AND p.pdp_visibility='public' AND p.id>0 AND p.name<>'' AND char_length(p.name)<=240 AND p.sku<>'' AND char_length(p.sku)<=120 AND p.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'"
+const PUBLIC= " "+PUBLIC_PRODUCT+" AND c.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND s.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'"
 const LIST=" p.listing_visibility IN ('default','low_priority')"
 const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const ROUTE_CATEGORIES=new Set(['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat'])
 const HOSTS=new Set(['cdn.dongphugia.com.vn','dpg-products.b-cdn.net','cdn.hita.com.vn','hita.com.vn','vietceramics.com','tygjmrhandbffjllxveu.supabase.co'])
 function safeImage(s:string|null){
  if(!s||s.length>2048)return null
@@ -58,6 +60,40 @@ export const getLiveListing=cache(async(category:string,listing:string,page=1,pa
    ' ORDER BY p.listing_priority DESC NULLS LAST,p.sort_order,p.id LIMIT $4 OFFSET $3',
    [category,listing,(page-1)*pageSize,pageSize])
  return {products:rows.map(mapLiveProduct),totalCount:Number(rows[0]?.total_count??0),page}
+})
+type ListingLeaf={slug:string;name:string;totalCount:number}
+export const getLiveListingLeaves=cache(async(category:string):Promise<ListingLeaf[]>=>{
+ if(!ROUTE_CATEGORIES.has(category)||!SLUG.test(category))return []
+ const rows=await readPublicRows<{slug:string;name:string;total_count:number|string}>(
+  'SELECT s.slug,s.name,count(p.id) AS total_count'+
+  ' FROM dpg_app.categories c JOIN dpg_app.subcategories s ON s.category_id=c.id'+
+  ' JOIN dpg_app.products p ON p.category_id=c.id AND p.subcategory_id=s.id'+
+  ' WHERE c.is_active=true AND c.slug=$1 AND s.is_active=true'+
+  " AND c.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND s.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'"+
+  ' AND '+PUBLIC_PRODUCT+' AND '+LIST+
+  ' GROUP BY s.id,s.slug,s.name HAVING count(p.id)>0 ORDER BY s.name,s.slug LIMIT 100',
+  [category])
+ return rows.flatMap(row=>{
+  const totalCount=Number(row.total_count)
+  return SLUG.test(row.slug)&&typeof row.name==='string'&&row.name.length>0&&row.name.length<=240
+   &&Number.isSafeInteger(totalCount)&&totalCount>0?[{slug:row.slug,name:row.name,totalCount}]:[]
+ })
+})
+type ListingRouteMetadata={categoryName:string;listingName:string}
+export const getLiveListingRouteMetadata=cache(async(category:string,listing:string):Promise<ListingRouteMetadata|null>=>{
+ if(!ROUTE_CATEGORIES.has(category)||!SLUG.test(category)||!SLUG.test(listing))return null
+ const rows=await readPublicRows<ListingRouteMetadata>(
+  'SELECT c.name AS "categoryName",s.name AS "listingName" FROM dpg_app.categories c'+
+  ' JOIN dpg_app.subcategories s ON s.category_id=c.id AND s.is_active=true'+
+  " AND s.slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'"+
+  ' WHERE c.is_active=true AND c.slug=$1 AND s.slug=$2'+
+  ' AND EXISTS (SELECT 1 FROM dpg_app.products p WHERE p.category_id=c.id AND p.subcategory_id=s.id'+
+  ' AND '+PUBLIC_PRODUCT+' AND '+LIST+') LIMIT 1',
+  [category,listing])
+ const row=rows[0]
+ return row&&typeof row.categoryName==='string'&&row.categoryName.length>0&&row.categoryName.length<=240
+  &&typeof row.listingName==='string'&&row.listingName.length>0&&row.listingName.length<=240
+  ?{categoryName:row.categoryName,listingName:row.listingName}:null
 })
 type Count={category_slug:string;category_name:string;listing_slug:string;listing_name:string;total_count:number|string}
 type Brand={category_slug:string;slug:string;name:string}

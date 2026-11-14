@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ readPublicRows: vi.fn() }))
 vi.mock('./public-db', () => ({ readPublicRows: mocks.readPublicRows }))
 
-import { getLiveListing, getLiveProduct, getLiveBrandsForListing, getLiveProductByCategory, mapLiveProduct, searchLiveProducts } from './live-public-catalogue'
+import { getLiveListing, getLiveListingLeaves, getLiveListingRouteMetadata, getLiveProduct, getLiveBrandsForListing, getLiveProductByCategory, mapLiveProduct, searchLiveProducts } from './live-public-catalogue'
 
 const product = {
   id: 42,
@@ -47,6 +47,50 @@ describe('Live public catalogue projection', () => {
       price_display: 'Liên hệ báo giá',
       stock_status: 'contact',
     })
+  })
+
+  it('resolves PLP route metadata with one parameterized listing-scoped existence query', async () => {
+    mocks.readPublicRows.mockResolvedValueOnce([{ categoryName: 'Thiết bị vệ sinh', listingName: 'Bồn cầu' }])
+    await expect(getLiveListingRouteMetadata('thiet-bi-ve-sinh', 'bon-cau')).resolves.toEqual({
+      categoryName: 'Thiết bị vệ sinh', listingName: 'Bồn cầu',
+    })
+    expect(mocks.readPublicRows).toHaveBeenCalledOnce()
+    const [statement, values] = mocks.readPublicRows.mock.calls[0]
+    expect(statement).toContain('FROM dpg_app.categories c')
+    expect(statement).toContain('JOIN dpg_app.subcategories s')
+    expect(statement).toContain('EXISTS (SELECT 1 FROM dpg_app.products p')
+    expect(statement).toContain("p.publication_status='public'")
+    expect(statement).toContain("p.pdp_visibility='public'")
+    expect(statement).toContain("p.listing_visibility IN ('default','low_priority')")
+    expect(statement).toContain('c.slug=$1 AND s.slug=$2')
+    expect(statement).toContain('LIMIT 1')
+    expect(statement).not.toContain('GROUP BY')
+    expect(statement).not.toContain('SELECT DISTINCT')
+    expect(values).toEqual(['thiet-bi-ve-sinh', 'bon-cau'])
+  })
+
+  it('loads one category of visible listing leaves without brands or first product pages', async () => {
+    mocks.readPublicRows.mockResolvedValueOnce([{ slug: 'bon-cau', name: 'Bồn cầu', total_count: '145' }])
+    await expect(getLiveListingLeaves('thiet-bi-ve-sinh')).resolves.toEqual([
+      { slug: 'bon-cau', name: 'Bồn cầu', totalCount: 145 },
+    ])
+    expect(mocks.readPublicRows).toHaveBeenCalledOnce()
+    const [statement, values] = mocks.readPublicRows.mock.calls[0]
+    expect(statement).toContain('FROM dpg_app.categories c JOIN dpg_app.subcategories s')
+    expect(statement).toContain('JOIN dpg_app.products p ON p.category_id=c.id AND p.subcategory_id=s.id')
+    expect(statement).toContain("p.listing_visibility IN ('default','low_priority')")
+    expect(statement).toContain('GROUP BY s.id,s.slug,s.name')
+    expect(statement).not.toContain('LEFT JOIN dpg_app.brands')
+    expect(statement).not.toContain('ORDER BY p.listing_priority')
+    expect(values).toEqual(['thiet-bi-ve-sinh'])
+  })
+
+  it('returns no route metadata for unsupported categories or missing eligible listings', async () => {
+    await expect(getLiveListingRouteMetadata('admin-users', 'private')).resolves.toBeNull()
+    expect(mocks.readPublicRows).not.toHaveBeenCalled()
+    mocks.readPublicRows.mockResolvedValueOnce([])
+    await expect(getLiveListingRouteMetadata('thiet-bi-ve-sinh', 'unpublished-listing')).resolves.toBeNull()
+    expect(mocks.readPublicRows).toHaveBeenCalledOnce()
   })
 
   it('keeps unapproved prices and remote image hosts out of Public projections', () => {
