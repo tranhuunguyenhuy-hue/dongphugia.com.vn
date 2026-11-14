@@ -160,6 +160,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -euo pipefail
+          diagnostic_dir="$RUNNER_TEMP/v1-public-smoke-diagnostics"
+          mkdir -p "$diagnostic_dir"
           node - "$RUNNER_TEMP/v1-release/wrangler.json" "$RUNNER_TEMP/v1-release/wrangler.public-preflight.json" <<'NODE'
           const fs=require('fs');
           const src=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
@@ -168,20 +170,113 @@ jobs:
           src.preview_urls=false;
           fs.writeFileSync(process.argv[3],JSON.stringify(src,null,2)+'\n',{mode:0o600});
           NODE
+
+          attempts=0
+          started_at="$(date +%s)"
+          last_status='000'
+          last_response_status='000'
+          last_curl_exit=1
+          worker_exit_code=''
+          worker_alive=true
+          smoke_exit_code=''
+          write_state() {
+            V1_STAGE="$1" V1_WORKER_ALIVE="$2" V1_WORKER_EXIT_CODE="$3" V1_SMOKE_EXIT_CODE="$4" \
+            V1_ATTEMPTS="$attempts" V1_STARTED_AT="$started_at" V1_LAST_STATUS="$last_response_status" \
+            V1_LAST_ATTEMPT_STATUS="$last_status" \
+            V1_CURL_EXIT="$last_curl_exit" V1_WORKER_PID="$worker_pid" node - "$diagnostic_dir/state.json" <<'NODE'
+          const fs=require('fs');
+          const value=(raw)=>raw===''?null:Number(raw);
+          const state={
+            stage:process.env.V1_STAGE,
+            attempts:Number(process.env.V1_ATTEMPTS),
+            elapsedMs:Math.max(0,Date.now()-Number(process.env.V1_STARTED_AT)*1000),
+            lastHttpStatus:process.env.V1_LAST_STATUS,
+            lastAttemptStatus:process.env.V1_LAST_ATTEMPT_STATUS,
+            curlExitCode:Number(process.env.V1_CURL_EXIT),
+            workerPid:Number(process.env.V1_WORKER_PID),
+            workerAlive:process.env.V1_WORKER_ALIVE==='true',
+            workerExitCode:value(process.env.V1_WORKER_EXIT_CODE),
+            smokeExitCode:value(process.env.V1_SMOKE_EXIT_CODE),
+          };
+          fs.writeFileSync(process.argv[2],JSON.stringify(state,null,2)+'\n',{mode:0o600});
+          NODE
+          }
+          cleanup() {
+            if kill -0 "$worker_pid" 2>/dev/null; then kill "$worker_pid" 2>/dev/null || true; fi
+            wait "$worker_pid" 2>/dev/null || true
+          }
           node "$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js" dev \
             --remote --config "$RUNNER_TEMP/v1-release/wrangler.public-preflight.json" \
             --ip 127.0.0.1 --port 8793 --show-interactive-dev-session=false \
-            > "$RUNNER_TEMP/v1-public-smoke-wrangler.log" 2>&1 &
+            > "$diagnostic_dir/wrangler.log" 2>&1 &
           worker_pid=$!
-          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          trap cleanup EXIT
           ready=0
-          for _ in {1..60}; do
-            if curl --fail --silent --max-time 12 http://127.0.0.1:8793/api/health > /dev/null; then ready=1; break; fi
+          for attempt in {1..60}; do
+            attempts="$attempt"
+            : > "$diagnostic_dir/curl.stderr"
+            if status="$(curl --silent --show-error --noproxy '*' --connect-timeout 1 --max-time 2 \
+              --dump-header "$diagnostic_dir/current.headers" \
+              --output "$diagnostic_dir/current.body" \
+              --write-out '%{http_code}' \
+              http://127.0.0.1:8793/api/health 2>> "$diagnostic_dir/curl.stderr")"; then
+              last_curl_exit=0
+            else
+              last_curl_exit=$?
+            fi
+            last_status="${status:-000}"
+            if [ "$last_status" != '000' ]; then
+              last_response_status="$last_status"
+              cp "$diagnostic_dir/current.headers" "$diagnostic_dir/response.headers"
+              cp "$diagnostic_dir/current.body" "$diagnostic_dir/response.body"
+            fi
+            printf '%s\t%s\t%s\n' "$attempts" "$last_status" "$last_curl_exit" >> "$diagnostic_dir/http-history.tsv"
+            if kill -0 "$worker_pid" 2>/dev/null; then worker_alive=true; else worker_alive=false; fi
+            if [ "$last_status" = '200' ] && [ "$last_curl_exit" -eq 0 ]; then ready=1; break; fi
+            if [ "$worker_alive" = false ]; then
+              set +e
+              wait "$worker_pid"
+              worker_exit_code=$?
+              set -e
+              write_state readiness false "$worker_exit_code" ''
+              exit 1
+            fi
             sleep 1
           done
-          test "$ready" -eq 1
+          if [ "$ready" -ne 1 ]; then
+            write_state readiness "$worker_alive" "$worker_exit_code" ''
+            exit 1
+          fi
+          write_state smoke "$worker_alive" "$worker_exit_code" ''
+          set +e
           node "$GITHUB_WORKSPACE/scripts/app-foundation/public-postgres-release-smoke.mjs" \
-            http://127.0.0.1:8793 "$GITHUB_SHA" local
+            http://127.0.0.1:8793 "$GITHUB_SHA" local > "$diagnostic_dir/smoke.log" 2>&1
+          smoke_exit_code=$?
+          set -e
+          if [ "$smoke_exit_code" -ne 0 ]; then
+            write_state smoke "$worker_alive" "$worker_exit_code" "$smoke_exit_code"
+            exit "$smoke_exit_code"
+          fi
+          cat "$diagnostic_dir/smoke.log"
+          write_state complete "$worker_alive" "$worker_exit_code" "$smoke_exit_code"
+      - name: Collect sanitized packaged Public Worker preflight diagnostics
+        if: always() && steps.public_preflight.outcome == 'failure'
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          node "$GITHUB_WORKSPACE/scripts/app-foundation/v1-worker-preflight-diagnostics.mjs" \
+            "$RUNNER_TEMP/v1-public-smoke-diagnostics" \
+            "$RUNNER_TEMP/v1-public-smoke-diagnostics/diagnostics.json"
+      - name: Upload sanitized packaged Public Worker preflight diagnostics
+        if: always() && steps.public_preflight.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: v1-public-preflight-diagnostics-${{ github.run_id }}
+          path: ${{ runner.temp }}/v1-public-smoke-diagnostics/diagnostics.json
+          if-no-files-found: error
+          retention-days: 1
       - name: Verify live snapshot rollback and record active version
         id: rollback
         if: inputs.publish
