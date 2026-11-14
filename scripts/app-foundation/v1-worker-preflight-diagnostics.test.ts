@@ -21,7 +21,7 @@ describe('V1 packaged Worker preflight diagnostics', () => {
       body: 'Error 1101: Worker threw exception',
     })
     const application = buildPreflightDiagnostics({
-      state: { stage: 'readiness', lastHttpStatus: '503', workerAlive: true, workerExitCode: null },
+      state: { stage: 'readiness', lastHttpStatus: '503', lastAttemptStatus: '000', workerAlive: true, workerExitCode: null },
       headers: 'HTTP/1.1 503 Service Unavailable\r\nx-dpg-source-sha: ' + 'a'.repeat(40) + '\r\ncontent-type: application/json\r\n',
       body: '{"status":"error","code":"PUBLIC_DATABASE_UNAVAILABLE"}',
     })
@@ -34,6 +34,7 @@ describe('V1 packaged Worker preflight diagnostics', () => {
     expect(application.classification).toBe('public_application_http_error')
     expect(applicationConfig.classification).toBe('public_application_http_error')
     expect(application.evidence.workerExitCode).toBeNull()
+    expect(application.evidence.lastAttemptStatus).toBe('000')
   })
 
   it('classifies an explicit remote session failure and an unresolved no-listener timeout separately', () => {
