@@ -105,13 +105,25 @@ describe('Live public catalogue projection', () => {
     expect(projected.image_main_url).toBeNull()
   })
 
+  it('rewrites the legacy Bunny product hostname to its documented Pull Zone alias', () => {
+    const projected = mapLiveProduct({
+      ...product,
+      image_main_url: 'https://cdn.dongphugia.com.vn/migrated/viglacera/item.webp',
+    })
+    expect(projected.image_main_url).toBe('https://dpg-products.b-cdn.net/migrated/viglacera/item.webp')
+    expect(projected.publicContent?.gallery).toEqual([
+      'https://dpg-products.b-cdn.net/migrated/viglacera/item.webp',
+    ])
+  })
+
   it('loads bounded PDP media and sanitized content with one parameterized read', async () => {
     mocks.readPublicRows.mockResolvedValueOnce([{
       ...product,
-      gallery_images: [{ image_url: 'https://dpg-products.b-cdn.net/gallery.jpg' }],
-      description_html: '<p>Chi tiết</p><script>bad()</script>',
+      image_main_url: 'https://cdn.dongphugia.com.vn/migrated/viglacera/item.webp',
+      gallery_images: [{ image_url: 'https://cdn.dongphugia.com.vn/migrated/viglacera/gallery.webp' }],
+      description_html: '<p>Chi tiết <img src="https://cdn.dongphugia.com.vn/migrated/viglacera/detail.webp"></p><script>bad()</script>',
       specifications: { 'Kích thước': '600 mm' },
-      documents: [{ name: 'Hướng dẫn', url: 'https://dpg-products.b-cdn.net/manual.pdf', type: 'manual', size: 400 }],
+      documents: [{ name: 'Hướng dẫn', url: 'https://cdn.dongphugia.com.vn/migrated/viglacera/manual.pdf', type: 'manual', size: 400 }],
       product_feature_values: [{ product_features: { name: 'Tiết kiệm nước' } }],
     }])
     const result = await getLiveProduct('thiet-bi-bep', 'voi-rua-chen', 'voi-rua-chen-42')
@@ -122,10 +134,13 @@ describe('Live public catalogue projection', () => {
     expect(statement).toContain('LIMIT 12')
     expect(values).toEqual(['thiet-bi-bep', 'voi-rua-chen', 'voi-rua-chen-42'])
     expect(result?.publicContent).toMatchObject({
-      descriptionHtml: '<p>Chi tiết</p>',
+      descriptionHtml: '<p>Chi tiết <img src="https://dpg-products.b-cdn.net/migrated/viglacera/detail.webp" loading="lazy" /></p>',
       specifications: { 'Kích thước': '600 mm' },
-      gallery: [product.image_main_url, 'https://dpg-products.b-cdn.net/gallery.jpg'],
-      documents: [{ name: 'Hướng dẫn', url: 'https://dpg-products.b-cdn.net/manual.pdf', type: 'manual', size: '400' }],
+      gallery: [
+        'https://dpg-products.b-cdn.net/migrated/viglacera/item.webp',
+        'https://dpg-products.b-cdn.net/migrated/viglacera/gallery.webp',
+      ],
+      documents: [{ name: 'Hướng dẫn', url: 'https://dpg-products.b-cdn.net/migrated/viglacera/manual.pdf', type: 'manual', size: '400' }],
     })
     expect(result?.product_feature_values).toEqual([{ product_features: { name: 'Tiết kiệm nước' } }])
   })

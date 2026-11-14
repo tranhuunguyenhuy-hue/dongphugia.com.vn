@@ -26,12 +26,24 @@ const LIST=" p.listing_visibility IN ('default','low_priority')"
 const SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const ROUTE_CATEGORIES=new Set(['thiet-bi-ve-sinh','thiet-bi-bep','vat-lieu-nuoc','gach-op-lat'])
 const HOSTS=new Set(['cdn.dongphugia.com.vn','dpg-products.b-cdn.net','cdn.hita.com.vn','hita.com.vn','vietceramics.com','tygjmrhandbffjllxveu.supabase.co'])
+const LEGACY_PRODUCT_CDN='cdn.dongphugia.com.vn'
+const PRODUCT_PULL_ZONE_CDN='dpg-products.b-cdn.net'
 function safeImage(s:string|null){
  if(!s||s.length>2048)return null
  if(s.startsWith('/images/')&&!s.includes('..'))return s
- try{const u=new URL(s);return u.protocol==='https:'&&!u.search&&!u.hash&&!u.username&&!u.password
-   &&HOSTS.has(u.hostname)&&(!u.hostname.endsWith('.supabase.co')||u.pathname.startsWith('/storage/v1/object/public/'))?u.href:null
+ try{const u=new URL(s);if(u.protocol!=='https:'||u.search||u.hash||u.username||u.password||!HOSTS.has(u.hostname)
+   ||(u.hostname.endsWith('.supabase.co')&&!u.pathname.startsWith('/storage/v1/object/public/')))return null
+  // The legacy custom hostname is a documented alias for this Bunny Pull Zone,
+  // but its TLS endpoint rejects modern clients. Match snapshot-mode delivery.
+  if(u.hostname===LEGACY_PRODUCT_CDN)u.hostname=PRODUCT_PULL_ZONE_CDN
+  return u.href
  }catch{return null}
+}
+function normalizeProductHtmlImages(html:string){
+ return html.replace(/(\bsrc\s*=\s*)(["'])([^"']+)\2/gi,(whole,prefix:string,quote:string,raw:string)=>{
+  const normalized=safeImage(raw)
+  return normalized?`${prefix}${quote}${normalized}${quote}`:whole
+ })
 }
 export function mapLiveProduct(row:Row):SnapshotProduct{
  if(!Number.isSafeInteger(row.id)||row.id<=0||![row.category_slug,row.listing_slug,row.slug].every(s=>SLUG.test(s))
@@ -151,7 +163,8 @@ const loadLiveProduct=async(where:string,values:readonly string[])=>{
   const url=safeImage(doc.url)
   return url&&doc.name&&doc.name.length<=240? [{name:doc.name.slice(0,240),url,type:doc.type.slice(0,80),size:doc.size===null||doc.size===undefined?'':String(doc.size)}]:[]
  })
- const descriptionHtml=rows[0].description_html?sanitizeRichHtml(rows[0].description_html):undefined
+ const descriptionHtml=rows[0].description_html
+  ?sanitizeRichHtml(normalizeProductHtmlImages(rows[0].description_html)):undefined
  return {...product,product_feature_values:rows[0].product_feature_values??[],publicContent:{...product.publicContent!,gallery,
   specifications,...(descriptionHtml?{descriptionHtml}:{}),documents},imageUrl:product.image_main_url,
   brand:product.brands??{name:'',slug:''},categoryName:product.categories.name,listingName:product.subcategories.name,
