@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildPreflightDiagnostics, redactDiagnosticText } from './v1-worker-preflight-diagnostics.mjs'
+import { buildPreflightDiagnostics, parseSafeRuntimeEvents, redactDiagnosticText } from './v1-worker-preflight-diagnostics.mjs'
 
 describe('V1 packaged Worker preflight diagnostics', () => {
   it('redacts credentials, bearer tokens, database URLs, JWTs, and labeled secrets', () => {
@@ -62,5 +62,66 @@ describe('V1 packaged Worker preflight diagnostics', () => {
     expect(result.evidence.responseExcerpt.length).toBeLessThanOrEqual(2_020)
     expect(result.evidence.wranglerLogTail.length).toBeLessThanOrEqual(16_020)
     expect(result.evidence.responseExcerpt).toContain('[truncated]')
+  })
+
+  it('preserves bounded route-level smoke evidence while dropping unrecognized data', () => {
+    const safeRecord = {
+      route: 'plp', slug: 'bon-cau', status: 500, contentType: 'text/html',
+      sourceShaMatches: true, hasSetCookie: false, redirectLocation: 'missing',
+      elapsedMs: 5333, failedChecks: ['status'], bodyClass: 'html_error_page',
+      safeBodyExcerpt: 'internal_server_error', privateBody: 'customer data',
+    }
+    const result = buildPreflightDiagnostics({
+      state: { stage: 'smoke', lastHttpStatus: '200', workerAlive: true },
+      smokeOutput: `PUBLIC_POSTGRES_SMOKE_HTTP ${JSON.stringify(safeRecord)}`,
+    })
+
+    expect(result.evidence.publicHttpRequests).toEqual([{
+      route: 'plp', slug: 'bon-cau', status: 500, contentType: 'text/html',
+      sourceShaMatches: true, hasSetCookie: false, redirectLocation: 'missing',
+      elapsedMs: 5333, failedChecks: ['status'], bodyClass: 'html_error_page',
+      safeBodyExcerpt: 'internal_server_error',
+    }])
+    expect(JSON.stringify(result.evidence.publicHttpRequests)).not.toContain('customer data')
+  })
+
+  it('retains only allowlisted Worker database and PLP events in the artifact', () => {
+    const rawEvents = [
+      JSON.stringify({
+        event: 'PUBLIC_DATABASE_READ_FAILURE', queryTables: ['brands', 'products'],
+        elapsedMs: 5001, activePgClients: 6, peakPgClients: 6, sqlState: '53300',
+        sql: 'SELECT customer email', connectionString: 'postgresql://reader:private@db.invalid/postgres',
+      }),
+      JSON.stringify({
+        event: 'PUBLIC_LISTING_ROUTE_FAILURE', stage: 'render', categorySlug: 'thiet-bi-ve-sinh',
+        subcategorySlug: 'bon-cau', errorClass: 'Error', publicErrorCode: 'PUBLIC_CATALOGUE_UNAVAILABLE',
+        sqlState: '53300', message: 'customer@example.test',
+      }),
+      JSON.stringify({
+        event: 'PUBLIC_RENDER_HTTP_FAILURE', route: 'plp', categorySlug: 'thiet-bi-ve-sinh',
+        subcategorySlug: 'bon-cau', status: 500, contentTypeClass: 'text/html',
+        hasRenderFailureMarker: false, rawBody: 'private customer data',
+      }),
+    ].map(line => `[wrangler:log] ${line}`).join('\n')
+    const events = parseSafeRuntimeEvents(rawEvents)
+    const result = buildPreflightDiagnostics({
+      state: { stage: 'smoke', lastHttpStatus: '200', workerAlive: true },
+      wranglerLog: `ready on http://127.0.0.1:8793\n${rawEvents}`,
+    })
+
+    expect(events).toEqual([
+      { event: 'PUBLIC_DATABASE_READ_FAILURE', queryTables: ['brands', 'products'], elapsedMs: 5001,
+        activePgClients: 6, peakPgClients: 6, sqlState: '53300' },
+      { event: 'PUBLIC_LISTING_ROUTE_FAILURE', stage: 'render', categorySlug: 'thiet-bi-ve-sinh',
+        subcategorySlug: 'bon-cau', errorClass: 'Error', publicErrorCode: 'PUBLIC_CATALOGUE_UNAVAILABLE', sqlState: '53300' },
+      { event: 'PUBLIC_RENDER_HTTP_FAILURE', route: 'plp', status: 500, categorySlug: 'thiet-bi-ve-sinh',
+        subcategorySlug: 'bon-cau', contentTypeClass: 'text/html', hasRenderFailureMarker: false },
+    ])
+    expect(result.evidence.runtimeEvents).toEqual(events)
+    expect(result.evidence.wranglerLogTail).toContain('ready on')
+    expect(JSON.stringify(result)).not.toContain('customer@example.test')
+    expect(JSON.stringify(result)).not.toContain('private customer data')
+    expect(JSON.stringify(result)).not.toContain('postgresql://reader')
+    expect(JSON.stringify(result)).not.toContain('SELECT customer')
   })
 })

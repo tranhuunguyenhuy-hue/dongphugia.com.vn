@@ -1,3 +1,5 @@
+import { buildSmokeNetworkFailureEvidence, buildSmokeResponseEvidence } from './public-postgres-smoke-diagnostics.mjs'
+
 const [baseArgument, sourceSha, posture] = process.argv.slice(2)
 const fail = (reason) => { throw new Error(`PUBLIC_POSTGRES_SMOKE_${reason}`) }
 if (!/^[a-f0-9]{40}$/.test(sourceSha) || !['local', 'production'].includes(posture)) fail('ARGUMENT')
@@ -5,36 +7,84 @@ const base = new URL(baseArgument)
 if (posture === 'local' && !(base.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(base.hostname))) fail('BASE')
 if (posture === 'production' && base.origin !== 'https://www.dongphugia.vn') fail('BASE')
 
-async function checked(path, expectedType) {
-  const response = await fetch(new URL(path, base), { redirect: 'manual', signal: AbortSignal.timeout(20000) })
-  if (response.status !== 200 || response.headers.get('x-dpg-source-sha') !== sourceSha
-    || response.headers.has('set-cookie') || !response.headers.get('content-type')?.includes(expectedType)) fail('RESPONSE')
+let emittedHttpEvidence = 0
+const MAX_HTTP_EVIDENCE = 48
+function emitHttpEvidence(evidence) {
+  if (emittedHttpEvidence >= MAX_HTTP_EVIDENCE) return
+  emittedHttpEvidence += 1
+  console.error(`PUBLIC_POSTGRES_SMOKE_HTTP ${JSON.stringify(evidence)}`)
+}
+
+async function safeBodyPrefix(response) {
+  const reader = response.body?.getReader()
+  if (!reader) return ''
+  const chunks = []
+  let size = 0
+  try {
+    while (size < 2_048) {
+      const { done, value } = await reader.read()
+      if (done || !value) break
+      const chunk = value.subarray(0, 2_048 - size)
+      chunks.push(chunk)
+      size += chunk.byteLength
+      if (chunk.byteLength < value.byteLength) break
+    }
+  } catch { /* Failure evidence must not hide the original response check. */ }
+  try { await reader.cancel() } catch { /* The bounded diagnostic read is best effort. */ }
+  const bytes = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength }
+  return new TextDecoder().decode(bytes)
+}
+
+async function checked(path, expectedType, route, slug) {
+  const started = performance.now()
+  let response
+  try {
+    response = await fetch(new URL(path, base), { redirect: 'manual', signal: AbortSignal.timeout(20000) })
+  } catch (error) {
+    emitHttpEvidence(buildSmokeNetworkFailureEvidence({ route, slug, error, elapsedMs: performance.now() - started }))
+    fail('REQUEST')
+  }
+  let evidence = buildSmokeResponseEvidence({
+    route, slug, response, expectedSha: sourceSha, expectedType, base,
+    elapsedMs: performance.now() - started,
+  })
+  if (evidence.failedChecks.length) {
+    evidence = buildSmokeResponseEvidence({
+      route, slug, response, expectedSha: sourceSha, expectedType, base,
+      elapsedMs: performance.now() - started, body: await safeBodyPrefix(response),
+    })
+  }
+  emitHttpEvidence(evidence)
+  if (evidence.failedChecks.length) fail(`RESPONSE_${evidence.failedChecks[0].toUpperCase()}`)
   const bytes = new Uint8Array(await response.arrayBuffer())
   if (bytes.length > 2_000_000) fail('SIZE')
   return { response, body: new TextDecoder().decode(bytes) }
 }
 
-const health = await checked('/api/health', 'application/json')
+const health = await checked('/api/health', 'application/json', 'health')
 let state
 try { state = JSON.parse(health.body) } catch { fail('HEALTH_JSON') }
 if (state.status !== 'ok' || state.catalogueMode !== 'postgresql' || state.publicProducts !== 5964
   || state.listingProducts !== 5362 || state.publishedBlogs !== 10) fail('HEALTH')
 
-const home = await checked('/', 'text/html')
+const home = await checked('/', 'text/html', 'homepage')
 if (!home.body.includes('<h1') || !home.body.includes('href="https://www.dongphugia.vn"')) fail('HOME')
-const category = await checked('/thiet-bi-ve-sinh', 'text/html')
+const category = await checked('/thiet-bi-ve-sinh', 'text/html', 'category')
 if (!category.body.includes('<h1')) fail('CATEGORY')
 const listingSlugs = [...new Set([...category.body.matchAll(/href=["']\/thiet-bi-ve-sinh\/([a-z0-9]+(?:-[a-z0-9]+)*)["']/g)].map(m => m[1]))]
 let selectedListing = null
 let listingShard = null
 for (const slug of listingSlugs.slice(0, 30)) {
-  const candidate = await fetch(new URL(`/api/catalogue/listings/thiet-bi-ve-sinh/${slug}?page=1`, base), {
-    redirect: 'manual', signal: AbortSignal.timeout(20000),
-  })
-  if (candidate.status !== 200 || candidate.headers.get('x-dpg-source-sha') !== sourceSha
-    || candidate.headers.has('set-cookie')) continue
+  const candidateResult = await checked(`/api/catalogue/listings/thiet-bi-ve-sinh/${slug}?page=1`, 'application/json', 'listing-shard', slug)
+    .catch(error => {
+      if (/PUBLIC_POSTGRES_SMOKE_(?:REQUEST|RESPONSE_)/.test(String(error?.message))) return null
+      throw error
+    })
+  if (!candidateResult) continue
   let body
-  try { body = await candidate.json() } catch { continue }
+  try { body = JSON.parse(candidateResult.body) } catch { continue }
   if (body.contract === 'dpg:public-catalogue-listing-shard:v1' && body.totalCount > 0
     && Array.isArray(body.products) && body.products.length > 0) {
     selectedListing = slug
@@ -43,27 +93,30 @@ for (const slug of listingSlugs.slice(0, 30)) {
   }
 }
 if (!selectedListing || !listingShard) fail('PLP_API')
-const plp = await checked(`/thiet-bi-ve-sinh/${selectedListing}`, 'text/html')
+const plp = await checked(`/thiet-bi-ve-sinh/${selectedListing}`, 'text/html', 'plp', selectedListing)
 if (!plp.body.includes('<h1')) fail('PLP')
+const canonicalTag = plp.body.match(/<link\b[^>]*\brel=["']canonical["'][^>]*>/i)?.[0]
+const canonicalHref = canonicalTag?.match(/\bhref=["']([^"']+)["']/i)?.[1]
+if (canonicalHref !== `https://www.dongphugia.vn/thiet-bi-ve-sinh/${selectedListing}`) fail('PLP_CANONICAL')
 
-const search = await checked('/api/search?q=A-LFV-402S-1&limit=8', 'application/json')
+const search = await checked('/api/search?q=A-LFV-402S-1&limit=8', 'application/json', 'search-api')
 let searchBody
 try { searchBody = JSON.parse(search.body) } catch { fail('SEARCH_JSON') }
 const product = searchBody.results?.find(value => value.sku === 'A-LFV-402S-1')
 if (!product || typeof product.url !== 'string' || !/^\/(?:thiet-bi-ve-sinh|thiet-bi-bep|vat-lieu-nuoc|gach-op-lat)\/[a-z0-9-]+\/[a-z0-9-]+$/.test(product.url)
   || product.price !== null || product.price_display !== 'Liên hệ báo giá' || searchBody.total < 1) fail('DATABASE_ONLY_SKU')
-const searchPage = await checked('/tim-kiem?q=A-LFV-402S-1', 'text/html')
+const searchPage = await checked('/tim-kiem?q=A-LFV-402S-1', 'text/html', 'search-page')
 if (!searchPage.body.includes('Tìm kiếm sản phẩm') || !searchPage.body.includes('A-LFV-402S-1')) fail('SEARCH_PAGE')
-const pdp = await checked(product.url, 'text/html')
+const pdp = await checked(product.url, 'text/html', 'pdp')
 if (!pdp.body.includes('<h1') || !pdp.body.includes('A-LFV-402S-1') || !pdp.body.includes('Liên hệ báo giá')) fail('PDP')
 
-const blog = await checked('/blog', 'text/html')
+const blog = await checked('/blog', 'text/html', 'blog-index')
 if (!blog.body.includes('Các bài viết đã xuất bản') || !blog.body.includes('10 bài viết')) fail('BLOG_INDEX')
 const articlePaths = [...new Set([...blog.body.matchAll(/href=["'](\/blog\/[a-z0-9-]+\/[a-z0-9-]+)(?:[?#][^"']*)?["']/g)].map(m => m[1]))]
 if (articlePaths.length !== 10) fail('BLOG_COUNT')
 const articles = []
 for (const path of articlePaths) {
-  const article = await checked(path, 'text/html')
+  const article = await checked(path, 'text/html', 'blog-article')
   if (!article.body.includes('<article') || !article.body.includes('<h1')) fail('BLOG_ARTICLE')
   articles.push(article.body)
 }

@@ -172,6 +172,7 @@ jobs:
           src.name=`dpg-v1-public-smoke-${process.env.GITHUB_RUN_ID}`;
           src.workers_dev=false;
           src.preview_urls=false;
+          src.vars={...(src.vars||{}),PUBLIC_DB_DIAGNOSTICS:'true'};
           fs.writeFileSync(process.argv[3],JSON.stringify(src,null,2)+'\n',{mode:0o600});
           NODE
 
