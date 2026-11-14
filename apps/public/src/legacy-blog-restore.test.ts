@@ -105,7 +105,7 @@ describe('Owner-requested legacy blog restoration', () => {
     const smoke = readFileSync(resolve(root, 'scripts/catalogue-direct/public-production-smoke.mjs'), 'utf8')
     const homepage = readFileSync(resolve(root, 'apps/public/src/runtime/preview-public-home.ts'), 'utf8')
     expect(listing).toContain('blogPosts')
-    expect(category).toContain('getLegacyBlogPostsForCategory')
+    expect(category).toContain('getPublicBlogPostsForCategory')
     expect(detail).toContain('sanitizeRichHtml')
     expect(detail).toContain('application/ld+json')
     expect(smoke).toContain("fail('NEWS_RESTORE')")

@@ -1,3 +1,4 @@
+import { publicPostgresEnabled } from './public-db'
 // Public immutable data identity only. No database URL/key enters this module.
 declare const __DPG_PUBLIC_CATALOGUE_CHECKPOINT__: string | null
 export function publicSnapshotCheckpoint():string|null {
@@ -11,4 +12,4 @@ export function usesProductionPublishedCatalogue() {
   return (process.env.APP_ENV === 'preview' || process.env.APP_ENV === 'staging')
     && process.env.PUBLIC_CATALOGUE_SOURCE === 'production-published-snapshot'
 }
-export function usesPublicSnapshot() { return publicSnapshotCheckpoint()!==null || usesProductionPublishedCatalogue() }
+export function usesPublicSnapshot() { return publicPostgresEnabled() || publicSnapshotCheckpoint()!==null || usesProductionPublishedCatalogue() }

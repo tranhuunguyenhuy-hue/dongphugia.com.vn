@@ -2,10 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { LegacyBlogCard } from '../../src/components/legacy-blog-card'
-import {
-  blogCategoriesWithPosts,
-  blogPosts,
-} from '../../src/runtime/legacy-blog'
+import { getPublicBlogPosts, getPublicBlogCategories } from '../../src/runtime/live-public-blog'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -21,8 +18,11 @@ export default async function PublicNewsPage({ searchParams }: {
   searchParams: Promise<{ page?: string | string[] }>
 }) {
   const { page } = await searchParams
-  // The original published archive has eight posts: exactly one listing page.
+  // M1 Postgres mode uses the verified published source, snapshot remains rollback.
   if (page !== undefined && page !== '1') notFound()
+  const blogPosts = await getPublicBlogPosts()
+  const activeCategories = await getPublicBlogCategories()
+  const blogCategoriesWithPosts = activeCategories.filter(c => blogPosts.some(p => p.category_id === c.id))
   const [featured, ...remaining] = blogPosts
   return (
     <main className="min-h-screen bg-white">

@@ -6,11 +6,10 @@ import { LegacyBlogCard } from '../../../../src/components/legacy-blog-card'
 import {
   blogPostPath,
   formatLegacyBlogDate,
-  getLegacyBlogPost,
-  getLegacyBlogRelatedPosts,
   historicalBlogImage,
   restoreHistoricalBlogArticleLinks,
 } from '../../../../src/runtime/legacy-blog'
+import { getPublicBlogPost, getPublicBlogRelatedPosts } from '../../../../src/runtime/live-public-blog'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -19,7 +18,7 @@ type Props = { params: Promise<{ categorySlug: string; postSlug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug, postSlug } = await params
-  const post = getLegacyBlogPost(categorySlug, postSlug)
+  const post = await getPublicBlogPost(categorySlug, postSlug)
   if (!post) return { title: 'Bài viết không tồn tại', robots: { index: false, follow: false } }
   const path = blogPostPath(post)
   const cover = historicalBlogImage(post.cover_image_url ?? post.thumbnail_url)
@@ -42,13 +41,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PublicBlogPostPage({ params }: Props) {
   const { categorySlug, postSlug } = await params
-  const post = getLegacyBlogPost(categorySlug, postSlug)
+  const post = await getPublicBlogPost(categorySlug, postSlug)
   if (!post) notFound()
   const cover = historicalBlogImage(post.cover_image_url ?? post.thumbnail_url)
   const articleContent = sanitizeRichHtml(
     restoreHistoricalBlogArticleLinks(post.content.replace(/<h1(\s|>)/gi, '<h2$1').replace(/<\/h1>/gi, '</h2>')),
   )
-  const relatedPosts = getLegacyBlogRelatedPosts(post)
+  const relatedPosts = await getPublicBlogRelatedPosts(post)
   const path = blogPostPath(post)
   const articleStructuredData = {
     '@context': 'https://schema.org',

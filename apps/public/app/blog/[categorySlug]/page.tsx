@@ -2,10 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { LegacyBlogCard } from '../../../src/components/legacy-blog-card'
-import {
-  getLegacyBlogCategory,
-  getLegacyBlogPostsForCategory,
-} from '../../../src/runtime/legacy-blog'
+import { getPublicBlogCategory, getPublicBlogPostsForCategory } from '../../../src/runtime/live-public-blog'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -17,9 +14,9 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug } = await params
-  const category = getLegacyBlogCategory(categorySlug)
+  const category = await getPublicBlogCategory(categorySlug)
   if (!category) return { title: 'Không tìm thấy chuyên mục', robots: { index: false, follow: false } }
-  const count = getLegacyBlogPostsForCategory(categorySlug).length
+  const count = (await getPublicBlogPostsForCategory(categorySlug)).length
   return {
     title: category.seo_title || category.name,
     description: category.seo_description || category.description || `Bài viết chuyên mục ${category.name} tại Đông Phú Gia.`,
@@ -31,9 +28,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PublicBlogCategoryPage({ params, searchParams }: Props) {
   const [{ categorySlug }, { page }] = await Promise.all([params, searchParams])
   if (page !== undefined && page !== '1') notFound()
-  const category = getLegacyBlogCategory(categorySlug)
+  const category = await getPublicBlogCategory(categorySlug)
   if (!category) notFound()
-  const posts = getLegacyBlogPostsForCategory(categorySlug)
+  const posts = await getPublicBlogPostsForCategory(categorySlug)
 
   return (
     <main className="min-h-screen bg-white">

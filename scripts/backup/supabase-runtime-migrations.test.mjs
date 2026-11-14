@@ -6,6 +6,7 @@ import {
   ADOPTED_CHECKPOINT_MIGRATIONS,
   BACKUP_BOOTSTRAP_MIGRATIONS,
   BACKUP_BOOTSTRAP_PREFIX_LENGTH,
+  OUT_OF_BAND_MIGRATIONS,
   EXPECTED_RUNTIME_MIGRATIONS,
   backupBootstrapMigrationsAppliedCount,
   executeRuntimeMigrations,
@@ -56,7 +57,11 @@ describe('Supabase runtime migration runner contract', () => {
 
     expect(ADOPTED_CHECKPOINT_MIGRATIONS).toHaveLength(7)
     expect(ADOPTED_CHECKPOINT_MIGRATIONS.at(-1)).toBe('20260828163113_leo541_runtime_api.sql')
-    expect(EXPECTED_RUNTIME_MIGRATIONS).toEqual(actual)
+    expect([...EXPECTED_RUNTIME_MIGRATIONS, ...OUT_OF_BAND_MIGRATIONS].sort()).toEqual(actual)
+    expect(OUT_OF_BAND_MIGRATIONS).toEqual([
+      '20261113194603_public_catalogue_readonly.sql',
+    ])
+    expect(EXPECTED_RUNTIME_MIGRATIONS).not.toContain(OUT_OF_BAND_MIGRATIONS[0])
     expect(EXPECTED_RUNTIME_MIGRATIONS.indexOf('20260828183200_leo540_backup_coverage_prerequisite.sql'))
       .toBe(EXPECTED_RUNTIME_MIGRATIONS.indexOf('20260828183000_leo542_backup_role_prerequisite.sql') + 1)
     expect(EXPECTED_RUNTIME_MIGRATIONS.indexOf('20260828183200_leo540_backup_coverage_prerequisite.sql'))

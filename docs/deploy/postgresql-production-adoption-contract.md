@@ -19,6 +19,7 @@
 ## Public database read path
 
 - Connect Production Worker with a least-privileged **read-only** PostgreSQL role and compatible Cloudflare connection adapter (Hyperdrive if proven with actual bindings). Do not expose privileged credentials to browser code.
+- The Public role needs schema `USAGE` and column-level `SELECT` only for the explicit projections in `live-public-catalogue.ts` and `live-public-blog.ts`; use RLS policies that enforce the same active/public/listing/search/published predicates as those queries. Do not grant table-wide access to blog publishing metadata, Admin tables, customers, orders, quote requests, audit, or publishing-control data. Verify the effective privileges and policies using the intended login before creating Hyperdrive.
 - Implement bounded queries/cache and explicit freshness/invalidation. Public may use cached results but its authoritative data origin must be hosted PostgreSQL. Avoid calling an unchanging bundled snapshot a live DB connection.
 - Verify from actual deployed Worker version and representative category/listing/PDP/search/Blog requests. Document the evidence that DB query/projection was used and content reconciliation passed.
 - Preserve a tested switch/rollback to current published snapshot if new DB path fails, without losing current routes or images.

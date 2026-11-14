@@ -39,6 +39,13 @@ export const EXPECTED_RUNTIME_MIGRATIONS = [
   '20261016090000_leo560_preview_rls_hardening.sql',
 ]
 
+// Public Production's least-privilege catalogue policy is applied through the
+// dedicated Supabase migration path. The runtime-rehome runner targets an
+// isolated database and must not install this production-only principal there.
+export const OUT_OF_BAND_MIGRATIONS = [
+  '20261113194603_public_catalogue_readonly.sql',
+]
+
 export const BACKUP_BOOTSTRAP_MIGRATIONS = [
   '20260828183000_leo542_backup_role_prerequisite.sql',
   '20260828183200_leo540_backup_coverage_prerequisite.sql',
@@ -258,7 +265,8 @@ async function loadMigrations() {
   const actual = (await readdir(migrationsDirectory))
     .filter((name) => name.endsWith('.sql'))
     .sort()
-  if (JSON.stringify(actual) !== JSON.stringify(EXPECTED_RUNTIME_MIGRATIONS)) {
+  const expectedLocal = [...EXPECTED_RUNTIME_MIGRATIONS, ...OUT_OF_BAND_MIGRATIONS].sort()
+  if (JSON.stringify(actual) !== JSON.stringify(expectedLocal)) {
     fail('migration_set_changed')
   }
 

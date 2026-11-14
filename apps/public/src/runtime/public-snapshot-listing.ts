@@ -1,4 +1,7 @@
+declare const __DPG_BUILD_SOURCE_SHA__: string
 import { getSnapshotProducts, readSnapshotManifest } from './public-snapshot-catalogue'
+import { publicPostgresEnabled } from './public-db'
+import { getLiveListing } from './live-public-catalogue'
 import { publicSnapshotCheckpoint } from './public-snapshot-mode'
 import {
     isPublicSnapshotListingProduct,
@@ -6,6 +9,7 @@ import {
     PUBLIC_SNAPSHOT_LISTING_MAX_PAGES,
     PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,
     type PublicSnapshotListingShard,
+    type PublicSnapshotListingProduct,
 } from './snapshot-listing-contract'
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -17,6 +21,41 @@ export async function getPublicSnapshotListingShard(
 ): Promise<PublicSnapshotListingShard | null> {
     if (!SAFE_SLUG.test(category) || !SAFE_SLUG.test(listing) || !Number.isSafeInteger(page) || page < 1) return null
 
+    if (publicPostgresEnabled()) {
+        const live = await getLiveListing(category, listing, page)
+        if (live.totalCount === 0) return null
+        const totalPages = Math.ceil(live.totalCount / PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE)
+        if (totalPages > PUBLIC_SNAPSHOT_LISTING_MAX_PAGES) {
+            throw new Error('PUBLIC_DATABASE_LISTING_TOO_LARGE')
+        }
+        if (page > totalPages) return null
+        const checkpoint = publicSnapshotCheckpoint()
+            ?? (typeof __DPG_BUILD_SOURCE_SHA__ === 'undefined' ? '' : __DPG_BUILD_SOURCE_SHA__)
+        if (!/^[a-f0-9]{40}$/.test(checkpoint)) {
+            throw new Error('PUBLIC_DATABASE_SOURCE_ID_REQUIRED')
+        }
+        const products: PublicSnapshotListingProduct[] = live.products.map(p => ({
+            id: p.id, name: p.name, display_name: p.display_name,
+            slug: p.slug, sku: p.sku, price: p.price, price_display: p.price_display,
+            stock_status: p.stock_status, image_main_url: p.image_main_url,
+            is_active: p.is_active, is_featured: p.is_featured,
+            is_promotion: p.is_promotion, variant_options: [],
+            categories: p.categories, subcategories: p.subcategories,
+            brands: p.brands,
+            canonical_category_slug: p.canonical_category_slug,
+            canonical_subcategory_slug: p.canonical_subcategory_slug,
+            url: p.url,
+        }))
+        if (products.some(p => !isPublicSnapshotListingProduct(p, category, listing))) {
+            throw new Error('PUBLIC_DATABASE_LISTING_INVALID')
+        }
+        return {
+            contract: PUBLIC_SNAPSHOT_LISTING_CONTRACT,
+            checkpoint, categorySlug: category, listingSlug: listing,
+            page, pageSize: PUBLIC_SNAPSHOT_LISTING_PAGE_SIZE,
+            totalCount: live.totalCount, totalPages, products,
+        }
+    }
     const manifest = await readSnapshotManifest()
     if (!Array.isArray(manifest.categories)) throw new Error('PUBLIC_CATALOGUE_UNAVAILABLE')
     const categoryRecord = manifest.categories.find((value) => value.slug === category)
