@@ -14,6 +14,7 @@ import {
   PRIVATE_CACHE_CONTROL,
   PUBLIC_BROWSER_CACHE_CONTROL,
   PUBLIC_EDGE_CACHE_CONTROL,
+  publicRuntimeRejectionDiagnostics,
   robotsHeader,
   type PublicWorkerEnvironment,
   withHeaders,
@@ -34,7 +35,11 @@ export default {
     try {
     try {
       assertPublicRuntime(request, environment)
-    } catch {
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: 'PUBLIC_RUNTIME_CONFIGURATION_REJECTED',
+        ...publicRuntimeRejectionDiagnostics(request, environment, error),
+      }))
       return new Response('Public configuration rejected.', {
         status: 503,
         headers: {

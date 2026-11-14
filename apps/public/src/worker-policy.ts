@@ -32,6 +32,40 @@ export const PUBLIC_BROWSER_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
 export const PUBLIC_EDGE_CACHE_CONTROL = `public, max-age=${PUBLIC_EDGE_CACHE_SECONDS}, must-revalidate`
 export const PUBLIC_PREVIEW_ROBOTS_HEADER = 'noindex, nofollow'
 
+// Keep the runtime error response generic, but allow Wrangler preflight logs to
+// identify the failed policy without ever printing a binding name or value.
+export function publicRuntimeRejectionReason(error: unknown) {
+  const message = error instanceof Error ? error.message : ''
+  if (message === 'PUBLIC_WORKER_PRODUCTION_CONFIGURATION_REQUIRED') return 'production-configuration'
+  if (message === 'PUBLIC_WORKER_PRODUCTION_HOST_FORBIDDEN') return 'production-host-forbidden'
+  if (message.startsWith('PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN:')) return 'privileged-binding-forbidden'
+  if (message.startsWith('PUBLIC_WORKER_PREVIEW_')) return 'preview-policy'
+  return 'unclassified'
+}
+
+export function publicRuntimeRejectionDiagnostics(
+  request: Request,
+  environment: PublicWorkerEnvironment,
+  error: unknown,
+) {
+  const host = new URL(request.url).hostname.toLowerCase()
+  const isAllowedHost = host === 'www.dongphugia.vn'
+    || host === 'dongphugia.vn'
+    || host === 'dongphugia-v1-public-production.tranhuunguyenhuy.workers.dev'
+    || host === 'localhost'
+    || host === '127.0.0.1'
+  return {
+    reason: publicRuntimeRejectionReason(error),
+    appEnvProduction: environment.APP_ENV === 'production',
+    publicBuildTarget: environment.APP_BUILD_TARGET === 'public',
+    canonicalAppOrigin: environment.APP_ORIGIN === 'https://www.dongphugia.vn',
+    previewNoindexDisabled: environment.PREVIEW_NOINDEX !== 'true',
+    requestProtocolAllowed: ['https:', 'http:'].includes(new URL(request.url).protocol),
+    requestHostClass: isAllowedHost ? 'allowed' : host.endsWith('.workers.dev') ? 'workers-dev' : 'other',
+    privilegedBindingPresent: Object.keys(environment).some((name) => PRIVILEGED_RUNTIME_BINDING_PATTERN.test(name)),
+  }
+}
+
 export function assertPublicRuntime(request: Request, environment: PublicWorkerEnvironment) {
   if (environment.APP_ENV === 'preview' || environment.APP_ENV === 'staging') {
     assertPreviewRuntime(request, environment)

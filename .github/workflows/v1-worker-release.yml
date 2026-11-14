@@ -83,7 +83,11 @@ jobs:
           const fs=require('fs');
           const p=process.argv[2];
           const x=JSON.parse(fs.readFileSync(p,'utf8'));
-          if(x.name!=='dongphugia-v1-public-production' || x.vars?.APP_ENV!=='production' || x.vars?.APP_ORIGIN!=='https://www.dongphugia.vn') process.exit(1);
+          if(x.name!=='dongphugia-v1-public-production' || x.vars?.APP_ENV!=='production'
+            || x.vars?.APP_BUILD_TARGET!=='public' || x.vars?.APP_ORIGIN!=='https://www.dongphugia.vn'
+            || x.vars?.PREVIEW_NOINDEX==='true') process.exit(1);
+          const forbidden=/(SERVICE_ROLE|AUTH_ADMIN|ADMIN_SESSION|SECRET|PASSWORD|DATABASE_URL|DIRECT_URL|PRIVATE_KEY|CREDENTIAL|CLOUDFLARE_API_TOKEN|BUNNY_API_KEY)/i;
+          if(Object.keys(x.vars||{}).some(name=>forbidden.test(name))) process.exit(1);
           if(x.main!=='worker/index.js' || !x.assets?.directory) process.exit(1);
           if(process.env.PUBLIC_CATALOGUE_SOURCE==='postgresql'
             && (!/^[0-9a-f]{32}$/.test(process.env.V1_PUBLIC_HYPERDRIVE_ID||'')
@@ -207,6 +211,7 @@ jobs:
           }
           node "$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js" dev \
             --remote --config "$RUNNER_TEMP/v1-release/wrangler.public-preflight.json" \
+            --host www.dongphugia.vn --upstream-protocol https \
             --ip 127.0.0.1 --port 8793 --show-interactive-dev-session=false \
             > "$diagnostic_dir/wrangler.log" 2>&1 &
           worker_pid=$!

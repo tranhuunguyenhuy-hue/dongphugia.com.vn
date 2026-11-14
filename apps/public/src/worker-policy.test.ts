@@ -8,6 +8,8 @@ import {
   isAnonymousCacheCandidate,
   isCacheableResponse,
   isForbiddenInternalControlRequest,
+  publicRuntimeRejectionDiagnostics,
+  publicRuntimeRejectionReason,
   PUBLIC_EDGE_CACHE_CONTROL,
   PUBLIC_PREVIEW_ROBOTS_HEADER,
   robotsHeader,
@@ -53,6 +55,37 @@ describe('Public Worker fail-closed policy', () => {
     expect(() => assertPublicRuntime(canonical, { ...production, PREVIEW_NOINDEX: 'true' })).toThrow('PUBLIC_WORKER_PRODUCTION_CONFIGURATION_REQUIRED')
     expect(() => assertPublicRuntime(new Request('https://private.dongphugia.vn/'), production)).toThrow('PUBLIC_WORKER_PRODUCTION_HOST_FORBIDDEN')
     expect(() => assertPublicRuntime(canonical, { ...production, SUPABASE_SERVICE_ROLE_KEY: 'synthetic' })).toThrow('PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN')
+  })
+
+  it('classifies remote preflight origins safely while keeping Production host checks strict', () => {
+    const production = {
+      APP_ENV: 'production',
+      APP_BUILD_TARGET: 'public',
+      APP_ORIGIN: 'https://www.dongphugia.vn',
+      PREVIEW_NOINDEX: '',
+    }
+    const canonical = new Request('https://www.dongphugia.vn/api/health')
+    const remoteSmoke = new Request('https://dpg-v1-public-smoke-43562516411.preview.workers.dev/api/health')
+
+    expect(() => assertPublicRuntime(canonical, production)).not.toThrow()
+    expect(() => assertPublicRuntime(remoteSmoke, production)).toThrow('PUBLIC_WORKER_PRODUCTION_HOST_FORBIDDEN')
+    expect(publicRuntimeRejectionReason(new Error('PUBLIC_WORKER_PRODUCTION_HOST_FORBIDDEN')))
+      .toBe('production-host-forbidden')
+    expect(publicRuntimeRejectionReason(new Error('PUBLIC_WORKER_PRIVILEGED_BINDING_FORBIDDEN:SUPABASE_SERVICE_ROLE_KEY')))
+      .toBe('privileged-binding-forbidden')
+    expect(publicRuntimeRejectionReason(new Error('untrusted error carrying secret-looking data')))
+      .toBe('unclassified')
+    expect(publicRuntimeRejectionDiagnostics(remoteSmoke, production, new Error('PUBLIC_WORKER_PRODUCTION_HOST_FORBIDDEN')))
+      .toEqual({
+        reason: 'production-host-forbidden',
+        appEnvProduction: true,
+        publicBuildTarget: true,
+        canonicalAppOrigin: true,
+        previewNoindexDisabled: true,
+        requestProtocolAllowed: true,
+        requestHostClass: 'workers-dev',
+        privilegedBindingPresent: false,
+      })
   })
 
   it('caches only anonymous root responses and keys by host, path, and source SHA', () => {
