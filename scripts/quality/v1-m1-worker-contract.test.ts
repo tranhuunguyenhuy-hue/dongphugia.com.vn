@@ -24,6 +24,8 @@ describe('M1 read-only source contract', () => {
     const databaseProbe=readFileSync('scripts/app-foundation/public-db-preflight-worker.mjs','utf8')
     const publicSmoke=readFileSync('scripts/app-foundation/public-postgres-release-smoke.mjs','utf8')
     expect(workflow).toContain('x.hyperdrive[0].id!==process.env.V1_PUBLIC_HYPERDRIVE_ID')
+    expect(workflow).toContain("x.vars?.APP_BUILD_TARGET!=='public'")
+    expect(workflow).toContain("--host www.dongphugia.vn --upstream-protocol https")
     expect(workflow).toContain('workers_dev:false')
     expect(workflow).toContain('--remote --config "$RUNNER_TEMP/v1-release/wrangler.public-db-smoke.json"')
     expect(databaseProbe).toContain("current_user AS role")
