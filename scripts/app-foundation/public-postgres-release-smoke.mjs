@@ -93,11 +93,18 @@ for (const slug of listingSlugs.slice(0, 30)) {
   }
 }
 if (!selectedListing || !listingShard) fail('PLP_API')
-const plp = await checked(`/thiet-bi-ve-sinh/${selectedListing}`, 'text/html', 'plp', selectedListing)
-if (!plp.body.includes('<h1')) fail('PLP')
-const canonicalTag = plp.body.match(/<link\b[^>]*\brel=["']canonical["'][^>]*>/i)?.[0]
-const canonicalHref = canonicalTag?.match(/\bhref=["']([^"']+)["']/i)?.[1]
-if (canonicalHref !== `https://www.dongphugia.vn/thiet-bi-ve-sinh/${selectedListing}`) fail('PLP_CANONICAL')
+if (!listingSlugs.includes('bon-cau')) fail('INCIDENT_PLP_LISTING')
+async function checkedCanonicalPlp(slug) {
+  const plp = await checked(`/thiet-bi-ve-sinh/${slug}`, 'text/html', 'plp', slug)
+  if (!plp.body.includes('<h1')) fail('PLP')
+  const canonicalTag = plp.body.match(/<link\b[^>]*\brel=["']canonical["'][^>]*>/i)?.[0]
+  const canonicalHref = canonicalTag?.match(/\bhref=["']([^"']+)["']/i)?.[1]
+  if (canonicalHref !== `https://www.dongphugia.vn/thiet-bi-ve-sinh/${slug}`) fail('PLP_CANONICAL')
+}
+// Keep the previously failing production route in the strict smoke path even
+// if a different eligible listing becomes the first dynamically discovered one.
+await checkedCanonicalPlp('bon-cau')
+if (selectedListing !== 'bon-cau') await checkedCanonicalPlp(selectedListing)
 
 const search = await checked('/api/search?q=A-LFV-402S-1&limit=8', 'application/json', 'search-api')
 let searchBody

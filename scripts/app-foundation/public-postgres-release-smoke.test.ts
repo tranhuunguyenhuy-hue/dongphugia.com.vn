@@ -27,9 +27,10 @@ async function createFixture({ failPlp = false }: { failPlp?: boolean } = {}) {
       return send(response, '<main><h1>Đông Phú Gia</h1><a href="https://www.dongphugia.vn">Trang chủ</a></main>', 'text/html')
     }
     if (path === '/thiet-bi-ve-sinh') {
-      return send(response, '<main><h1>Thiết bị vệ sinh</h1><a href="/thiet-bi-ve-sinh/bon-cau">Bồn cầu</a></main>', 'text/html')
+      return send(response, '<main><h1>Thiết bị vệ sinh</h1><a href="/thiet-bi-ve-sinh/voi-sen">Vòi sen</a><a href="/thiet-bi-ve-sinh/bon-cau">Bồn cầu</a></main>', 'text/html')
     }
-    if (path === '/api/catalogue/listings/thiet-bi-ve-sinh/bon-cau') {
+    if (path === '/api/catalogue/listings/thiet-bi-ve-sinh/voi-sen'
+      || path === '/api/catalogue/listings/thiet-bi-ve-sinh/bon-cau') {
       return send(response, JSON.stringify({
         contract: 'dpg:public-catalogue-listing-shard:v1', totalCount: 1,
         products: [{ sku: 'A-LFV-402S-1', image_main_url: `http://127.0.0.1:${server.address()?.port}/images/product.png` }],
@@ -40,6 +41,9 @@ async function createFixture({ failPlp = false }: { failPlp?: boolean } = {}) {
       return failPlp
         ? send(response, '<html><head><title>Internal Server Error</title></head><body>private diagnostics</body></html>', 'text/html', 500)
         : send(response, html, 'text/html')
+    }
+    if (path === '/thiet-bi-ve-sinh/voi-sen') {
+      return send(response, '<html><head><link rel="canonical" href="https://www.dongphugia.vn/thiet-bi-ve-sinh/voi-sen"></head><body><h1>Vòi sen</h1></body></html>', 'text/html')
     }
     if (path === '/api/search') {
       return send(response, JSON.stringify({
@@ -103,6 +107,7 @@ describe('packaged Public PostgreSQL release smoke', () => {
       expect(result.exitCode, `${result.stdout}\n${result.stderr}`).toBe(0)
       expect(result.stdout).toContain('PUBLIC_POSTGRES_SMOKE status=PASS')
       expect(fixture.hits).toContain('/thiet-bi-ve-sinh/bon-cau')
+      expect(fixture.hits).toContain('/thiet-bi-ve-sinh/voi-sen')
       expect(fixture.hits).toContain('/thiet-bi-ve-sinh/bon-cau/product-one')
       expect(fixture.hits.filter(path => path.startsWith('/blog/kien-thuc/bai-viet-'))).toHaveLength(10)
       expect(fixture.hits.filter(path => path.startsWith('/images/'))).toHaveLength(2)
@@ -128,6 +133,7 @@ describe('packaged Public PostgreSQL release smoke', () => {
         sourceShaMatches: true, hasSetCookie: false, failedChecks: ['status'],
         bodyClass: 'html_error_page', safeBodyExcerpt: 'internal_server_error',
       })
+      expect(fixture.hits).not.toContain('/thiet-bi-ve-sinh/voi-sen')
       expect(result.stderr).not.toContain('private diagnostics')
       expect(result.stderr).toContain('PUBLIC_POSTGRES_SMOKE_RESPONSE_STATUS')
     } finally {
