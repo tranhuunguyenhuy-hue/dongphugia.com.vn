@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildSmokeNetworkFailureEvidence,
   buildSmokeResponseEvidence,
+  buildSmokeImageFailureEvidence,
   buildBlogContentEvidence,
   classifySmokeBody,
   classifySmokeLocation,
@@ -11,6 +12,30 @@ const sourceSha = 'a'.repeat(40)
 const base = new URL('https://www.dongphugia.vn')
 
 describe('bounded Public PostgreSQL smoke evidence', () => {
+  it('classifies image TLS failures without retaining a URL, path, or raw error', () => {
+    const error = Object.assign(new TypeError('private request details'), {
+      cause: Object.assign(new Error('TLS peer details'), { code: 'ERR_SSL_DH_KEY_TOO_SMALL' }),
+    })
+    const evidence = buildSmokeImageFailureEvidence({
+      source: 'product', host: 'hita.com.vn', error,
+    })
+
+    expect(evidence).toEqual({
+      source: 'product', host: 'hita.com.vn', finalHostClass: 'missing', status: null,
+      contentType: 'missing', errorClass: 'tls_error', tlsCode: 'ERR_SSL_DH_KEY_TOO_SMALL',
+    })
+    expect(JSON.stringify(evidence)).not.toContain('private request details')
+    expect(JSON.stringify(evidence)).not.toContain('TLS peer details')
+
+    expect(buildSmokeImageFailureEvidence({
+      source: 'product', host: 'customer.example.invalid', finalHost: 'customer.example.invalid',
+      status: 503, contentType: 'text/plain',
+    })).toEqual({
+      source: 'product', host: 'other', finalHostClass: 'same_host', status: 503,
+      contentType: 'text/plain', errorClass: 'http_failure',
+    })
+  })
+
   it('normalizes React SSR text-node boundaries while retaining heading, count, and unique-link checks', () => {
     const paths = Array.from({ length: 10 }, (_, index) => `/blog/kien-thuc/bai-viet-${index + 1}`)
     const html = `<main><h2>Các bài viết đã xuất bản</h2><p>Đang hiển thị <!-- -->10<!-- --> bài viết được khôi phục từ dữ liệu trước đây.</p>${paths.map(path => `<a href="${path}">Bài viết</a>`).join('')}</main>`

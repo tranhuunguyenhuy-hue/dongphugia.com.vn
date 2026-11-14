@@ -19,6 +19,10 @@ const SAFE_JSON_CODES = new Set([
   'PUBLIC_DATABASE_UNAVAILABLE', 'PUBLIC_CATALOGUE_UNAVAILABLE',
   'PUBLIC_PRODUCT_DB_ROW_INVALID', 'PUBLIC_DATABASE_BINDING_REQUIRED',
 ])
+const SAFE_IMAGE_TLS_CODES = new Set([
+  'ERR_SSL_DH_KEY_TOO_SMALL', 'ERR_TLS_CERT_ALTNAME_INVALID', 'CERT_HAS_EXPIRED',
+  'DEPTH_ZERO_SELF_SIGNED_CERT', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+])
 
 export function classifySmokeBody(contentType, body) {
   const text = String(body ?? '').slice(0, 2_048).trim()
@@ -115,6 +119,32 @@ export function buildSmokeNetworkFailureEvidence({ route, slug, error, elapsedMs
     elapsedMs: Math.max(0, Math.round(Number(elapsedMs) || 0)),
     failedChecks: ['network_request'],
     errorClass: name === 'TimeoutError' || name === 'AbortError' ? 'request_timeout' : 'network_error',
+  }
+}
+
+/** Safe image probe evidence: no URL, path, headers, or raw TLS details. */
+export function buildSmokeImageFailureEvidence({ source, host, finalHost, error, status, contentType }) {
+  const safeSource = source === 'product' || source === 'blog' ? source : 'other'
+  const safeHost = SAFE_IMAGE_HOSTS.has(host) ? host : 'other'
+  const finalHostClass = !finalHost ? 'missing'
+    : finalHost === host ? 'same_host'
+      : SAFE_IMAGE_HOSTS.has(finalHost) ? 'approved_asset_host' : 'other'
+  const safeStatus = Number.isInteger(status) && status >= 100 && status <= 599 ? status : null
+  const cause = error && typeof error === 'object' && 'cause' in error && error.cause
+    && typeof error.cause === 'object' ? error.cause : error
+  const code = cause && typeof cause === 'object' && 'code' in cause ? String(cause.code) : ''
+  const name = error && typeof error === 'object' && 'name' in error ? String(error.name) : ''
+  const errorClass = SAFE_IMAGE_TLS_CODES.has(code) ? 'tls_error'
+    : name === 'TimeoutError' || name === 'AbortError' ? 'request_timeout'
+      : safeStatus !== null ? 'http_failure' : 'network_error'
+  return {
+    source: safeSource,
+    host: safeHost,
+    finalHostClass,
+    status: safeStatus,
+    contentType: contentTypeClass(contentType),
+    errorClass,
+    ...(SAFE_IMAGE_TLS_CODES.has(code) ? { tlsCode: code } : {}),
   }
 }
 

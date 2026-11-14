@@ -112,6 +112,27 @@ describe('V1 packaged Worker preflight diagnostics', () => {
     expect(invalid.evidence.publicBlogContent).toBeNull()
   })
 
+  it('retains only bounded image-origin TLS evidence and drops raw URLs and error text', () => {
+    const imageRecord = {
+      source: 'product', host: 'hita.com.vn', finalHostClass: 'missing', status: null,
+      contentType: 'missing', errorClass: 'tls_error', tlsCode: 'ERR_SSL_DH_KEY_TOO_SMALL',
+      url: 'https://hita.com.vn/private/customer-image.jpg', rawError: 'TLS secret details',
+    }
+    const result = buildPreflightDiagnostics({
+      state: { stage: 'smoke' },
+      smokeOutput: `PUBLIC_POSTGRES_SMOKE_IMAGE_FAILURE ${JSON.stringify(imageRecord)}\nPUBLIC_POSTGRES_SMOKE_IMAGE other failure`,
+    })
+
+    expect(result.evidence.publicImageFailures).toEqual([{
+      source: 'product', host: 'hita.com.vn', finalHostClass: 'missing', status: null,
+      contentType: 'missing', errorClass: 'tls_error', tlsCode: 'ERR_SSL_DH_KEY_TOO_SMALL',
+    }])
+    expect(result.evidence.smokeOutput).toContain('PUBLIC_POSTGRES_SMOKE_IMAGE other failure')
+    expect(result.evidence.smokeOutput).not.toContain('PUBLIC_POSTGRES_SMOKE_IMAGE_FAILURE')
+    expect(JSON.stringify(result)).not.toContain('/private/customer-image.jpg')
+    expect(JSON.stringify(result)).not.toContain('TLS secret details')
+  })
+
   it('retains only allowlisted Worker database and PLP events in the artifact', () => {
     const rawEvents = [
       JSON.stringify({
