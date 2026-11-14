@@ -75,6 +75,8 @@ jobs:
             --source-sha "$GITHUB_SHA"
       - name: Confirm exact target, source and Wrangler dry-run
         shell: bash
+        env:
+          V1_PUBLIC_HYPERDRIVE_ID: ${{ vars.V1_PUBLIC_HYPERDRIVE_ID }}
         run: |
           set -euo pipefail
           node - "$RUNNER_TEMP/v1-release/wrangler.json" <<'NODE'
@@ -84,13 +86,104 @@ jobs:
           if(x.name!=='dongphugia-v1-public-production' || x.vars?.APP_ENV!=='production' || x.vars?.APP_ORIGIN!=='https://www.dongphugia.vn') process.exit(1);
           if(x.main!=='worker/index.js' || !x.assets?.directory) process.exit(1);
           if(process.env.PUBLIC_CATALOGUE_SOURCE==='postgresql'
-            && (!x.hyperdrive?.some(b=>b.binding==='PUBLIC_DB' && /^[0-9a-f]{32}$/.test(b.id))
+            && (!/^[0-9a-f]{32}$/.test(process.env.V1_PUBLIC_HYPERDRIVE_ID||'')
+              || x.hyperdrive?.length!==1
+              || x.hyperdrive[0].binding!=='PUBLIC_DB'
+              || x.hyperdrive[0].id!==process.env.V1_PUBLIC_HYPERDRIVE_ID
               || x.vars?.PUBLIC_CATALOGUE_SOURCE!=='postgresql')) process.exit(1);
+          if(process.env.PUBLIC_CATALOGUE_SOURCE==='snapshot'
+            && (x.hyperdrive?.length || x.vars?.PUBLIC_CATALOGUE_SOURCE!=='snapshot')) process.exit(1);
           console.log('V1_WORKER_IDENTITY_PASS');
           NODE
           cd "$RUNNER_TEMP/v1-release"
           node "$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js" deploy --dry-run --config wrangler.json
-      - name: Publish only when explicitly requested
+      - name: Verify dedicated Public role and Hyperdrive permissions before publish
+        id: db_preflight
+        if: inputs.data_source == 'postgresql'
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          V1_PUBLIC_HYPERDRIVE_ID: ${{ vars.V1_PUBLIC_HYPERDRIVE_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN"
+          test "$CLOUDFLARE_ACCOUNT_ID" = 'd54f3402b9d112ab64d6135e0e3f1fb1'
+          test "$V1_PUBLIC_HYPERDRIVE_ID" = '905f5791e9d84cf285f7533b92d03f49'
+          export PREFLIGHT_TOKEN="$(openssl rand -hex 32)"
+          echo "::add-mask::$PREFLIGHT_TOKEN"
+          node - "$RUNNER_TEMP/v1-release/wrangler.public-db-smoke.json" <<'NODE'
+          const fs=require('fs');
+          const path=process.argv[2];
+          const cfg={
+            name:`dpg-v1-public-db-smoke-${process.env.GITHUB_RUN_ID}`,
+            main:`${process.env.GITHUB_WORKSPACE}/scripts/app-foundation/public-db-preflight-worker.mjs`,
+            compatibility_date:'2026-08-30',
+            compatibility_flags:['nodejs_compat'],
+            workers_dev:false,
+            preview_urls:false,
+            vars:{PREFLIGHT_TOKEN:process.env.PREFLIGHT_TOKEN},
+            hyperdrive:[{binding:'PUBLIC_DB',id:process.env.V1_PUBLIC_HYPERDRIVE_ID}],
+          };
+          fs.writeFileSync(path,JSON.stringify(cfg,null,2)+'\n',{mode:0o600});
+          NODE
+          node "$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js" dev \
+            --remote --config "$RUNNER_TEMP/v1-release/wrangler.public-db-smoke.json" \
+            --ip 127.0.0.1 --port 8792 --show-interactive-dev-session=false \
+            > "$RUNNER_TEMP/v1-public-db-smoke-wrangler.log" 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for _ in {1..60}; do
+            status="$(curl --silent --output "$RUNNER_TEMP/v1-public-db-smoke.json" \
+              --write-out '%{http_code}' --max-time 12 \
+              --header "Authorization: Bearer $PREFLIGHT_TOKEN" \
+              http://127.0.0.1:8792/probe || true)"
+            if [ "$status" = '200' ]; then ready=1; break; fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          node - "$RUNNER_TEMP/v1-public-db-smoke.json" <<'NODE'
+          const fs=require('fs');
+          const x=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          if(x.status!=='PASS'||x.role!=='dpg_public_catalogue'||x.readOnly!==true||x.tls!==true
+            ||x.rowLevelSecurity!==true||x.customerReadDenied!==true||x.adminReadDenied!==true||x.publicProducts!==5964
+            ||x.listingProducts!==5362||x.publishedBlogs!==10||x.databaseOnlySku!=='A-LFV-402S-1') process.exit(1);
+          console.log(`PUBLIC_DB_PREFLIGHT status=PASS role=${x.role} read_only=${x.readOnly} tls=${x.tls} rls=${x.rowLevelSecurity} customer_read=denied admin_read=denied listing_products=${x.listingProducts} blogs=${x.publishedBlogs} db_only_sku=${x.databaseOnlySku}`);
+          NODE
+      - name: Verify packaged Public Worker reads PostgreSQL before publish
+        id: public_preflight
+        if: inputs.data_source == 'postgresql'
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          node - "$RUNNER_TEMP/v1-release/wrangler.json" "$RUNNER_TEMP/v1-release/wrangler.public-preflight.json" <<'NODE'
+          const fs=require('fs');
+          const src=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          src.name=`dpg-v1-public-smoke-${process.env.GITHUB_RUN_ID}`;
+          src.workers_dev=false;
+          src.preview_urls=false;
+          fs.writeFileSync(process.argv[3],JSON.stringify(src,null,2)+'\n',{mode:0o600});
+          NODE
+          node "$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js" dev \
+            --remote --config "$RUNNER_TEMP/v1-release/wrangler.public-preflight.json" \
+            --ip 127.0.0.1 --port 8793 --show-interactive-dev-session=false \
+            > "$RUNNER_TEMP/v1-public-smoke-wrangler.log" 2>&1 &
+          worker_pid=$!
+          trap 'kill "$worker_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for _ in {1..60}; do
+            if curl --fail --silent --max-time 12 http://127.0.0.1:8793/api/health > /dev/null; then ready=1; break; fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          node "$GITHUB_WORKSPACE/scripts/app-foundation/public-postgres-release-smoke.mjs" \
+            http://127.0.0.1:8793 "$GITHUB_SHA" local
+      - name: Verify live snapshot rollback and record active version
+        id: rollback
         if: inputs.publish
         shell: bash
         env:
@@ -98,6 +191,65 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -euo pipefail
+          wrangler="$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js"
+          node "$wrangler" deployments list --name dongphugia-v1-public-production --json > "$RUNNER_TEMP/v1-before-deployments.json"
+          node - "$RUNNER_TEMP/v1-before-deployments.json" "$GITHUB_OUTPUT" <<'NODE'
+          const fs=require('fs');
+          const doc=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const deployments=Array.isArray(doc)?doc:(doc.deployments??doc.result?.deployments);
+          const current=deployments?.reduce((latest,item)=>!latest||item.created_on>latest.created_on?item:latest,null);
+          const active=current?.versions?.filter(v=>v.percentage===100)??[];
+          const id=active[0]?.version_id;
+          if(!/^[a-f0-9-]{36}$/.test(id||'')||active.length!==1) process.exit(1);
+          fs.appendFileSync(process.argv[3],`version_id=${id}\n`);
+          NODE
+          rollback_version="$(sed -n 's/^version_id=//p' "$GITHUB_OUTPUT" | tail -n1)"
+          node "$wrangler" versions view "$rollback_version" --name dongphugia-v1-public-production --json > "$RUNNER_TEMP/v1-before-version.json"
+          node - "$RUNNER_TEMP/v1-before-version.json" <<'NODE'
+          const fs=require('fs');
+          const raw=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const v=raw.version??raw.result??raw;
+          const bindings=v.resources?.bindings??[];
+          if(bindings.some(b=>b.name==='PUBLIC_DB'||b.type==='hyperdrive')) process.exit(1);
+          if(!bindings.some(b=>b.name==='APP_ENV'&&b.text==='production')
+            ||!bindings.some(b=>b.name==='APP_ORIGIN'&&b.text==='https://www.dongphugia.vn')) process.exit(1);
+          NODE
+          curl --fail --silent --show-error --max-time 20 \
+            --dump-header "$RUNNER_TEMP/v1-snapshot-health.headers" \
+            --output "$RUNNER_TEMP/v1-snapshot-health.json" \
+            https://www.dongphugia.vn/api/health
+          node - "$RUNNER_TEMP/v1-snapshot-health.headers" "$RUNNER_TEMP/v1-snapshot-health.json" "$GITHUB_OUTPUT" <<'NODE'
+          const fs=require('fs');
+          const headers=fs.readFileSync(process.argv[2],'utf8');
+          const body=JSON.parse(fs.readFileSync(process.argv[3],'utf8'));
+          const sha=headers.match(/^x-dpg-source-sha:\s*([a-f0-9]{40})\s*$/im)?.[1];
+          if(!sha||body.status!=='ok'||body.catalogueMode!=='verified-snapshot'||body.publicProducts!==5223
+            ||body.listingProducts!==4853||!/^[a-f0-9]{40}$/.test(body.catalogueCheckpoint||'')) process.exit(1);
+          fs.appendFileSync(process.argv[4],`snapshot_sha=${sha}\nsnapshot_checkpoint=${body.catalogueCheckpoint}\n`);
+          NODE
+          snapshot_sha="$(sed -n 's/^snapshot_sha=//p' "$GITHUB_OUTPUT" | tail -n1)"
+          snapshot_checkpoint="$(sed -n 's/^snapshot_checkpoint=//p' "$GITHUB_OUTPUT" | tail -n1)"
+          node "$GITHUB_WORKSPACE/scripts/catalogue-direct/public-production-smoke.mjs" \
+            https://www.dongphugia.vn "$snapshot_sha" production "$snapshot_checkpoint"
+      - name: Require verified PostgreSQL source for publication
+        if: inputs.publish && inputs.data_source != 'postgresql'
+        shell: bash
+        run: |
+          echo 'Only the verified PostgreSQL build can be published; snapshot recovery uses the recorded previous Worker version.' >&2
+          exit 1
+      - name: Publish only when explicitly requested
+        if: inputs.publish && inputs.data_source == 'postgresql'
+        id: deploy
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ "$PUBLIC_CATALOGUE_SOURCE" != 'postgresql' ]; then
+            echo 'Only the verified PostgreSQL build can be published; snapshot recovery uses the recorded previous Worker version.' >&2
+            exit 1
+          fi
           test -n "$CLOUDFLARE_API_TOKEN"
           test "$CLOUDFLARE_ACCOUNT_ID" = 'd54f3402b9d112ab64d6135e0e3f1fb1'
           cd "$RUNNER_TEMP/v1-release"
@@ -107,12 +259,61 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for route in / /blog; do
-            curl --fail --location --silent --show-error \
-              --retry 4 --retry-all-errors --retry-delay 3 \
-              --max-time 25 --output /dev/null \
-              "https://www.dongphugia.vn$route"
-          done
+          node "$GITHUB_WORKSPACE/scripts/app-foundation/public-postgres-release-smoke.mjs" \
+            https://www.dongphugia.vn "$GITHUB_SHA" production
+      - name: Verify deployed Worker version and Hyperdrive binding
+        if: inputs.publish
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          V1_PUBLIC_HYPERDRIVE_ID: ${{ vars.V1_PUBLIC_HYPERDRIVE_ID }}
+        run: |
+          set -euo pipefail
+          wrangler="$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js"
+          node "$wrangler" deployments list --name dongphugia-v1-public-production --json > "$RUNNER_TEMP/v1-after-deployments.json"
+          node - "$RUNNER_TEMP/v1-after-deployments.json" "$RUNNER_TEMP/v1-deployed-version-id" <<'NODE'
+          const fs=require('fs');
+          const doc=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const deployments=Array.isArray(doc)?doc:(doc.deployments??doc.result?.deployments);
+          const current=deployments?.reduce((latest,item)=>!latest||item.created_on>latest.created_on?item:latest,null);
+          const active=current?.versions?.filter(v=>v.percentage===100)??[];
+          const id=active[0]?.version_id;
+          if(!/^[a-f0-9-]{36}$/.test(id||'')||active.length!==1) process.exit(1);
+          fs.writeFileSync(process.argv[3],id);
+          NODE
+          deployed_version="$(cat "$RUNNER_TEMP/v1-deployed-version-id")"
+          node "$wrangler" versions view "$deployed_version" --name dongphugia-v1-public-production --json > "$RUNNER_TEMP/v1-after-version.json"
+          node - "$RUNNER_TEMP/v1-after-version.json" "$V1_PUBLIC_HYPERDRIVE_ID" <<'NODE'
+          const fs=require('fs');
+          const raw=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const v=raw.version??raw.result??raw;
+          const bindings=v.resources?.bindings??[];
+          const db=bindings.filter(b=>b.name==='PUBLIC_DB'&&b.type==='hyperdrive');
+          if(db.length!==1||(db[0].id??db[0].hyperdrive_id)!==process.argv[3]) process.exit(1);
+          if(!bindings.some(b=>b.name==='PUBLIC_CATALOGUE_SOURCE'&&b.text==='postgresql')
+            ||!bindings.some(b=>b.name==='APP_ENV'&&b.text==='production')
+            ||!bindings.some(b=>b.name==='APP_ORIGIN'&&b.text==='https://www.dongphugia.vn')) process.exit(1);
+          NODE
+          echo "DEPLOYED_WORKER_VERSION=$deployed_version" >> "$GITHUB_STEP_SUMMARY"
+          echo "DEPLOYED_WORKER_BINDING=PUBLIC_DB:Hyperdrive" >> "$GITHUB_STEP_SUMMARY"
+      - name: Restore verified snapshot and smoke it after a failed Production release
+        if: failure() && inputs.publish && steps.deploy.outcome != 'skipped' && steps.rollback.outputs.version_id != ''
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PREVIOUS_VERSION_ID: ${{ steps.rollback.outputs.version_id }}
+          SNAPSHOT_SOURCE_SHA: ${{ steps.rollback.outputs.snapshot_sha }}
+          SNAPSHOT_CHECKPOINT: ${{ steps.rollback.outputs.snapshot_checkpoint }}
+        run: |
+          set -euo pipefail
+          wrangler="$GITHUB_WORKSPACE/apps/public/node_modules/wrangler/bin/wrangler.js"
+          node "$wrangler" rollback "$PREVIOUS_VERSION_ID" \
+            --name dongphugia-v1-public-production --yes \
+            --message 'V1 PostgreSQL M1 smoke failed; restore verified snapshot'
+          node "$GITHUB_WORKSPACE/scripts/catalogue-direct/public-production-smoke.mjs" \
+            https://www.dongphugia.vn "$SNAPSHOT_SOURCE_SHA" production "$SNAPSHOT_CHECKPOINT"
       - name: Log immutable source and deployment decision
         if: always()
         shell: bash
@@ -125,6 +326,11 @@ jobs:
             echo "- Target: dongphugia-v1-public-production"
             echo "- Publish requested: $PUBLISH"
             echo "- Public data source: $PUBLIC_CATALOGUE_SOURCE"
+            echo "- PostgreSQL permission/TLS/read smoke: ${{ steps.db_preflight.outcome }}"
+            echo "- Live Public Worker PostgreSQL preflight: ${{ steps.public_preflight.outcome }}"
+            echo "- Snapshot rollback version: ${{ steps.rollback.outputs.version_id }}"
+            echo "- Snapshot source/checkpoint: ${{ steps.rollback.outputs.snapshot_sha }} / ${{ steps.rollback.outputs.snapshot_checkpoint }}"
+            echo "- Production deployment version: ${{ steps.deploy.outcome }}"
             echo "- Deployment verification: ${{ job.status }}"
             echo "- Before M1 acceptance: no claim of complete hosted Products/Blog."
             echo "- Rollback: previous Cloudflare Worker deployment; PostgreSQL separately."

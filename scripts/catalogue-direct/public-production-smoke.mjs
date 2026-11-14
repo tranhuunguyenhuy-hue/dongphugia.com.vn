@@ -27,10 +27,11 @@ const blogPaths = [
 const paths = ['/', ...blogPaths, '/thiet-bi-ve-sinh', '/thiet-bi-bep', '/vat-lieu-nuoc', '/gach-op-lat', '/thiet-bi-ve-sinh/lavabo', ...productPaths]
 const fail = (reason) => { throw new Error(`PUBLIC_PRODUCTION_SMOKE_${reason}`) }
 if (!/^[a-f0-9]{40}$/.test(sourceSha) || !/^[a-f0-9]{40}$/.test(expectedCheckpoint)
-  || !['local', 'workers-dev'].includes(posture)) fail('ARGUMENT')
+  || !['local', 'workers-dev', 'production'].includes(posture)) fail('ARGUMENT')
 const base = new URL(baseArgument)
 if (posture === 'local' && !(base.protocol === 'http:' && ['127.0.0.1', 'localhost'].includes(base.hostname))) fail('BASE')
 if (posture === 'workers-dev' && !(base.protocol === 'https:' && base.hostname === 'dongphugia-v1-public-production.tranhuunguyenhuy.workers.dev')) fail('BASE')
+if (posture === 'production' && base.origin !== 'https://www.dongphugia.vn') fail('BASE')
 
 async function checked(path) {
   const response = await fetch(new URL(path, base), { redirect: 'manual', signal: AbortSignal.timeout(20000) })
