@@ -12,8 +12,8 @@ function send(response: ServerResponse, source: string, type: string, status = 2
   response.end(source)
 }
 
-async function createFixture({ failPlp = false, blogCount = 10, includeBlogHeading = true, duplicateLastArticle = false }: {
-  failPlp?: boolean; blogCount?: number; includeBlogHeading?: boolean; duplicateLastArticle?: boolean
+async function createFixture({ failPlp = false, failImage = false, blogCount = 10, includeBlogHeading = true, duplicateLastArticle = false }: {
+  failPlp?: boolean; failImage?: boolean; blogCount?: number; includeBlogHeading?: boolean; duplicateLastArticle?: boolean
 } = {}) {
   const hits: string[] = []
   const server = createServer((request: IncomingMessage, response: ServerResponse) => {
@@ -71,8 +71,13 @@ async function createFixture({ failPlp = false, blogCount = 10, includeBlogHeadi
       return send(response, '<article><h1>Bài viết</h1></article>', 'text/html')
     }
     if (path.startsWith('/images/')) {
-      response.writeHead(200, { 'content-type': 'image/png' })
-      response.end(Buffer.from([137, 80, 78, 71]))
+      if (failImage) {
+        response.writeHead(503, { 'content-type': 'text/plain' })
+        response.end('private image origin diagnostics')
+      } else {
+        response.writeHead(200, { 'content-type': 'image/png' })
+        response.end(Buffer.from([137, 80, 78, 71]))
+      }
       return
     }
     return send(response, 'Not Found', 'text/plain', 404)
@@ -163,6 +168,25 @@ describe('packaged Public PostgreSQL release smoke', () => {
       expect(result.stderr).toContain('"visibleCount":10')
       expect(result.stderr).toContain('"uniqueArticleCount":9')
       expect(result.stderr).toContain('PUBLIC_POSTGRES_SMOKE_BLOG_COUNT')
+    } finally {
+      await fixture.close()
+    }
+  })
+
+  it('keeps image failures strict and emits only safe source, host, status, and MIME evidence', async () => {
+    const fixture = await createFixture({ failImage: true })
+    try {
+      const result = await runSmoke(fixture.base)
+      expect(result.exitCode).not.toBe(0)
+      const line = result.stderr.split(/\r?\n/).find(value => value.startsWith('PUBLIC_POSTGRES_SMOKE_IMAGE_FAILURE '))
+      expect(line).toBeTruthy()
+      expect(JSON.parse(line!.slice('PUBLIC_POSTGRES_SMOKE_IMAGE_FAILURE '.length))).toEqual({
+        source: 'product', host: 'other', finalHostClass: 'same_host', status: 503,
+        contentType: 'text/plain', errorClass: 'http_failure',
+      })
+      expect(result.stderr).toContain('PUBLIC_POSTGRES_SMOKE_IMAGE')
+      expect(result.stderr).not.toContain('private image origin diagnostics')
+      expect(result.stderr).not.toContain(fixture.base)
     } finally {
       await fixture.close()
     }

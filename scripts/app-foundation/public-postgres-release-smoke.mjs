@@ -1,4 +1,4 @@
-import { buildBlogContentEvidence, buildSmokeNetworkFailureEvidence, buildSmokeResponseEvidence } from './public-postgres-smoke-diagnostics.mjs'
+import { buildBlogContentEvidence, buildSmokeImageFailureEvidence, buildSmokeNetworkFailureEvidence, buildSmokeResponseEvidence } from './public-postgres-smoke-diagnostics.mjs'
 
 const [baseArgument, sourceSha, posture] = process.argv.slice(2)
 const fail = (reason) => { throw new Error(`PUBLIC_POSTGRES_SMOKE_${reason}`) }
@@ -156,22 +156,37 @@ function firstImage(html) {
   }
   return null
 }
-async function checkImage(url) {
+async function checkImage(url, source) {
   if (!safeHosts.has(url.hostname)) fail('IMAGE_HOST')
   if (url.hostname === 'media.dongphugia.vn'
     && (!url.pathname.startsWith('/publishing/') || url.search || url.hash)) fail('IMAGE_PATH')
-  const response = await fetch(url, { headers: { Range: 'bytes=0-0' }, redirect: 'follow', signal: AbortSignal.timeout(20000) })
+  let response
+  try {
+    response = await fetch(url, { headers: { Range: 'bytes=0-0' }, redirect: 'follow', signal: AbortSignal.timeout(20000) })
+  } catch (error) {
+    console.error(`PUBLIC_POSTGRES_SMOKE_IMAGE_FAILURE ${JSON.stringify(buildSmokeImageFailureEvidence({
+      source, host: url.hostname, error,
+    }))}`)
+    fail('IMAGE_REQUEST')
+  }
   const finalUrl = new URL(response.url)
+  const responseType = response.headers.get('content-type')
   if (!safeHosts.has(finalUrl.hostname) || (finalUrl.hostname === 'media.dongphugia.vn' && !finalUrl.pathname.startsWith('/publishing/'))
-    || ![200, 206].includes(response.status)
-    || !response.headers.get('content-type')?.startsWith('image/')) fail('IMAGE')
+    || ![200, 206].includes(response.status) || !responseType?.startsWith('image/')) {
+    await response.body?.cancel()
+    console.error(`PUBLIC_POSTGRES_SMOKE_IMAGE_FAILURE ${JSON.stringify(buildSmokeImageFailureEvidence({
+      source, host: url.hostname, finalHost: finalUrl.hostname,
+      status: response.status, contentType: responseType,
+    }))}`)
+    fail('IMAGE')
+  }
   await response.body?.cancel()
 }
 const productImage = product.image_main_url ? new URL(product.image_main_url, base) : firstImage(pdp.body) ?? firstImage(plp.body)
 if (!productImage) fail('PRODUCT_IMAGE_SOURCE')
-await checkImage(productImage)
+await checkImage(productImage, 'product')
 const blogImage = firstImage(blog.body) ?? articles.map(firstImage).find(Boolean)
 if (!blogImage) fail('BLOG_IMAGE_SOURCE')
-await checkImage(blogImage)
+await checkImage(blogImage, 'blog')
 
 console.log(`PUBLIC_POSTGRES_SMOKE status=PASS posture=${posture} listingProducts=${state.listingProducts} blogs=${articlePaths.length} source=${sourceSha}`)

@@ -15,6 +15,19 @@ const SAFE_SMOKE_CHECKS = new Set(['status', 'source_sha', 'set_cookie', 'conten
 const SAFE_SMOKE_BODY_CLASSES = new Set([
   'empty', 'html_error_page', 'known_application_error', 'json_error', 'other_error_body',
 ])
+const SAFE_IMAGE_HOSTS = new Set([
+  'www.dongphugia.vn', 'dpg-products.b-cdn.net', 'cdn.dongphugia.com.vn',
+  'cdn.hita.com.vn', 'hita.com.vn', 'vietceramics.com',
+  'tygjmrhandbffjllxveu.supabase.co', 'media.dongphugia.vn',
+])
+const SAFE_IMAGE_FAILURE_SOURCES = new Set(['product', 'blog', 'other'])
+const SAFE_IMAGE_FAILURE_HOST_CLASSES = new Set(['missing', 'same_host', 'approved_asset_host', 'other'])
+const SAFE_IMAGE_FAILURE_CONTENT_TYPES = new Set(['application/json', 'text/html', 'text/plain', 'image/*', 'other', 'missing'])
+const SAFE_IMAGE_FAILURE_CLASSES = new Set(['tls_error', 'request_timeout', 'http_failure', 'network_error'])
+const SAFE_IMAGE_TLS_CODES = new Set([
+  'ERR_SSL_DH_KEY_TOO_SMALL', 'ERR_TLS_CERT_ALTNAME_INVALID', 'CERT_HAS_EXPIRED',
+  'DEPTH_ZERO_SELF_SIGNED_CERT', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+])
 const SAFE_SMOKE_EXCERPTS = new Set([
   'public_configuration_rejected', 'database_temporarily_unavailable',
   'catalogue_temporarily_unavailable', 'internal_server_error', 'not_found',
@@ -147,10 +160,39 @@ function parseSmokeBlogContent(raw) {
   return null
 }
 
+function parseSmokeImageFailureEvidence(raw) {
+  const prefix = 'PUBLIC_POSTGRES_SMOKE_IMAGE_FAILURE '
+  const result = []
+  for (const line of String(raw ?? '').split(/\r?\n/)) {
+    if (result.length >= 8 || !line.startsWith(prefix)) continue
+    try {
+      const value = JSON.parse(line.slice(prefix.length))
+      if (!value || !SAFE_IMAGE_FAILURE_SOURCES.has(value.source)
+        || !(value.host === 'other' || SAFE_IMAGE_HOSTS.has(value.host))
+        || !SAFE_IMAGE_FAILURE_HOST_CLASSES.has(value.finalHostClass)
+        || !(value.status === null || (Number.isInteger(value.status) && value.status >= 100 && value.status <= 599))
+        || !SAFE_IMAGE_FAILURE_CONTENT_TYPES.has(value.contentType)
+        || !SAFE_IMAGE_FAILURE_CLASSES.has(value.errorClass)
+        || (value.tlsCode !== undefined && !SAFE_IMAGE_TLS_CODES.has(value.tlsCode))) continue
+      result.push({
+        source: value.source,
+        host: value.host,
+        finalHostClass: value.finalHostClass,
+        status: value.status,
+        contentType: value.contentType,
+        errorClass: value.errorClass,
+        ...(value.tlsCode ? { tlsCode: value.tlsCode } : {}),
+      })
+    } catch { /* Retain only bounded, allowlisted image-origin evidence. */ }
+  }
+  return result
+}
+
 function removeSmokeEvidenceLines(raw) {
   return String(raw ?? '').split(/\r?\n/)
     .filter(line => !line.startsWith('PUBLIC_POSTGRES_SMOKE_HTTP ')
-      && !line.startsWith('PUBLIC_POSTGRES_SMOKE_BLOG_CONTENT '))
+      && !line.startsWith('PUBLIC_POSTGRES_SMOKE_BLOG_CONTENT ')
+      && !line.startsWith('PUBLIC_POSTGRES_SMOKE_IMAGE_FAILURE '))
     .join('\n')
 }
 
@@ -287,6 +329,7 @@ export function buildPreflightDiagnostics(input, secretValues = []) {
   const smokeOutput = sanitize(removeSmokeEvidenceLines(input.smokeOutput ?? ''), MAX_SMOKE_CHARS, secretValues)
   const publicHttpRequests = parseSmokeHttpEvidence(input.smokeOutput ?? '')
   const publicBlogContent = parseSmokeBlogContent(input.smokeOutput ?? '')
+  const publicImageFailures = parseSmokeImageFailureEvidence(input.smokeOutput ?? '')
   const history = sanitize((input.history ?? '').split(/\r?\n/).filter(Boolean).slice(-MAX_HISTORY_LINES).join('\n'), 4_000, secretValues)
   const summary = {
     classification: classify({ state, headers, body, wranglerLog, curlError }),
@@ -306,6 +349,7 @@ export function buildPreflightDiagnostics(input, secretValues = []) {
       smokeOutput,
       publicHttpRequests,
       publicBlogContent,
+      publicImageFailures,
       runtimeEvents,
       httpHistory: history,
       wranglerLogTail: wranglerLog,
@@ -349,6 +393,7 @@ if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
     `- Wrangler process alive at failure: \`${result.evidence.workerAlive ?? 'unknown'}\`; exit code: \`${result.evidence.workerExitCode ?? 'unknown'}\``,
     `- Safe Worker runtime events: \`${result.evidence.runtimeEvents.length}\`; PostgreSQL read failures: \`${result.evidence.runtimeEvents.filter(event => event.event === 'PUBLIC_DATABASE_READ_FAILURE').length}\`; SQLSTATE: \`${[...new Set(result.evidence.runtimeEvents.map(event => event.sqlState).filter(Boolean))].join(', ') || 'none recorded'}\`; peak reported DB clients: \`${Math.max(0, ...result.evidence.runtimeEvents.map(event => event.peakPgClients ?? event.activePgClients ?? 0))}\`.`,
     `- Blog content evidence: \`${JSON.stringify(result.evidence.publicBlogContent ?? 'not recorded')}\`.`,
+    `- Safe image failures: \`${JSON.stringify(result.evidence.publicImageFailures)}\`.`,
     '- Allowlisted Worker events, sanitized Wrangler log tail, response excerpt, curl error, and bounded HTTP history are attached as a short-retention artifact.',
     '- Raw Wrangler logs and raw response data are not uploaded.',
   ].join('\n') + '\n'
