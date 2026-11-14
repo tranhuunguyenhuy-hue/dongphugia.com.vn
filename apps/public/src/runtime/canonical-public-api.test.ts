@@ -1,7 +1,7 @@
 import {describe,it,expect,vi} from 'vitest'
-const dbMocks=vi.hoisted(()=>({enabled:false,getBrands:vi.fn(),getListing:vi.fn(),getProduct:vi.fn()}))
+const dbMocks=vi.hoisted(()=>({enabled:false,getBrands:vi.fn(),getListing:vi.fn(),getListingLeaves:vi.fn(),getProduct:vi.fn()}))
 vi.mock('./public-db',()=>({publicPostgresEnabled:()=>dbMocks.enabled}))
-vi.mock('./live-public-catalogue',()=>({getLiveBrandsForListing:dbMocks.getBrands,getLiveListing:dbMocks.getListing,getLiveProductByCategory:dbMocks.getProduct}))
+vi.mock('./live-public-catalogue',()=>({getLiveBrandsForListing:dbMocks.getBrands,getLiveListing:dbMocks.getListing,getLiveListingLeaves:dbMocks.getListingLeaves,getLiveProductByCategory:dbMocks.getProduct}))
 const products=Array.from({length:60},(_,i)=>({id:i,slug:'p-'+i,name:'P'+i,brands:{name:i<50?'A':'B',slug:i<50?'a':'b'},is_featured:false,price:null,stock_status:'contact'}))
 vi.mock('./public-snapshot-catalogue',()=>({
  getSnapshotCategories:async()=>[{slug:'thiet-bi-bep',listings:[{slug:'voi-rua-chen',name:'Vòi rửa chén',totalCount:60}]}],
@@ -9,7 +9,7 @@ vi.mock('./public-snapshot-catalogue',()=>({
  getSnapshotProduct:async(_category:string,_listing:string,slug:string)=>slug==='public-content'?{id:1,slug,name:'Public product',price:null,stock_status:'contact',publicContent:{summary:'Public summary',descriptionBlocks:[{kind:'heading',text:'Công nghệ'},{kind:'paragraph',text:'Nội dung thực.'}],specifications:{'Công nghệ':'Public technology specification'},gallery:[],referencePrice:{amountVnd:1200000,recordedUpdateDate:'2026-07-02',provenance:'legacy-manual-public-display'}}}:null,
  getSnapshotVariantSiblings:async(group:string,id:number)=>group==='public-17'&&id===1?[{id:2,sku:'SKU-2',slug:'variant-2',name:'Variant 2',url:'/thiet-bi-bep/voi-rua-chen/variant-2',price:null,price_display:'Liên hệ báo giá',stock_status:'contact',is_active:true,image_main_url:null,variant_options:[],variant_group:'public-17',variant_type:'size',variant_label:'Size 2',categories:{slug:'thiet-bi-bep'},subcategories:{slug:'voi-rua-chen'},canonical_category_slug:'thiet-bi-bep',canonical_subcategory_slug:'voi-rua-chen'}]:[],
 }))
-import {getPublicProducts,getAvailableFiltersBySubcategory,getPublicProductBySlug,getPdpSpecifications,getPdpDescriptionBlocks,getPdpHistoricalReferencePrice,getVariantSiblings} from './canonical-public-api'
+import {getPublicProducts,getPublicListingLeaves,getAvailableFiltersBySubcategory,getPublicProductBySlug,getPdpSpecifications,getPdpDescriptionBlocks,getPdpHistoricalReferencePrice,getVariantSiblings} from './canonical-public-api'
 describe('canonical Preview public snapshot seam',()=>{
  it('returns the real total for snapshot Listing templates without reading server-side product pages',async()=>{
   const result=await getPublicProducts({category_slug:'thiet-bi-bep',subcategory_slugs:'voi-rua-chen',pageSize:24,page:2})
@@ -23,6 +23,7 @@ describe('canonical Preview public snapshot seam',()=>{
  it('uses bounded database results for product filters and PDP related cards',async()=>{
   dbMocks.enabled=true
   dbMocks.getBrands.mockResolvedValueOnce([{slug:'acme',name:'Acme'}])
+  dbMocks.getListingLeaves.mockResolvedValueOnce([{slug:'voi-rua-chen',name:'Vòi rửa chén',totalCount:60}])
   dbMocks.getListing.mockResolvedValueOnce({products:products.slice(0,6),totalCount:60,page:1})
   const filters=await getAvailableFiltersBySubcategory('voi-rua-chen',undefined,'thiet-bi-bep')
   expect(filters.brands.map(b=>b.slug)).toEqual(['acme'])
@@ -30,6 +31,23 @@ describe('canonical Preview public snapshot seam',()=>{
   expect(dbMocks.getListing).toHaveBeenCalledWith('thiet-bi-bep','voi-rua-chen',1,6)
   expect(related.products).toHaveLength(5)
   expect(related.total).toBe(60)
+  dbMocks.enabled=false
+ })
+
+ it('uses category-scoped PostgreSQL listing metadata for PLP navigation and totals',async()=>{
+  dbMocks.enabled=true
+  dbMocks.getListingLeaves.mockResolvedValue([
+   {slug:'voi-rua-chen',name:'Vòi rửa chén',totalCount:60},
+   {slug:'voi-sen',name:'Vòi sen',totalCount:30},
+  ])
+  const leaves=await getPublicListingLeaves('thiet-bi-bep')
+  const result=await getPublicProducts({category_slug:'thiet-bi-bep',subcategory_slugs:'voi-rua-chen',pageSize:12,page:2})
+  expect(leaves).toEqual([
+   {id:null,name:'Vòi rửa chén',slug:'voi-rua-chen',description:null,thumbnail_url:null,source:'legacy',_count:{products:60}},
+   {id:null,name:'Vòi sen',slug:'voi-sen',description:null,thumbnail_url:null,source:'legacy',_count:{products:30}},
+  ])
+  expect(result).toMatchObject({products:[],total:60,totalPages:5,page:2,pageSize:12})
+  expect(dbMocks.getListingLeaves).toHaveBeenCalledWith('thiet-bi-bep')
   dbMocks.enabled=false
  })
 
