@@ -1,4 +1,4 @@
-import { buildSmokeNetworkFailureEvidence, buildSmokeResponseEvidence } from './public-postgres-smoke-diagnostics.mjs'
+import { buildBlogContentEvidence, buildSmokeNetworkFailureEvidence, buildSmokeResponseEvidence } from './public-postgres-smoke-diagnostics.mjs'
 
 const [baseArgument, sourceSha, posture] = process.argv.slice(2)
 const fail = (reason) => { throw new Error(`PUBLIC_POSTGRES_SMOKE_${reason}`) }
@@ -118,8 +118,12 @@ const pdp = await checked(product.url, 'text/html', 'pdp')
 if (!pdp.body.includes('<h1') || !pdp.body.includes('A-LFV-402S-1') || !pdp.body.includes('Liên hệ báo giá')) fail('PDP')
 
 const blog = await checked('/blog', 'text/html', 'blog-index')
-if (!blog.body.includes('Các bài viết đã xuất bản') || !blog.body.includes('10 bài viết')) fail('BLOG_INDEX')
 const articlePaths = [...new Set([...blog.body.matchAll(/href=["'](\/blog\/[a-z0-9-]+\/[a-z0-9-]+)(?:[?#][^"']*)?["']/g)].map(m => m[1]))]
+const blogContent = buildBlogContentEvidence(blog.body, articlePaths)
+console.error(`PUBLIC_POSTGRES_SMOKE_BLOG_CONTENT ${JSON.stringify(blogContent)}`)
+if (!blogContent.mainFound) fail('BLOG_MAIN')
+if (!blogContent.publishedHeadingFound) fail('BLOG_HEADING')
+if (blogContent.visibleCount !== 10) fail('BLOG_VISIBLE_COUNT')
 if (articlePaths.length !== 10) fail('BLOG_COUNT')
 const articles = []
 for (const path of articlePaths) {

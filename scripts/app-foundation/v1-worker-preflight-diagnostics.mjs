@@ -124,6 +124,36 @@ function parseSmokeHttpEvidence(raw) {
   return result
 }
 
+function parseSmokeBlogContent(raw) {
+  const prefix = 'PUBLIC_POSTGRES_SMOKE_BLOG_CONTENT '
+  for (const line of String(raw ?? '').split(/\r?\n/)) {
+    if (!line.startsWith(prefix)) continue
+    try {
+      const value = JSON.parse(line.slice(prefix.length))
+      if (!value || typeof value.mainFound !== 'boolean'
+        || typeof value.publishedHeadingFound !== 'boolean'
+        || typeof value.rawExactCountSubstringMatched !== 'boolean'
+        || !(value.visibleCount === null || (Number.isInteger(value.visibleCount) && value.visibleCount >= 0 && value.visibleCount <= 100))
+        || !(value.uniqueArticleCount === null || (Number.isInteger(value.uniqueArticleCount) && value.uniqueArticleCount >= 0 && value.uniqueArticleCount <= 100))) continue
+      return {
+        mainFound: value.mainFound,
+        publishedHeadingFound: value.publishedHeadingFound,
+        rawExactCountSubstringMatched: value.rawExactCountSubstringMatched,
+        visibleCount: value.visibleCount,
+        uniqueArticleCount: value.uniqueArticleCount,
+      }
+    } catch { /* Retain only a valid, fully allowlisted Blog acceptance record. */ }
+  }
+  return null
+}
+
+function removeSmokeEvidenceLines(raw) {
+  return String(raw ?? '').split(/\r?\n/)
+    .filter(line => !line.startsWith('PUBLIC_POSTGRES_SMOKE_HTTP ')
+      && !line.startsWith('PUBLIC_POSTGRES_SMOKE_BLOG_CONTENT '))
+    .join('\n')
+}
+
 function safeCount(value) {
   return Number.isInteger(value) && value >= 0 && value <= 128 ? value : undefined
 }
@@ -254,8 +284,9 @@ export function buildPreflightDiagnostics(input, secretValues = []) {
   const wranglerLog = sanitize(removeRuntimeEventLines(input.wranglerLog ?? ''), MAX_LOG_CHARS, secretValues)
   const runtimeEvents = parseSafeRuntimeEvents(input.wranglerLog ?? '')
   const curlError = sanitize(input.curlError ?? '', MAX_CURL_ERROR_CHARS, secretValues)
-  const smokeOutput = sanitize(input.smokeOutput ?? '', MAX_SMOKE_CHARS, secretValues)
+  const smokeOutput = sanitize(removeSmokeEvidenceLines(input.smokeOutput ?? ''), MAX_SMOKE_CHARS, secretValues)
   const publicHttpRequests = parseSmokeHttpEvidence(input.smokeOutput ?? '')
+  const publicBlogContent = parseSmokeBlogContent(input.smokeOutput ?? '')
   const history = sanitize((input.history ?? '').split(/\r?\n/).filter(Boolean).slice(-MAX_HISTORY_LINES).join('\n'), 4_000, secretValues)
   const summary = {
     classification: classify({ state, headers, body, wranglerLog, curlError }),
@@ -274,6 +305,7 @@ export function buildPreflightDiagnostics(input, secretValues = []) {
       curlError,
       smokeOutput,
       publicHttpRequests,
+      publicBlogContent,
       runtimeEvents,
       httpHistory: history,
       wranglerLogTail: wranglerLog,
@@ -316,6 +348,7 @@ if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
     `- Stage: \`${result.evidence.stage}\`; last HTTP response: \`${result.evidence.lastHttpStatus}\`; final probe: \`${result.evidence.lastAttemptStatus}\`; attempts: \`${result.evidence.attempts ?? 'unknown'}\``,
     `- Wrangler process alive at failure: \`${result.evidence.workerAlive ?? 'unknown'}\`; exit code: \`${result.evidence.workerExitCode ?? 'unknown'}\``,
     `- Safe Worker runtime events: \`${result.evidence.runtimeEvents.length}\`; PostgreSQL read failures: \`${result.evidence.runtimeEvents.filter(event => event.event === 'PUBLIC_DATABASE_READ_FAILURE').length}\`; SQLSTATE: \`${[...new Set(result.evidence.runtimeEvents.map(event => event.sqlState).filter(Boolean))].join(', ') || 'none recorded'}\`; peak reported DB clients: \`${Math.max(0, ...result.evidence.runtimeEvents.map(event => event.peakPgClients ?? event.activePgClients ?? 0))}\`.`,
+    `- Blog content evidence: \`${JSON.stringify(result.evidence.publicBlogContent ?? 'not recorded')}\`.`,
     '- Allowlisted Worker events, sanitized Wrangler log tail, response excerpt, curl error, and bounded HTTP history are attached as a short-retention artifact.',
     '- Raw Wrangler logs and raw response data are not uploaded.',
   ].join('\n') + '\n'

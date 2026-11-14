@@ -85,6 +85,33 @@ describe('V1 packaged Worker preflight diagnostics', () => {
     expect(JSON.stringify(result.evidence.publicHttpRequests)).not.toContain('customer data')
   })
 
+  it('retains only allowlisted Blog content signals in the preflight artifact', () => {
+    const blogRecord = {
+      mainFound: true, publishedHeadingFound: true, rawExactCountSubstringMatched: false,
+      visibleCount: 10, uniqueArticleCount: 10,
+      renderedHtml: 'private Blog contents', title: 'untrusted extra field',
+    }
+    const result = buildPreflightDiagnostics({
+      state: { stage: 'smoke', lastHttpStatus: '200', workerAlive: true },
+      smokeOutput: `PUBLIC_POSTGRES_SMOKE_BLOG_CONTENT ${JSON.stringify(blogRecord)}\nPUBLIC_POSTGRES_SMOKE_BLOG_INDEX private body`,
+    })
+
+    expect(result.evidence.publicBlogContent).toEqual({
+      mainFound: true, publishedHeadingFound: true, rawExactCountSubstringMatched: false,
+      visibleCount: 10, uniqueArticleCount: 10,
+    })
+    expect(result.evidence.smokeOutput).toContain('PUBLIC_POSTGRES_SMOKE_BLOG_INDEX')
+    expect(result.evidence.smokeOutput).not.toContain('PUBLIC_POSTGRES_SMOKE_BLOG_CONTENT')
+    expect(JSON.stringify(result)).not.toContain('private Blog contents')
+    expect(JSON.stringify(result)).not.toContain('untrusted extra field')
+
+    const invalid = buildPreflightDiagnostics({
+      state: { stage: 'smoke' },
+      smokeOutput: 'PUBLIC_POSTGRES_SMOKE_BLOG_CONTENT {"mainFound":true,"publishedHeadingFound":true,"rawExactCountSubstringMatched":false,"visibleCount":101,"uniqueArticleCount":10}',
+    })
+    expect(invalid.evidence.publicBlogContent).toBeNull()
+  })
+
   it('retains only allowlisted Worker database and PLP events in the artifact', () => {
     const rawEvents = [
       JSON.stringify({

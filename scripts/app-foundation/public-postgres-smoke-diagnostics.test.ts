@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildSmokeNetworkFailureEvidence,
   buildSmokeResponseEvidence,
+  buildBlogContentEvidence,
   classifySmokeBody,
   classifySmokeLocation,
 } from './public-postgres-smoke-diagnostics.mjs'
@@ -10,6 +11,36 @@ const sourceSha = 'a'.repeat(40)
 const base = new URL('https://www.dongphugia.vn')
 
 describe('bounded Public PostgreSQL smoke evidence', () => {
+  it('normalizes React SSR text-node boundaries while retaining heading, count, and unique-link checks', () => {
+    const paths = Array.from({ length: 10 }, (_, index) => `/blog/kien-thuc/bai-viet-${index + 1}`)
+    const html = `<main><h2>Các bài viết đã xuất bản</h2><p>Đang hiển thị <!-- -->10<!-- --> bài viết được khôi phục từ dữ liệu trước đây.</p>${paths.map(path => `<a href="${path}">Bài viết</a>`).join('')}</main>`
+    expect(buildBlogContentEvidence(html, paths)).toEqual({
+      mainFound: true,
+      publishedHeadingFound: true,
+      rawExactCountSubstringMatched: false,
+      visibleCount: 10,
+      uniqueArticleCount: 10,
+    })
+  })
+
+  it('distinguishes a missing heading, a visible count mismatch, and fewer than ten unique article URLs', () => {
+    const ninePaths = Array.from({ length: 9 }, (_, index) => `/blog/kien-thuc/bai-viet-${index + 1}`)
+    const missingHeading = `<main><p>Đang hiển thị <!-- -->10<!-- --> bài viết.</p></main>`
+    const ninePosts = `<main><h2>Các bài viết đã xuất bản</h2><p>Đang hiển thị <!-- -->9<!-- --> bài viết.</p></main>`
+    const duplicatePosts = [...ninePaths, ninePaths[8]]
+    const duplicateHtml = `<main><h2>Các bài viết đã xuất bản</h2><p>Đang hiển thị 10 bài viết.</p></main>`
+
+    expect(buildBlogContentEvidence(missingHeading, ninePaths)).toMatchObject({
+      mainFound: true, publishedHeadingFound: false, visibleCount: 10, uniqueArticleCount: 9,
+    })
+    expect(buildBlogContentEvidence(ninePosts, ninePaths)).toMatchObject({
+      mainFound: true, publishedHeadingFound: true, visibleCount: 9, uniqueArticleCount: 9,
+    })
+    expect(buildBlogContentEvidence(duplicateHtml, duplicatePosts)).toMatchObject({
+      publishedHeadingFound: true, visibleCount: 10, uniqueArticleCount: 9,
+    })
+  })
+
   it('identifies the failed HTTP predicate while keeping response body text allowlisted', () => {
     const response = new Response('<html><head><title>Internal Server Error</title></head><body>private details</body></html>', {
       status: 500,
