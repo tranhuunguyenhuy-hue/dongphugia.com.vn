@@ -23,6 +23,19 @@ import {
 declare const __DPG_BUILD_SOURCE_SHA__: string
 
 const sourceIdentityHeader = { 'X-DPG-Source-SHA': __DPG_BUILD_SOURCE_SHA__ }
+const SAFE_ROUTE_SLUG=/^[a-z0-9]+(?:-[a-z0-9]+)*$/
+function routeDiagnostics(request:Request) {
+  const segments=new URL(request.url).pathname.split('/').filter(Boolean)
+  if(segments.length===2&&segments[0]==='api'&&segments[1]==='health')return {route:'health'}
+  if(segments.length===5&&segments[0]==='api'&&segments[1]==='catalogue'&&segments[2]==='listings')return {route:'listing-shard'}
+  if(segments.length===2&&segments.every(segment=>SAFE_ROUTE_SLUG.test(segment)))return {
+    route:'plp',categorySlug:segments[0],subcategorySlug:segments[1],
+  }
+  if(segments.length===3&&segments.every(segment=>SAFE_ROUTE_SLUG.test(segment)))return {
+    route:'pdp',categorySlug:segments[0],subcategorySlug:segments[1],productSlug:segments[2],
+  }
+  return {route:'other'}
+}
 
 export default {
   async fetch(
@@ -126,6 +139,16 @@ export default {
     }
 
     const rendered = await vinextHandler.fetch(request, environment, context)
+    if(environment.PUBLIC_DB_DIAGNOSTICS==='true'&&rendered.status>=500){
+      const marker=rendered.headers.get('X-DPG-Render-Failure')??''
+      const safeMarkers=new Set(['CROSS_REQUEST_IO','GLOBAL_SCOPE_IO','SUBREQUEST_LIMIT','CPU_LIMIT','MEMORY_LIMIT','NO_RESPONSE','STREAM_CLOSED','BODY_USED','NETWORK_LOST','ASSET_UNAVAILABLE','UNCLASSIFIED_EXCEPTION'])
+      const rawContentType=rendered.headers.get('content-type')?.split(';',1)[0].toLowerCase()??''
+      const contentTypeClass=rawContentType==='text/html'||rawContentType==='application/json'||rawContentType==='text/plain'
+        ?rawContentType:rawContentType.startsWith('image/')?'image/*':rawContentType?'other':'missing'
+      console.error(JSON.stringify({event:'PUBLIC_RENDER_HTTP_FAILURE',...routeDiagnostics(request),status:rendered.status,
+        contentTypeClass,
+        hasRenderFailureMarker:safeMarkers.has(marker),...(safeMarkers.has(marker)?{renderFailure:marker}:{})}))
+    }
     if (!cacheKey || !isCacheableResponse(rendered)) {
       return withHeaders(rendered, {
         ...sourceIdentityHeader,
