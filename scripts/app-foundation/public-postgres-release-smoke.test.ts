@@ -12,7 +12,9 @@ function send(response: ServerResponse, source: string, type: string, status = 2
   response.end(source)
 }
 
-async function createFixture({ failPlp = false }: { failPlp?: boolean } = {}) {
+async function createFixture({ failPlp = false, blogCount = 10, includeBlogHeading = true, duplicateLastArticle = false }: {
+  failPlp?: boolean; blogCount?: number; includeBlogHeading?: boolean; duplicateLastArticle?: boolean
+} = {}) {
   const hits: string[] = []
   const server = createServer((request: IncomingMessage, response: ServerResponse) => {
     const path = new URL(request.url ?? '/', `http://${request.headers.host}`).pathname
@@ -57,9 +59,13 @@ async function createFixture({ failPlp = false }: { failPlp?: boolean } = {}) {
       return send(response, '<main><h1>Sản phẩm</h1><p>A-LFV-402S-1</p><p>Liên hệ báo giá</p></main>', 'text/html')
     }
     if (path === '/blog') {
-      const articles = Array.from({ length: 10 }, (_, index) =>
-        `<a href="/blog/kien-thuc/bai-viet-${index + 1}">Bài viết ${index + 1}</a>`).join('')
-      return send(response, `<main><h1>Các bài viết đã xuất bản</h1><p>10 bài viết</p>${articles}<img src="/images/blog.png"></main>`, 'text/html')
+      const articles = Array.from({ length: blogCount }, (_, index) => {
+        const articleNumber = duplicateLastArticle && index === blogCount - 1 ? blogCount - 1 : index + 1
+        return `<a href="/blog/kien-thuc/bai-viet-${articleNumber}">Bài viết ${articleNumber}</a>`
+      }).join('')
+      const heading = includeBlogHeading ? '<h1>Các bài viết đã xuất bản</h1>' : ''
+      const count = `<p>Đang hiển thị <!-- -->${blogCount}<!-- --> bài viết được khôi phục từ dữ liệu website trước đây.</p>`
+      return send(response, `<main>${heading}${count}${articles}<img src="/images/blog.png"></main>`, 'text/html')
     }
     if (/^\/blog\/kien-thuc\/bai-viet-[1-9][0-9]*$/.test(path)) {
       return send(response, '<article><h1>Bài viết</h1></article>', 'text/html')
@@ -117,6 +123,46 @@ describe('packaged Public PostgreSQL release smoke', () => {
         sourceShaMatches: true, hasSetCookie: false, failedChecks: [],
       })
       expect(records.filter(record => record.route === 'blog-article')).toHaveLength(10)
+      const blogContent = result.stderr.split(/\r?\n/).find(line => line.startsWith('PUBLIC_POSTGRES_SMOKE_BLOG_CONTENT '))
+      expect(blogContent).toContain('"rawExactCountSubstringMatched":false')
+      expect(blogContent).toContain('"visibleCount":10')
+      expect(blogContent).toContain('"uniqueArticleCount":10')
+    } finally {
+      await fixture.close()
+    }
+  })
+
+  it('keeps a missing Blog heading and nine published posts as hard failures', async () => {
+    for (const fixtureOptions of [{ includeBlogHeading: false }, { blogCount: 9 }]) {
+      const fixture = await createFixture(fixtureOptions)
+      try {
+        const result = await runSmoke(fixture.base)
+        expect(result.exitCode).not.toBe(0)
+        expect(result.stderr).toContain('PUBLIC_POSTGRES_SMOKE_BLOG_')
+        const record = result.stderr.split(/\r?\n/).find(line => line.startsWith('PUBLIC_POSTGRES_SMOKE_BLOG_CONTENT '))
+        expect(record).toBeTruthy()
+        if (fixtureOptions.includeBlogHeading === false) {
+          expect(record).toContain('"publishedHeadingFound":false')
+          expect(result.stderr).toContain('PUBLIC_POSTGRES_SMOKE_BLOG_HEADING')
+        } else {
+          expect(record).toContain('"visibleCount":9')
+          expect(record).toContain('"uniqueArticleCount":9')
+          expect(result.stderr).toContain('PUBLIC_POSTGRES_SMOKE_BLOG_VISIBLE_COUNT')
+        }
+      } finally {
+        await fixture.close()
+      }
+    }
+  })
+
+  it('rejects ten article links when only nine URLs are unique', async () => {
+    const fixture = await createFixture({ duplicateLastArticle: true })
+    try {
+      const result = await runSmoke(fixture.base)
+      expect(result.exitCode).not.toBe(0)
+      expect(result.stderr).toContain('"visibleCount":10')
+      expect(result.stderr).toContain('"uniqueArticleCount":9')
+      expect(result.stderr).toContain('PUBLIC_POSTGRES_SMOKE_BLOG_COUNT')
     } finally {
       await fixture.close()
     }

@@ -117,3 +117,38 @@ export function buildSmokeNetworkFailureEvidence({ route, slug, error, elapsedMs
     errorClass: name === 'TimeoutError' || name === 'AbortError' ? 'request_timeout' : 'network_error',
   }
 }
+
+function normalizeBlogMainText(html) {
+  const main = String(html ?? '').match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1]
+  if (!main) return { mainFound: false, text: '' }
+  const text = main
+    .replace(/<(script|style|template|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;|&#160;|&#xA0;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+  return { mainFound: true, text }
+}
+
+/** Keep only bounded Blog acceptance signals; rendered HTML is never emitted. */
+export function buildBlogContentEvidence(html, articlePaths) {
+  const { mainFound, text } = normalizeBlogMainText(html)
+  const countMatch = text.match(/Đang hiển thị\s+(\d{1,3})\s+bài viết\b/i)
+  const visibleCount = countMatch ? Number(countMatch[1]) : null
+  const uniqueArticleCount = Array.isArray(articlePaths)
+    ? new Set(articlePaths.filter(path => typeof path === 'string')).size
+    : 0
+  return {
+    mainFound,
+    publishedHeadingFound: text.includes('Các bài viết đã xuất bản'),
+    rawExactCountSubstringMatched: String(html ?? '').includes('10 bài viết'),
+    visibleCount: Number.isSafeInteger(visibleCount) && visibleCount >= 0 && visibleCount <= 100 ? visibleCount : null,
+    uniqueArticleCount: Number.isSafeInteger(uniqueArticleCount) && uniqueArticleCount <= 100 ? uniqueArticleCount : null,
+  }
+}
